@@ -1,0 +1,304 @@
+<?php
+/**
+* Display help and module information
+* @param path which path of the site we're displaying help
+* @param arg array that holds the current path as would be returned from arg() function
+* @return help text for the path
+*/
+function summergame_help($path, $arg) {
+  $output = '';
+  switch ($path) {
+    case "admin/help#summergame":
+      $output = '<p>'. t('Summer Game system') .'</p>';
+      break;
+  }
+  return $output;
+}
+
+/**
+ * Implementation of hook_perm().
+ */
+function summergame_perm() {
+  return array('access summergame', 'administer summergame');
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function summergame_menu() {
+  $items = array();
+
+  $items['admin/summergame'] = array(
+    'title' => 'Summer Game Admin',
+    'description' => 'View, plublish, and respond to Patron Comments.',
+    'page callback' => 'summergame_admin',
+    'access arguments' => array('administer summergame'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+   $items['admin/summergame/add'] = array(
+    'title' => 'Add new Summer Game code',
+    'page callback' => 'summergame_admin_edit',
+    'access arguments' => array('administer summergame'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  $items['admin/summergame/edit'] = array(
+    'title' => 'Edit Summer Game code',
+    'page callback' => 'summergame_admin_edit',
+    'access arguments' => array('administer summergame'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  $items['admin/summergame/delete'] = array(
+    'title' => 'Delete Summer Game code',
+    'page callback' => 'summergame_admin_delete',
+    'access arguments' => array('administer summergame'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  $items['redeem'] = array(
+    'title' => t('Redeem Summer Game Code'),
+    'page callback' => 'summergame_redeem_page',
+    'access arguments' => array('access summergame'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['user/%user/summergame'] = array(
+    'title' => 'Summer Game',
+    'page callback' => 'summergame_myaccount_page',
+    'page arguments' => array(1),
+    'access callback' => 'user_edit_access',
+    'access arguments' => array(1),
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['summergame/register'] = array(
+    'title' => t('Register for the Summer Game'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('summergame_register_form'),
+    'access arguments' => array('access summergame'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/settings/pictionary'] = array(
+    'title' => t('Pictionary Settings'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('summergame_pictionary_settings'),
+    'access arguments' => array('administer site configuration'),
+    'description' => 'Settings for the Summer Game Pictionary game',
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'summergame.pictionary.inc',
+  );
+  $items['summergame/pictionary'] = array(
+    'title' => t('Redeem Summer Game Code'),
+    'page callback' => 'summergame_pictionary_page',
+    'access arguments' => array('access summergame'),
+    'type' => MENU_CALLBACK,
+    'file' => 'summergame.pictionary.inc',
+  );
+  $items['summergame/pictionaryupdate'] = array(
+    'page callback' => 'summergame_pictionary_update',
+    'access arguments' => array('access summergame'),
+    'type' => MENU_CALLBACK,
+    'file' => 'summergame.pictionary.inc',
+  );
+  return $items;
+}
+
+function summergame_admin() {
+  // Display all the game codes
+  $rows = array();
+  $res = db_query("SELECT * FROM sg_game_codes ORDER BY created DESC");
+  while ($row = db_fetch_array($res)) {
+    $row['Edit'] = l('edit', 'admin/summergame/edit/' . $row['code_id']);
+    $rows[] = $row;
+  }
+  $content .= theme('table', array_keys($rows[0]), $rows);
+
+  return $content;
+}
+
+function summergame_admin_edit($code_id = 0) {
+  if ($code_id) {
+    $game_code = db_fetch_array(db_query("SELECT * FROM sg_game_codes WHERE code_id = %d", $code_id));
+  }
+  $content .= drupal_get_form('summergame_code_edit_form', $game_code);
+
+  return $content;
+}
+
+function summergame_code_edit_form($form_state, $game_code) {
+  $form = array();
+  if ($game_code['code_id']) {
+    $form['code_id'] = array(
+      '#type' => 'value',
+      '#value' => $game_code['code_id'],
+    );
+  }
+  $form['text'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Code Text'),
+    '#default_value' => $game_code['text'],
+    '#size' => 32,
+    '#maxlength' => 32,
+    '#description' => t('Keyword text for this game code (e.g. APPLESAUCE)'),
+  );
+  $form['description'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Description'),
+    '#default_value' => $game_code['description'],
+    '#size' => 64,
+    '#maxlength' => 128,
+    '#description' => t('Description of the game code award (e.g. Attended Apple Peeling Event)'),
+  );
+  $form['points'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Points'),
+    '#default_value' => $game_code['points'],
+    '#size' => 16,
+    '#maxlength' => 8,
+    '#description' => t('Points to be awarded for the game code (e.g. 100)'),
+  );
+  $form['max_redemptions'] = array(
+    '#type' => 'select',
+    '#title' => t('Max Redemptions'),
+    '#default_value' => $game_code['max_redemptions'],
+    '#options' => array(
+      '0' => t('Unlimited'),
+      '1' => t('Single User'),
+      '2' => '2',
+      '3' => '3',
+      '4' => '4',
+      '5' => '5',
+      '10' => '10',
+      '25' => '25',
+      '50' => '50',
+      '100' => '100',
+    ),
+    '#description' => t('Number of players who can receive points for this award'),
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+  );
+
+  return $form;
+}
+
+function summergame_code_edit_form_submit($form, &$form_state) {
+  global $user;
+
+  if ($form_state['values']['code_id']) {
+    // Update existing code
+    db_query("UPDATE sg_game_codes SET text = '%s', description = '%s', points = %d, max_redemptions = %d " .
+             "WHERE code_id = %d",
+             $form_state['values']['text'], $form_state['values']['description'], $form_state['values']['points'],
+             $form_state['values']['max_redemptions'], $form_state['values']['code_id']);
+    drupal_set_message('Game Code ' . $form_state['values']['text'] . ' Updated');
+  }
+  else {
+    db_query("INSERT INTO sg_game_codes (creator_uid, created, text, description, points, max_redemptions) " .
+             "VALUES (%d, %d, '%s', '%s', %d, %d)",
+             $user->uid, time(), $form_state['values']['text'], $form_state['values']['description'],
+             $form_state['values']['points'], $form_state['values']['max_redemptions']);
+    drupal_set_message('Game Code ' . $form_state['values']['text'] . ' Created');
+  }
+
+  drupal_goto('admin/summergame');
+}
+
+function summergame_register_form($form_state) {
+  $form['title'] = array(
+    '#value' => '<h1>Summer Game Sign Up</h1>',
+  );
+  $form['name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Name'),
+    '#size' => 30,
+    '#maxlength' => 64,
+    '#description' => t('Enter your real name'),
+  );
+  $form['nickname'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Nickname'),
+    '#size' => 30,
+    '#maxlength' => 64,
+    '#description' => t('Enter an optional nickname (will be used for public display if allowed)'),
+  );
+  $form['phone'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Phone Number'),
+    '#size' => 30,
+    '#maxlength' => 64,
+    '#description' => t('Enter your phone number'),
+  );
+  $form['cardnum'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Registration Card Number'),
+    '#size' => 30,
+    '#maxlength' => 64,
+    '#description' => t('Did you pick up a score card? Enter its number here to help us track your progress'),
+  );
+  $form['privacy'] = array(
+    '#type' => 'checkboxes',
+    '#title' => 'Privacy Options',
+    '#options' => array(
+      'leaderboard' => 'Show my total score on the public leaderboard',
+      'myscore' => 'Allow others to see my summer game scores and awards page',
+      'public' => 'Allow public display of my nickname when I earn points or awards'
+    ),
+    '#description' => 'Select what other people can see about your Summer Game progress',
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit Registration')
+  );
+  return $form;
+}
+
+function summergame_myaccount_page($account) {
+  drupal_set_title(check_plain($account->name));
+
+  $output .= '<h1>My Summer Game</h1>';
+
+  $res = db_query('SELECT * FROM sg_ledger WHERE uid = %d ORDER BY timestamp ASC', $account->uid);
+
+  $total = 0;
+  $score_table = array();
+  while ($row = db_fetch_array($res)) {
+    $score_table[] = array(
+      'Date' => date('F j, Y, g:i a', $row['timestamp']),
+      'Code' => $row['code'],
+      'Points' => $row['points'],
+    );
+    $total += $row['points'];
+  }
+  $output .= theme('table', array_keys($score_table[0]), $score_table);
+  $output .= "<h1>Total: $total</h1>";
+
+  return $output;
+}
+
+function summergame_twilio_respond($incoming) {
+  // Check if Pictionary is active
+  if (variable_get('summergame_pictionary_active', FALSE)) {
+    $guess = $incoming['text'];
+    $answer = variable_get('summergame_pictionary_answer', '');
+    $response = array('uid' => twilio_lookup_user($incoming['phone']),
+                      'phone' => $incoming['phone'],
+                      'incoming' => 0);
+
+    db_query("INSERT INTO sg_pictionary (text, time) VALUES ('%s', '%d')",
+             $incoming['text'], time());
+
+    if (stripos($guess, $answer) !== FALSE) {
+      // Correct Answer
+      $place = variable_get('summergame_pictionary_guessed', 0) + 1;
+      variable_set('summergame_pictionary_guessed', $place);
+
+      $response['text'] = "Your answer of \"$guess\" is Correct Answer #$place!";
+      if ($place == 1) {
+        $response['text'] .= ' Please see a staff member to claim your prize';
+      }
+    }
+    else {
+      $response['text'] = "Sorry, your answer of \"$guess\" was incorrect. Please try again";
+    }
+
+    return array('summergame' => $response);
+  }
+}

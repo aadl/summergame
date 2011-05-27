@@ -1,0 +1,5 @@
+; $Id$
+name = Summer Game
+description = This module enables the Summer Game system
+core = 6.x
+package = AADL Modules
