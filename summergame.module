@@ -74,27 +74,27 @@ function summergame_menu() {
     'access arguments' => array('access summergame'),
     'type' => MENU_CALLBACK,
   );
-  $items['admin/settings/pictionary'] = array(
-    'title' => t('Pictionary Settings'),
+  $items['admin/settings/trivia'] = array(
+    'title' => t('Trivia Settings'),
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('summergame_pictionary_settings'),
+    'page arguments' => array('summergame_trivia_settings'),
     'access arguments' => array('administer site configuration'),
-    'description' => 'Settings for the Summer Game Pictionary game',
+    'description' => 'Settings for the Summer Game Trivia game',
     'type' => MENU_LOCAL_TASK,
-    'file' => 'summergame.pictionary.inc',
+    'file' => 'summergame.trivia.inc',
   );
-  $items['summergame/pictionary'] = array(
+  $items['summergame/trivia'] = array(
     'title' => t('Redeem Summer Game Code'),
-    'page callback' => 'summergame_pictionary_page',
+    'page callback' => 'summergame_trivia_page',
     'access arguments' => array('access summergame'),
     'type' => MENU_CALLBACK,
-    'file' => 'summergame.pictionary.inc',
+    'file' => 'summergame.trivia.inc',
   );
-  $items['summergame/pictionaryupdate'] = array(
-    'page callback' => 'summergame_pictionary_update',
+  $items['summergame/triviaupdate'] = array(
+    'page callback' => 'summergame_trivia_update',
     'access arguments' => array('access summergame'),
     'type' => MENU_CALLBACK,
-    'file' => 'summergame.pictionary.inc',
+    'file' => 'summergame.trivia.inc',
   );
   return $items;
 }
@@ -274,21 +274,20 @@ function summergame_myaccount_page($account) {
 }
 
 function summergame_twilio_respond($incoming) {
-  // Check if Pictionary is active
-  if (variable_get('summergame_pictionary_active', FALSE)) {
+  // Check if Trivia is active
+  if (variable_get('summergame_trivia_active', FALSE)) {
     $guess = $incoming['text'];
-    $answer = variable_get('summergame_pictionary_answer', '');
+    $answer = variable_get('summergame_trivia_answer', '');
     $response = array('uid' => twilio_lookup_user($incoming['phone']),
                       'phone' => $incoming['phone'],
                       'incoming' => 0);
 
-    db_query("INSERT INTO sg_pictionary (text, time) VALUES ('%s', '%d')",
-             $incoming['text'], time());
+    db_query("INSERT INTO sg_trivia_guesses (guess) VALUES ('%s')", $guess);
 
     if (stripos($guess, $answer) !== FALSE) {
       // Correct Answer
-      $place = variable_get('summergame_pictionary_guessed', 0) + 1;
-      variable_set('summergame_pictionary_guessed', $place);
+      db_query("INSERT INTO sg_trivia_correct (phone) VALUES ('%d')", $incoming['phone']);
+      $place = db_last_insert_id('sg_trivia', 'id');
 
       $response['text'] = "Your answer of \"$guess\" is Correct Answer #$place!";
       if ($place == 1) {

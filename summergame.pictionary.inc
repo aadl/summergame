@@ -1,14 +1,14 @@
 <?php
 
-function summergame_pictionary_page() {
-  drupal_add_js(drupal_get_path('module', 'summergame') . '/summergame.pictionary.js');
+function summergame_trivia_page() {
+  drupal_add_js(drupal_get_path('module', 'summergame') . '/summergame.trivia.js');
   $content .= drupal_get_js();
   $content .=
 <<<JST
 <script type="text/javascript">
 if( Drupal.jsEnabled ) {
   $(document).ready(function() {
-    setInterval("pictionaryupdate()", 3000);
+    setInterval("triviaupdate()", 3000);
   });
 }
 </script>
@@ -22,11 +22,11 @@ JST;
   print $content;
 }
 
-function summergame_pictionary_update() {
+function summergame_trivia_update() {
   // Check the Guessed Status
   $html .= '<h1>Answer: ';
-  if ($num_guessed = variable_get('summergame_pictionary_guessed', FALSE)) {
-    $html .= variable_get('summergame_pictionary_answer', '');
+  if ($num_guessed = variable_get('summergame_trivia_guessed', FALSE)) {
+    $html .= variable_get('summergame_trivia_answer', '');
     $html .= " ($num_guessed Correct Answer" . ($num_guessed == 1 ? ')' : 's)');
   }
   else {
@@ -34,7 +34,7 @@ function summergame_pictionary_update() {
   }
   $html .= '</h1>';
 
-  $res = db_query("SELECT * FROM sg_pictionary ORDER BY time DESC LIMIT 25");
+  $res = db_query("SELECT * FROM sg_trivia ORDER BY time DESC LIMIT 25");
   $rows = array();
   while ($row = db_fetch_array($res)) {
     $rows[] = $row;
@@ -46,26 +46,26 @@ function summergame_pictionary_update() {
   exit();
 }
 
-function summergame_pictionary_settings() {
-  $form['summergame_pictionary_active'] = array(
+function summergame_trivia_settings() {
+  $form['summergame_trivia_active'] = array(
     '#type' => 'checkbox',
     '#title' => t('Activate Game'),
-    '#default_value' => variable_get('summergame_pictionary_active', ''),
+    '#default_value' => variable_get('summergame_trivia_active', ''),
   );
-  $form['summergame_pictionary_answer'] = array(
+  $form['summergame_trivia_answer'] = array(
     '#type' => 'textfield',
-    '#title' => t("Pictionary Answer"),
-    '#default_value' => variable_get('summergame_pictionary_answer', ''),
+    '#title' => t("Trivia Answer"),
+    '#default_value' => variable_get('summergame_trivia_answer', ''),
     '#size' => 32,
     '#maxlength' => 32,
-    '#description' => t("Current Answer to the Pictionary Game"),
+    '#description' => t("Current Answer to the Trivia Game"),
   );
 
   return system_settings_form($form);
 }
 
-function summergame_pictionary_settings_validate($form, &$form_state) {
-  if ($form_state['value']['summergame_pictionary_answer'] != variable_get('summergame_pictionary_answer', '')) {
-    variable_set('summergame_pictionary_guessed', 0);
+function summergame_trivia_settings_validate($form, &$form_state) {
+  if ($form_state['value']['summergame_trivia_answer'] != variable_get('summergame_trivia_answer', '')) {
+    variable_set('summergame_trivia_guessed', 0);
   }
 }
