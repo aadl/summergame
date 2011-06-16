@@ -25,7 +25,9 @@ JST;
 function summergame_trivia_update() {
   // Check the Guessed Status
   $html .= '<h1>Answer: ';
-  if ($num_guessed = variable_get('summergame_trivia_guessed', FALSE)) {
+  $count = db_fetch_object(db_query("SELECT COUNT(id) AS count FROM sg_trivia_correct"));
+  $num_guessed = $count->count;
+  if ($num_guessed) {
     $html .= variable_get('summergame_trivia_answer', '');
     $html .= " ($num_guessed Correct Answer" . ($num_guessed == 1 ? ')' : 's)');
   }
@@ -34,7 +36,7 @@ function summergame_trivia_update() {
   }
   $html .= '</h1>';
 
-  $res = db_query("SELECT * FROM sg_trivia ORDER BY time DESC LIMIT 25");
+  $res = db_query("SELECT * FROM sg_trivia_guesses ORDER BY id DESC LIMIT 25");
   $rows = array();
   while ($row = db_fetch_array($res)) {
     $rows[] = $row;
@@ -66,6 +68,7 @@ function summergame_trivia_settings() {
 
 function summergame_trivia_settings_validate($form, &$form_state) {
   if ($form_state['value']['summergame_trivia_answer'] != variable_get('summergame_trivia_answer', '')) {
-    variable_set('summergame_trivia_guessed', 0);
+    // Clear the trivia correct table
+    db_query("TRUNCATE TABLE sg_trivia_correct");
   }
 }
