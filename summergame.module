@@ -90,6 +90,12 @@ function summergame_menu() {
     'access arguments' => array('access summergame'),
     'type' => MENU_CALLBACK,
   );
+  $items['summergame/badges'] = array(
+    'title' => 'Summer Game Badges',
+    'page callback' => 'summergame_badges_page',
+    'access arguments' => array('access summergame'),
+    'type' => MENU_CALLBACK,
+  );
   $items['summergame/pdf'] = array(
     'title' => t('Summer Game PDF'),
     'page callback' => 'summergame_pdf',
@@ -135,15 +141,15 @@ function summergame_admin() {
   // Print game cards
   $content .= '<h2 class="title">Print Game Cards</h2>';
   $content .= '<ul>';
-  $content .= '<li class="button green">' . l("Print Teen Game Card", 'summergame/admin') . '</li>';
-  $content .= '<li class="button green">' . l("Print Adult Game Card", 'summergame/admin') . '</li>';
+  $content .= '<li class="button green">' . l("Print Teen Game Card", 'summergame/pdf/teen') . '</li>';
+  $content .= '<li class="button green">' . l("Print Adult Game Card", 'summergame/pdf/adult') . '</li>';
   $content .= '</ul>';
 
   // Game Codes
   $content .= '<h2 class="title">Game Codes</h2>';
   $rows = array();
   $creators = array();
-  $res = db_query("SELECT * FROM sg_game_codes ORDER BY created DESC");
+  $res = db_query("SELECT * FROM sg_game_codes ORDER BY created DESC LIMIT 25");
   while ($game_code = db_fetch_array($res)) {
     // Load creator info
     $creator_uid = $game_code['creator_uid'];
@@ -169,11 +175,16 @@ function summergame_admin() {
 
   // Badges
   $content .= '<h2 class="title">Badges</h2>';
+  $sg_path = base_path() . drupal_get_path('module', 'summergame');
   $rows = array();
-  $creators = array();
   $res = db_query("SELECT * FROM sg_badges ORDER BY title ASC");
   while ($badge = db_fetch_array($res)) {
-    $rows[] = $badge;
+    $rows[] = array(
+      'Badge ID' => $badge['bid'],
+      'Image' => '<img src="' . $sg_path . '/images/' . $badge['image'] . '_100.png">',
+      'Title' => '<strong>' . $badge['title'] . '</strong>',
+      'Description' => $badge['description'],
+    );
   }
   $content .= theme('table', array_keys($rows[0]), $rows);
 
@@ -267,6 +278,17 @@ function summergame_code_edit_form($form_state, $game_code) {
   );
 
   return $form;
+}
+
+function summergame_code_edit_form_validate($form, &$form_state) {
+  // Check whether game code is unique
+  $res = db_query("SELECT code_id FROM sg_game_codes WHERE text LIKE '%s'", $form_state['values']['text']);
+  if ($code = db_fetch_object($res)) {
+    form_set_error('text', 'Code text is already in use. Please select another code.');
+  }
+  if (intval($form_state['values']['points']) < 1) {
+    form_set_error('points', 'Please enter a number for the point value');
+  }
 }
 
 function summergame_code_edit_form_submit($form, &$form_state) {
@@ -809,7 +831,7 @@ function summergame_player_page($pid = 0) {
       $header = array(
         'Player Details',
         array(
-          'data' => l('[Edit Player Info]', 'summergame/player/edit/' . $player['pid']),
+          'data' => '[ ' . l('Edit Player Info', 'summergame/player/edit/' . $player['pid']) . ' ]',
           'style' => 'text-align: right',
         ),
       );
@@ -863,16 +885,7 @@ function summergame_player_page($pid = 0) {
     $content .= ' || ';
     $content .= l('I Finished an Item!', 'summergame/player/consume/' . $player['pid']);
     $content .= '</h2>';
-/*
-    $content .= '<div id="player-redeem-form"><h2>I have a Game Code!</h2>';
-    $content .= drupal_get_form('summergame_redeem_form', $player['pid']);
-    $content .= '</div>';
 
-    // Consumption Form
-    $content .= '<div id="player-consume-form"><h2>I read/watched/listened to something!</h2>';
-    $content .= drupal_get_form('summergame_consume_form', $player['pid'], 1284044);
-    $content .= '</div>';
-*/
     // Badges
     $content .= '<h1>Badges</h1>';
     $sg_path = base_path() . drupal_get_path('module', 'summergame');
@@ -894,6 +907,8 @@ function summergame_player_page($pid = 0) {
     else {
       $content .= "<p>You haven't earned any badges yet.</p>";
     }
+
+    $content .= '<p>[ ' . l('See All Available Badges', 'summergame/badges') . ' ]</p>';
   }
   else {
     // invalid PID or not authorized
@@ -1021,6 +1036,26 @@ function summergame_leaderboard_page() {
     );
   }
   $content .= theme('table', array_keys($leaderboard[0]), $leaderboard);
+
+  return $content;
+}
+
+/**
+ * PAGE: Badges Page
+ */
+function summergame_badges_page() {
+  $content .= '<h1>Summer Game Badges</h1>';
+
+  $sg_path = base_path() . drupal_get_path('module', 'summergame');
+  $rows = array();
+  $res = db_query("SELECT * FROM sg_badges ORDER BY title ASC");
+  while ($badge = db_fetch_array($res)) {
+    $rows[] = array(
+      'Image' => '<img src="' . $sg_path . '/images/' . $badge['image'] . '_100.png">',
+      'Description' => '<strong>' . $badge['title'] . '</strong><p>' . $badge['description'] . '</p>',
+    );
+  }
+  $content .= theme('table', array(), $rows);
 
   return $content;
 }
