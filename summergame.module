@@ -796,8 +796,17 @@ function summergame_player_form_submit($form, &$form_state) {
   if ($form_state['values']['pid']) {
     $player_info['pid'] = $form_state['values']['pid'];
   }
+  else {
+    $new_player = TRUE;
+  }
 
   $player = summergame_player_save($player_info);
+
+  if ($new_player) {
+    $points = summergame_player_points($player['pid'], 100, 'Signup',
+                                       'Signed Up for the Summer Game');
+    drupal_set_message("Earned $points Summer Game points for signing up!");
+  }
 
   drupal_goto('summergame/player/' . $player['pid']);
 }
@@ -899,9 +908,11 @@ function summergame_player_page($pid = 0) {
 
     // Link to Points Forms
     $content .= '<h2>Earn More Points: ';
-    $content .= l('I have a Game Code!', 'summergame/player/gamecode/' . $player['pid']);
-    $content .= ' || ';
-    $content .= l('I Finished an Item!', 'summergame/player/consume/' . $player['pid']);
+    $content .= '[ ';
+    $content .= l('I have a Game Code', 'summergame/player/gamecode/' . $player['pid']);
+    $content .= ' ] [ ';
+    $content .= l('I Finished an Item', 'summergame/player/consume/' . $player['pid']);
+    $content .= ' ]';
     $content .= '</h2>';
 
     // Badges
@@ -1386,22 +1397,26 @@ function summergame_pdf($type = 'adult') {
     $pdf->Output('newteengame.pdf', 'D');
   }
   else { // default to the adult single player form
-    $id = 'AG' . $redis->incr('agpdfcounter');
+    // initiate FPDI
+    $pdf =& new FPDI('P', 'mm', 'Letter');
+    $pdf->SetAutoPageBreak(FALSE);
 
-    $pdf=new FPDF();
-    $pdf->addPage();
     // set the sourcefile
-    $pdf->Image($file_path . 'single_adult_game.png', 0, 82);
+    $pdf->setSourceFile($file_path . 'single_adult_game.pdf');
+    $tplidx = $pdf->importPage(1);
+    $pdf->addPage();
+    $pdf->useTemplate($tplidx);
 
     // now write some text
-    $pdf->SetFont('Helvetica', 'B', 13);
+    $id = 'AG' . $redis->incr('agpdfcounter');
+    $pdf->SetFont('Helvetica','B',13);
 
-    $pdf->SetXY(36, 189);
+    $pdf->SetXY(39, 110);
     $pdf->Cell(0, 10, $id, 0, 1);
 
-    $pdf->SetXY(161, 209);
+    $pdf->SetXY(161, 130);
     $pdf->Cell(0, 10, $id, 0, 1);
 
-    $pdf->Output('newadultsingle.pdf', 'D');
+    $pdf->Output('AGSummer_Game.pdf', 'D');
   }
 }
