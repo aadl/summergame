@@ -518,6 +518,13 @@ function summergame_consume_form($form_state, $pid, $bnum = 0) {
     '#maxlength' => 64,
     '#description' => t('Title of the Book/Movie/Music that you are reporting'),
   );
+  $form['duration'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Duration'),
+    '#size' => 16,
+    '#maxlength' => 16,
+    '#description' => t('Enter the # of pages OR the length in minutes for additional points! (Maximum 500 points)'),
+  );
   $form['id'] = array(
     '#type' => 'textfield',
     '#title' => t('Item Identifier'),
@@ -542,7 +549,7 @@ function summergame_consume_form($form_state, $pid, $bnum = 0) {
 }
 
 function summergame_consume_form_submit($form, &$form_state) {
-  $points = 50;
+  $points = 100;
   $pid = $form_state['values']['pid'];
   $title = $form_state['values']['title'];
   $description = $title;
@@ -551,11 +558,13 @@ function summergame_consume_form_submit($form, &$form_state) {
     $form_state['values']['id'] = $form_state['values']['bnum'];
   }
   if ($form_state['values']['id']) {
-    $points = 100;
     $description .= ' id:' . $form_state['values']['id'];
   }
-
-  summergame_player_points($pid, $points, 'mat_code:' . $form_state['values']['mat_code'], $description);
+  // Duration bonus
+  if ($form_state['values']['duration'] > $points) {
+    $points = ($form_state['values']['duration'] > 500 ? 500 : $form_state['values']['duration']);
+  }
+  $points = summergame_player_points($pid, $points, 'mat_code:' . $form_state['values']['mat_code'], $description);
   drupal_set_message("Earned $points points for finishing $title");
   drupal_goto('summergame/player/' . $pid);
 }
@@ -1272,8 +1281,8 @@ function summergame_redeem_code($pid, $code_text) {
     }
     // Go ahead and redeem
     db_query("UPDATE sg_game_codes SET num_redemptions = num_redemptions + 1 WHERE code_id = %d", $code->code_id);
-    summergame_player_points($pid, $code->points, $code->text, $code->description);
-    return array('success' => "Redeemed code \"$code->text\" for $code->points points");
+    $points = summergame_player_points($pid, $code->points, $code->text, $code->description);
+    return array('success' => "Redeemed code \"$code->text\" for $points points");
   }
   else {
     return array('warning' => "Code is not recognized");
@@ -1287,6 +1296,7 @@ function summergame_player_points($pid, $points, $code_text = '', $description =
   db_query("INSERT INTO sg_ledger (pid, points, code_text, description, timestamp) " .
            "VALUES (%d, %d, '%s', '%s', %d)",
            $pid, $points, $code_text, $description, time());
+  return $points;
 }
 
 /**
