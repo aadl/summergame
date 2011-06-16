@@ -555,9 +555,9 @@ function summergame_consume_form_submit($form, &$form_state) {
   $description = $title;
   if ($form_state['values']['bnum']) {
     // Use the trusted bnum as the id instead of a user-entered id
-    $form_state['values']['id'] = $form_state['values']['bnum'];
+    $description .= ' bnum:' . $form_state['values']['bnum'];
   }
-  if ($form_state['values']['id']) {
+  else if ($form_state['values']['id']) {
     $description .= ' id:' . $form_state['values']['id'];
   }
   // Duration bonus
@@ -1133,6 +1133,19 @@ function summergame_twilio_respond($incoming) {
 
   if ($response['text']) {
     return array('summergame' => $response);
+  }
+}
+
+/**
+ * HOOK: Add points when someone comments
+ */
+function summergame_comment($action, $op) {
+  if ($op == 'publish') {
+    if ($player = summergame_player_load(array('uid' => $action['uid']))) {
+      $points = summergame_player_points($player['pid'], 50, 'Added Comment',
+                                         'Commented on a website post nid:' . $action['nid']);
+      drupal_set_message("Earned $points Summer Game points for commenting on a website post");
+    }
   }
 }
 
