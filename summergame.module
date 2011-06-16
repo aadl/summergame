@@ -720,9 +720,12 @@ function summergame_player_form($form_state, $player = NULL) {
     // Set up default values
     $prize_array = summergame_get_prize_array();
     $default_prizes = array();
+    $prize_awarded = FALSE;
+
     foreach ($prize_array as $prize_code => $prize_name) {
       if (strpos($player['prizes'], $prize_code) !== FALSE ) {
         $default_prizes[$prize_code] = $prize_code;
+        $prize_awarded = TRUE;
       }
       else {
         $default_prizes[$prize_code] = 0;
@@ -733,6 +736,10 @@ function summergame_player_form($form_state, $player = NULL) {
       '#title' => t('Prizes Awarded'),
       '#options' => $prize_array,
       '#default_value' => $default_prizes,
+    );
+    $form['prize_awarded'] = array(
+      '#type' => 'value',
+      '#value' => $prize_awarded,
     );
   }
   $form['inline'] = array(
@@ -787,6 +794,12 @@ function summergame_player_form_submit($form, &$form_state) {
       }
     }
     $player_info['prizes'] = implode(',', $prizes);
+    if ($player_info['prizes'] && !($form_state['values']['prize_awarded'])) {
+      // Game Completion Bonus
+      $points = summergame_player_points($form_state['values']['pid'], 1000, 'Completed',
+                                         'Completed the Classic Summer Game');
+      drupal_set_message("Earned $points Summer Game points for completing the Classic Summer Game");
+    }
   }
 
   if ($form_state['values']['uid']) {
@@ -827,6 +840,13 @@ function summergame_player_page($pid = 0) {
   }
 
   if ($player) {
+    $player_access = summergame_player_access($player['pid']);
+    // Check if player's score card is private and we don't have access
+    if (!$player['show_myscore'] && !$player_access) {
+      drupal_set_message("Player #$pid's Score Card is private", 'error');
+      drupal_goto('summergame');
+    }
+
     $playername = $player['pid'] . ': ' . ($player['nickname'] ? $player['nickname'] : $player['name']);
     $content .= "<h1>Summer Game Player #$playername</h1>";
     if ($player['uid'] == $user->uid) {
@@ -834,7 +854,7 @@ function summergame_player_page($pid = 0) {
     }
 
     // Player Details
-    if (summergame_player_access($player['pid'])) {
+    if ($player_access) {
       $privacy_details .= '<ul>';
       if ($player['show_leaderboard']) {
         $privacy_details .= '<li>Show Nickname & Total Score on Public Leaderboard</li>';
@@ -884,7 +904,7 @@ function summergame_player_page($pid = 0) {
       $score_table[] = array(
         'Date' => date('F j, Y, g:i a', $row['timestamp']),
         'Code' => $row['code_text'],
-        'Description' => $description,
+        'Description' => ($player['show_titles'] || $player_access ? $description : ''),
         'Points' => $row['points'],
       );
       $current += $row['points'];
@@ -906,14 +926,16 @@ function summergame_player_page($pid = 0) {
     }
     $content .= "<h1>Total Points Earned: $net</h1>";
 
-    // Link to Points Forms
-    $content .= '<h2>Earn More Points: ';
-    $content .= '[ ';
-    $content .= l('I have a Game Code', 'summergame/player/gamecode/' . $player['pid']);
-    $content .= ' ] [ ';
-    $content .= l('I Finished an Item', 'summergame/player/consume/' . $player['pid']);
-    $content .= ' ]';
-    $content .= '</h2>';
+    if (summergame_player_access($player['pid'])) {
+      // Link to Points Forms
+      $content .= '<h2>Earn More Points: ';
+      $content .= '[ ';
+      $content .= l('Add a Game Code', 'summergame/player/gamecode/' . $player['pid']);
+      $content .= ' ] [ ';
+      $content .= l('Report Finishing an Item', 'summergame/player/consume/' . $player['pid']);
+      $content .= ' ]';
+      $content .= '</h2>';
+    }
 
     // Badges
     $content .= '<h1>Badges</h1>';
@@ -934,7 +956,7 @@ function summergame_player_page($pid = 0) {
       $content .= theme('table', array(), $badge_table);
     }
     else {
-      $content .= "<p>You haven't earned any badges yet.</p>";
+      $content .= "<p>This player hasn't earned any badges yet.</p>";
     }
 
     $content .= '<p>[ ' . l('See All Available Badges', 'summergame/badges') . ' ]</p>';
@@ -1094,32 +1116,47 @@ function summergame_badges_page() {
  */
 function summergame_twilio_respond($incoming) {
   // Prep generic response array
-  $response = array('uid' => twilio_lookup_user($incoming['phone']),
-                    'phone' => $incoming['phone'],
-                    'incoming' => 0);
+  $response_template = array('uid' => twilio_lookup_user($incoming['phone']),
+                             'phone' => $incoming['phone'],
+                             'incoming' => 0);
+  $responses = array();
 
   // Keyword responses
   if (strtolower($incoming['text']) == 'newplayer') {
     $new_player = array('phone' => $incoming['phone']);
-    summergame_player_save($new_player);
-    $response['text'] = "New Summer Game player created for this phone.";
+    $player = summergame_player_save($new_player);
+    $response = $response_template;
+    $response['text'] = "New Summer Game player #" . $player['pid'] . " created for this phone.";
+    $responses[] = $response;
+    // Signup bonus
+    $points = summergame_player_points($player['pid'], 100, 'Signup',
+                                       'Signed Up for the Summer Game');
+    $response = $response_template;
+    $response['text'] = "Earned $points Summer Game points for signing up!";
+    $responses[] = $response;
   }
   // Check if player record exists for this number
-  else if ($player = summergame_player_load(array('phone' => $incoming['phone']))) {
+  $res = db_query('SELECT pid FROM sg_players WHERE phone = %d', $incoming['phone']);
+  while ($player_info = db_fetch_object($res)) {
+    $player = summergame_player_load(array('pid' => $player_info->pid));
     // Associate a gamecard with the player if a game card ID
     if (preg_match('/^S?[ART]G[\d]{5}$/', $incoming['text'])) {
       $player['gamecard'] = $incoming['text'];
       summergame_player_save($player);
-      $response['text'] = 'Updated your player record with the scorecard ID ' . $incoming['text'];
+      $response = $response_template;
+      $response['text'] .= 'Updated your player record with the scorecard ID ' . $incoming['text'];
+      $responses[] = $response;
     }
     else {
       // Try to redeem text as a game code
       $status = summergame_redeem_code($player['pid'], $incoming['text']);
       if ($status['success'] || $status['error']) {
-        $response['text'] = $status['success'] . $status['error'];
+        $response = $response_template;
+        $response['text'] .= $status['success'] . $status['error'];
+        $responses[] = $response;
       }
+      // If not recognized, no response to allow other handlers to respond
     }
-    // If not recognized, no response to allow other handlers to respond
   }
   // Check if Trivia is active
   if (variable_get('summergame_trivia_active', FALSE) && empty($response['text'])) {
@@ -1132,18 +1169,22 @@ function summergame_twilio_respond($incoming) {
       db_query("INSERT INTO sg_trivia_correct (phone) VALUES ('%d')", $incoming['phone']);
       $place = db_last_insert_id('sg_trivia', 'id');
 
+      $response = $response_template;
       $response['text'] = "Your answer of \"$guess\" is Correct Answer #$place!";
       if ($place == 1) {
         $response['text'] .= ' Please see a staff member to claim your prize';
       }
+      $responses[] = $response;
     }
     else {
+      $response = $response_template;
       $response['text'] = "Sorry, your answer of \"$guess\" was incorrect. Please try again";
+      $responses[] = $response;
     }
   }
 
-  if ($response['text']) {
-    return array('summergame' => $response);
+  if (count($responses)) {
+    return $responses;
   }
 }
 
@@ -1327,7 +1368,7 @@ function summergame_player_points($pid, $points, $code_text = '', $description =
  * UTILITY: Award a badge to a player
  */
 function summergame_player_award_badge($pid, $bid) {
-  db_query("INSERT INTO sg_players_badges (pid, bid, timestamp) " .
+  db_query("INSERT IGNORE INTO sg_players_badges (pid, bid, timestamp) " .
            "VALUES (%d, %d, %d)",
            $pid, $bid, time());
 }
