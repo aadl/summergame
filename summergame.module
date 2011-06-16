@@ -434,6 +434,9 @@ function summergame_redeem_form($form_state, $pid) {
     '#type' => 'submit',
     '#value' => t('Submit'),
   );
+  $form['cancel'] = array(
+    '#value' => l('Cancel', 'summergame/player/' . $pid),
+  );
 
   return $form;
 }
@@ -474,9 +477,11 @@ function summergame_consume_form($form_state, $pid, $bnum = 0) {
   );
   $form['mat_code'] = array(
     '#type' => 'select',
-    '#title' => t('I read/watched/listened to a'),
+    '#title' => t('I finished a'),
     '#default_value' => $bib['mat_code'],
     '#options' => $locum->locum_config['formats'],
+    '#prefix' => "<div class=\"container-inline\">",
+    '#suffix' => "</div>",
   );
   $form['title'] = array(
     '#type' => 'textfield',
@@ -494,9 +499,16 @@ function summergame_consume_form($form_state, $pid, $bnum = 0) {
     '#maxlength' => 32,
     '#description' => t('Identifier Code for this item (ISBN, ASIN, Catalog Record Number)'),
   );
-  $form['submit'] = array(
+  $form['inline'] = array(
+    '#prefix' => "<div class=\"container-inline\">",
+    '#suffix' => "</div>",
+  );
+  $form['inline']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Submit'),
+  );
+  $form['inline']['cancel'] = array(
+    '#value' => l('Cancel', 'summergame/player/' . $pid),
   );
 
   return $form;
@@ -505,13 +517,15 @@ function summergame_consume_form($form_state, $pid, $bnum = 0) {
 function summergame_consume_form_submit($form, &$form_state) {
   $points = 50;
   $pid = $form_state['values']['pid'];
-  $description = $form_state['values']['title'];
+  $title = $form_state['values']['title'];
+  $description = $title;
   if ($form_state['values']['id']) {
     $points = 100;
     $description .= ' id:' . $form_state['values']['id'];
   }
-  summergame_player_points($pid, $points, 'Read Book', $description);
-  drupal_set_message("Earned $points points for consuming $description");
+
+  summergame_player_points($pid, $points, 'mat_code:' . $form_state['values']['mat_code'], $description);
+  drupal_set_message("Earned $points points for finishing $title");
   drupal_goto('summergame/player/' . $pid);
 }
 
@@ -792,13 +806,18 @@ function summergame_player_page($pid = 0) {
         array('<strong>Privacy Options:</strong>', $privacy_details),
       );
 
-      $content .= theme('table', array(array('data' => 'Player Details', 'colspan' => 2)), $player_table);
-      $content .= '<ul><li class="button green">' .
-                  l('Edit Player Informaton', 'summergame/player/edit/' . $player['pid']) .
-                  '</li></ul>';
+      $header = array(
+        'Player Details',
+        array(
+          'data' => l('[Edit Player Info]', 'summergame/player/edit/' . $player['pid']),
+          'style' => 'text-align: right',
+        ),
+      );
+      $content .= theme('table', $header, $player_table);
     }
 
     // Player Score
+    $locum = sopac_get_locum();
     $content .= '<h1>Score Card</h1>';
     $res = db_query('SELECT * FROM sg_ledger WHERE pid = %d ORDER BY timestamp ASC', $player['pid']);
 
@@ -806,10 +825,17 @@ function summergame_player_page($pid = 0) {
     $net = 0;
     $score_table = array();
     while ($row = db_fetch_array($res)) {
+      if (preg_match('/mat_code:([a-z])/', $row['code_text'], $matches)) {
+        // Translate material code to catalog material type
+        $row['code_text'] = 'Finished ' .
+                            $locum->locum_config['formats'][$matches[1]];
+      }
+      // Strip the id: code from the description field
+      $description = preg_replace('/id:[^\s]+/', '', $row['description']);
       $score_table[] = array(
         'Date' => date('F j, Y, g:i a', $row['timestamp']),
         'Code' => $row['code_text'],
-        'Description' => $row['description'],
+        'Description' => $description,
         'Points' => $row['points'],
       );
       $current += $row['points'];
@@ -835,7 +861,7 @@ function summergame_player_page($pid = 0) {
     $content .= '<h2>Earn More Points: ';
     $content .= l('I have a Game Code!', 'summergame/player/gamecode/' . $player['pid']);
     $content .= ' || ';
-    $content .= l('I Consumed Media!', 'summergame/player/consume/' . $player['pid']);
+    $content .= l('I Finished an Item!', 'summergame/player/consume/' . $player['pid']);
     $content .= '</h2>';
 /*
     $content .= '<div id="player-redeem-form"><h2>I have a Game Code!</h2>';
@@ -924,9 +950,8 @@ function summergame_player_redeem_page($pid = 0) {
   }
 
   $content .= '<h1>Redeem a Game Code for ' . ($player['nickname'] ? $player['nickname'] : $player['name']) . '</h1>';
-  $content .= '<p>You can find game codes for attending events, or by finding them around the library</p>';
+  $content .= '<p>You can find game codes for attending events, or by finding them around the library.</p>';
   $content .= drupal_get_form('summergame_redeem_form', $player['pid']);
-  $content .= '<ul><li class="button">' . l('Return to Player page', 'summergame/player') . '</li></ul>';
 
   return $content;
 }
@@ -954,10 +979,10 @@ function summergame_player_consume_page($pid = 0, $bnum = 0) {
     }
   }
 
-  $content .= '<h1>Report reading/listening/watching for ' . ($player['nickname'] ? $player['nickname'] : $player['name']) . '</h1>';
-  $content .= '<p>Did you read a book, listen to a CD, or watch a DVD? Enjoyed another item? Report it here to earn points</p>';
+  $content .= '<h1>Report ' . ($player['nickname'] ? $player['nickname'] : $player['name']) . ' Finished an item</h1>';
+  $content .= '<p>Did you read a book, listen to a CD, or watch a DVD? Enjoyed another item? Report it here to earn points:</p>';
+  $content .= '<p><em>HINT: If you are reporting an item from our catalog, click the "I FINISHED THIS" button on the full catalog page to automatically fill this form.</em></p>';
   $content .= drupal_get_form('summergame_consume_form', $player['pid'], $bnum);
-  $content .= '<ul><li class="button">' . l('Return to Player page', 'summergame/player') . '</li></ul>';
 
   return $content;
 }
