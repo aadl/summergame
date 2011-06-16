@@ -136,7 +136,7 @@ function summergame_admin() {
   // Players
   $content .= '<h2 class="title">Players</h2>';
   $content .= drupal_get_form('summergame_player_search_form');
-  $content .= '<ul><li class="button green">' . l("Create New Player", 'summergame/player/edit') . '</li></ul>';
+  $content .= '<ul><li class="button green">' . l("Create New Player", 'summergame/admin/players/new') . '</li></ul>';
 
   // Print game cards
   $content .= '<h2 class="title">Print Game Cards</h2>';
@@ -401,6 +401,7 @@ function summergame_admin_players($search_term = '') {
         );
       }
       $content .= theme('table', array_keys($rows[0]), $rows);
+      $content .= '<ul><li class="button green">' . l("Create New Player", 'summergame/admin/players/new') . '</li></ul>';
     }
   }
 
@@ -487,6 +488,10 @@ function summergame_consume_form($form_state, $pid, $bnum = 0) {
 
   if ($bnum) {
     $bib = $locum->get_bib_item($bnum);
+    $title = title_case($bib['title']);
+    if ($bib['title_medium']) {
+      $title .= ' ' . title_case($bib['title_medium']);
+    }
     $form['bnum'] = array(
       '#type' => 'value',
       '#value' => $bnum,
@@ -508,7 +513,7 @@ function summergame_consume_form($form_state, $pid, $bnum = 0) {
   $form['title'] = array(
     '#type' => 'textfield',
     '#title' => t('Item Title'),
-    '#default_value' => $bib['title'],
+    '#default_value' => $title,
     '#size' => 64,
     '#maxlength' => 64,
     '#description' => t('Title of the Book/Movie/Music that you are reporting'),
@@ -541,6 +546,10 @@ function summergame_consume_form_submit($form, &$form_state) {
   $pid = $form_state['values']['pid'];
   $title = $form_state['values']['title'];
   $description = $title;
+  if ($form_state['values']['bnum']) {
+    // Use the trusted bnum as the id instead of a user-entered id
+    $form_state['values']['id'] = $form_state['values']['bnum'];
+  }
   if ($form_state['values']['id']) {
     $points = 100;
     $description .= ' id:' . $form_state['values']['id'];
