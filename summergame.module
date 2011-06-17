@@ -1368,6 +1368,27 @@ function summergame_redeem_code($pid, $code_text) {
  * UTILITY: Apply points to a player
  */
 function summergame_player_points($pid, $points, $code_text = '', $description = '') {
+  if (strpos($code_text, 'mat_code:') !== FALSE ||
+      $code_text == 'Created List' ||
+      $code_text == 'Add to List' ||
+      $code_text == 'Checkout History') {
+    $point_limit = 1000;
+    $one_day_ago = time() - (60 * 60 * 24);
+    
+    $sql = "SELECT SUM(points) AS total FROM sg_ledger " .
+           "WHERE pid = %d " .
+           "AND timestamp > %d " .
+           "AND (code_text LIKE 'mat_code:%' " .
+           "OR code_text LIKE 'Created List' " .
+           "OR code_text LIKE 'Add to List' " .
+           "OR code_text LIKE 'Checkout History')";
+    $total = db_fetch_object(db_query($sql, $pid, $one_day_ago));
+    if ($total->total > $point_limit) {
+      drupal_set_message("Sorry, you are over the limit of $point_limit points for the last 24 hours for this category of points", 'error');
+      return 0;
+    }
+  }
+  
   db_query("INSERT INTO sg_ledger (pid, points, code_text, description, timestamp) " .
            "VALUES (%d, %d, '%s', '%s', %d)",
            $pid, $points, $code_text, $description, time());
