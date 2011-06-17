@@ -835,7 +835,14 @@ function summergame_player_form_submit($form, &$form_state) {
  * PAGE: Summer Game Player Account page
  */
 function summergame_player_page($pid = 0) {
-  global $user;
+  global $user, $_domain;
+
+  // Redirect to the right domain
+  if ($sg_did = variable_get('summergame_default_domain_id')) {
+    $summergame_domain = domain_load($sg_did);
+    domain_goto($summergame_domain);
+  }
+
   $pid = intval($pid);
 
   if ($pid) {
