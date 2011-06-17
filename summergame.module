@@ -838,7 +838,7 @@ function summergame_player_page($pid = 0) {
   global $user, $_domain;
 
   // Redirect to the right domain
-  if ($sg_did = variable_get('summergame_default_domain_id')) {
+  if ($sg_did = variable_get('summergame_default_domain_id', FALSE)) {
     $summergame_domain = domain_load($sg_did);
     domain_goto($summergame_domain);
   }
