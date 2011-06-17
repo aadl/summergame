@@ -184,6 +184,7 @@ function summergame_admin() {
       'Image' => '<img src="' . $sg_path . '/images/' . $badge['image'] . '_100.png">',
       'Title' => '<strong>' . $badge['title'] . '</strong>',
       'Description' => $badge['description'],
+      'Formula' => $badge['formula'],
     );
   }
   $content .= theme('table', array_keys($rows[0]), $rows);
