@@ -1361,7 +1361,62 @@ function summergame_player_points($pid, $points, $code_text = '', $description =
   db_query("INSERT INTO sg_ledger (pid, points, code_text, description, timestamp) " .
            "VALUES (%d, %d, '%s', '%s', %d)",
            $pid, $points, $code_text, $description, time());
+  
+  // Check if the new points affect any badges
+  if ($messages = summergame_player_check_badges($pid)) {
+    foreach($messages as $message) {
+      drupal_set_message($message);
+    }
+  }
+  
   return $points;
+}
+
+/**
+ * UTILITY: Check player for new badges
+ */
+function summergame_player_check_badges($pid) {
+  $messages = array();
+
+  $player_bids = array();
+  $res = db_query("SELECT * FROM sg_players_badges WHERE pid = %d", $pid);
+  while ($player_badge = db_fetch_object($res)) {
+    $player_bids[] = $player_badge->bid;
+  }
+  $res = db_query("SELECT * FROM sg_badges WHERE formula != ''");
+  while ($badge = db_fetch_object($res)) {
+    if (!in_array($badge->bid, $player_bids)) {
+      if (strpos($badge->formula, '::')) {
+        // Multiple of a code text formula
+        list($count_limit, $text_pattern) = explode('::', $badge->formula);
+        $lid_count = db_fetch_object(db_query("SELECT COUNT(lid) AS lid_count FROM sg_ledger WHERE pid = %d AND code_text LIKE '%%%s%%'", $pid, $text_pattern));
+        if ($lid_count->lid_count >= $count_limit) {
+          summergame_player_award_badge($pid, $badge->bid);
+          $messages[] = "Earned the $badge->title Badge!";
+        }
+      }
+      else {
+        // Collection Badge
+        $query = array();
+        $params = array($pid);
+        $collect_count = 0;
+        foreach(explode(',', $badge->formula) as $code_text) {
+          $query[] = "'%s'";
+          $params[] = $code_text;
+          $collect_count++;
+        }
+        $lid_count = db_fetch_object(db_query("SELECT COUNT(lid) AS lid_count FROM sg_ledger WHERE pid = %d " .
+                                              "AND code_text IN (" . implode(',', $query) . ")", $params));
+
+        if ($lid_count->lid_count >= $collect_count) {
+          summergame_player_award_badge($pid, $badge->bid);
+          $messages[] = "Earned the $badge->title Badge!";
+        }
+      }
+    }
+  }
+
+  return $messages;
 }
 
 /**
