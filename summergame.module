@@ -162,10 +162,11 @@ function summergame_admin() {
     $valid_end = date('n/d/Y H:i:s', $game_code['valid_end']);
     $rows[] = array(
       'Text' => $game_code['text'],
+      'Description' => $game_code['description'],
       'Points' => $game_code['points'],
-      'Created' => date('n/d/Y H:i:s', $game_code['created']),
+      'Created' => date('n/d/Y', $game_code['created']),
       'Created By' => $creator->name,
-      'Valid Dates' => $valid_start . ' through ' . $valid_end,
+      'Valid Dates' => $valid_start . '-<br />' . $valid_end,
       'Redemptions' => $game_code['num_redemptions'] . ' of ' . $game_code['max_redemptions'],
       'Edit' => l('edit', 'summergame/admin/edit/' . $game_code['code_id']),
     );
