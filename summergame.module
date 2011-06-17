@@ -899,7 +899,17 @@ function summergame_player_page($pid = 0) {
           'style' => 'text-align: right',
         ),
       );
-      $content .= theme('table', $header, $player_table);
+
+      // Link to Points Forms
+      $content .= '<div id="player-earn-links">';
+      $content .= '<h2>Earn Summer Game Points:</h2>';
+      $content .= '<ul>';
+      $content .= '<li class="button">' . l('I have a Game Code!', 'summergame/player/gamecode/' . $player['pid']) . '</li>';
+      $content .= '<li class="button">' . l('I Finished an Item!', 'summergame/player/consume/' . $player['pid']) . '</li>';
+      $content .= '</ul>';
+      $content .= '</div>';
+
+      $content .= '<div id="player-info-table">' . theme('table', $header, $player_table) . '</div>';
     }
 
     // Player Score
@@ -923,6 +933,13 @@ function summergame_player_page($pid = 0) {
       }
       // Strip the id: code from the description field
       $description = preg_replace('/id:[^\s]+/', '', $row['description']);
+      // Obscure game codes
+      if (!$player_access) {
+        $code_check = db_fetch_object(db_query("SELECT code_id FROM sg_game_codes WHERE text = '%s'", $row['code_text']));
+        if ($code_check->code_id) {
+          $row['code_text'] = '[GAME CODE]';
+        }
+      }
       $score_table[] = array(
         'Date' => date('F j, Y, g:i a', $row['timestamp']),
         'Code' => $row['code_text'],
@@ -948,17 +965,6 @@ function summergame_player_page($pid = 0) {
     }
     $content .= '<div id="scorecard-total">';
     $content .= "<h1>Total Points Earned: $net</h1>";
-
-    if (summergame_player_access($player['pid'])) {
-      // Link to Points Forms
-      $content .= '<h2>Earn More Points: ';
-      $content .= '[ ';
-      $content .= l('Add a Game Code', 'summergame/player/gamecode/' . $player['pid']);
-      $content .= ' ] [ ';
-      $content .= l('Report Finishing an Item', 'summergame/player/consume/' . $player['pid']);
-      $content .= ' ]';
-      $content .= '</h2>';
-    }
     $content .= '</div>'; // #scorecard-total
 
     // Badges

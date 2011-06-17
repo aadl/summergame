@@ -3,6 +3,19 @@
   max-width: 512px;
 }
 
+#summergame-player-page #player-info-table {
+  margin-right: 220px;
+}
+
+#summergame-player-page #player-earn-links {
+  width: 210px;
+  float: right;
+}
+
+#summergame-player-page #player-earn-links h2 {
+  margin-top: 0;
+}
+
 #summergame-player-page #scorecard-total {
   text-align: right;
 }
