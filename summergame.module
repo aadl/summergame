@@ -1449,18 +1449,15 @@ function summergame_player_check_badges($pid) {
       }
       else {
         // Collection Badge
-        $query = array();
-        $params = array($pid);
-        $collect_count = 0;
+        $eligible = TRUE;
         foreach(explode(',', $badge->formula) as $code_text) {
-          $query[] = "'%s'";
-          $params[] = $code_text;
-          $collect_count++;
+          $ledger = db_fetch_object(db_query("SELECT lid FROM sg_ledger WHERE pid = %d and code_text LIKE '%%%s%%' LIMIT 1", $pid, $code_text));
+          if (!$ledger->lid) {
+            $eligible = FALSE;
+            break;
+          }
         }
-        $lid_count = db_fetch_object(db_query("SELECT COUNT(lid) AS lid_count FROM sg_ledger WHERE pid = %d " .
-                                              "AND code_text IN (" . implode(',', $query) . ")", $params));
-
-        if ($lid_count->lid_count >= $collect_count) {
+        if ($eligible) {
           summergame_player_award_badge($pid, $badge->bid);
           $messages[] = "Earned the $badge->title Badge!";
         }
