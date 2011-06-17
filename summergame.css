@@ -1,0 +1,8 @@
+#summergame-player-page table {
+  width: 100%;
+  max-width: 512px;
+}
+
+#summergame-player-page #scorecard-total {
+  text-align: right;
+}

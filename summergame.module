@@ -847,7 +847,9 @@ function summergame_player_page($pid = 0) {
       drupal_goto('summergame');
     }
 
+    drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
     $playername = $player['pid'] . ': ' . ($player['nickname'] ? $player['nickname'] : $player['name']);
+    $content .= '<div id="summergame-player-page">';
     $content .= "<h1>Summer Game Player #$playername</h1>";
     if ($player['uid'] == $user->uid) {
       $content .= "<em>that's you!</em>";
@@ -894,10 +896,15 @@ function summergame_player_page($pid = 0) {
     $net = 0;
     $score_table = array();
     while ($row = db_fetch_array($res)) {
+      // Translate material code to catalog material type
       if (preg_match('/mat_code:([a-z])/', $row['code_text'], $matches)) {
-        // Translate material code to catalog material type
         $row['code_text'] = 'Finished ' .
                             $locum->locum_config['formats'][$matches[1]];
+      }
+      // Change bnum: code to a link to the bib record
+      if (preg_match('/bnum:([\d]{7})/', $row['description'], $matches)) {
+        $row['description'] = trim(str_replace($matches[0], '', $row['description']));
+        $row['description'] = l($row['description'], 'http://www.aadl.org/catalog/record/' . $matches[1]);
       }
       // Strip the id: code from the description field
       $description = preg_replace('/id:[^\s]+/', '', $row['description']);
@@ -924,6 +931,7 @@ function summergame_player_page($pid = 0) {
       $score_table[] = $total_row;
       $content .= theme('table', array_keys($score_table[0]), $score_table);
     }
+    $content .= '<div id="scorecard-total">';
     $content .= "<h1>Total Points Earned: $net</h1>";
 
     if (summergame_player_access($player['pid'])) {
@@ -936,7 +944,8 @@ function summergame_player_page($pid = 0) {
       $content .= ' ]';
       $content .= '</h2>';
     }
-
+    $content .= '</div>'; // #scorecard-total
+    
     // Badges
     $content .= '<h1>Badges</h1>';
     $sg_path = base_path() . drupal_get_path('module', 'summergame');
@@ -960,6 +969,7 @@ function summergame_player_page($pid = 0) {
     }
 
     $content .= '<p>[ ' . l('See All Available Badges', 'summergame/badges') . ' ]</p>';
+    $content .= '</div>'; // #summergame-player-page
   }
   else {
     // invalid PID or not authorized
