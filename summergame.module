@@ -721,12 +721,14 @@ function summergame_player_form($form_state, $player = NULL) {
     // Set up default values
     $prize_array = summergame_get_prize_array();
     $default_prizes = array();
-    $prize_awarded = FALSE;
+    $completed = FALSE;
 
     foreach ($prize_array as $prize_code => $prize_name) {
       if (strpos($player['prizes'], $prize_code) !== FALSE ) {
         $default_prizes[$prize_code] = $prize_code;
-        $prize_awarded = TRUE;
+        if ($prize_code != 'bucket' && $prize_code != 'silly') {
+          $completed = TRUE;
+        }
       }
       else {
         $default_prizes[$prize_code] = 0;
@@ -734,13 +736,13 @@ function summergame_player_form($form_state, $player = NULL) {
     }
     $form['prizes'] = array(
       '#type' => 'checkboxes',
-      '#title' => t('Prizes Awarded'),
+      '#title' => t('Staff Only: CHECK PRIZE GIVEN WHEN GAME IS COMPLETED'),
       '#options' => $prize_array,
       '#default_value' => $default_prizes,
     );
-    $form['prize_awarded'] = array(
+    $form['completed'] = array(
       '#type' => 'value',
-      '#value' => $prize_awarded,
+      '#value' => $completed,
     );
   }
   $form['inline'] = array(
@@ -788,14 +790,18 @@ function summergame_player_form_submit($form, &$form_state) {
   }
 
   if ($form_state['values']['prizes']) {
+    $completed = FALSE;
     $prizes = array();
     foreach ($form_state['values']['prizes'] as $prize) {
       if ($prize) {
         $prizes[] = $prize;
+        if ($prize != 'bucket' && $prize != 'silly') {
+          $completed = TRUE;
+        }
       }
     }
     $player_info['prizes'] = implode(',', $prizes);
-    if ($player_info['prizes'] && !($form_state['values']['prize_awarded'])) {
+    if ($completed && !($form_state['values']['completed'])) {
       // Game Completion Bonus
       $points = summergame_player_points($form_state['values']['pid'], 1000, 'Completed',
                                          'Completed the Classic Summer Game');
@@ -946,7 +952,7 @@ function summergame_player_page($pid = 0) {
       $content .= '</h2>';
     }
     $content .= '</div>'; // #scorecard-total
-    
+
     // Badges
     $content .= '<h1>Badges</h1>';
     $sg_path = base_path() . drupal_get_path('module', 'summergame');
@@ -1375,7 +1381,7 @@ function summergame_player_points($pid, $points, $code_text = '', $description =
       $code_text == 'Checkout History') {
     $point_limit = 1000;
     $one_day_ago = time() - (60 * 60 * 24);
-    
+
     $sql = "SELECT SUM(points) AS total FROM sg_ledger " .
            "WHERE pid = %d " .
            "AND timestamp > %d " .
@@ -1389,18 +1395,18 @@ function summergame_player_points($pid, $points, $code_text = '', $description =
       return 0;
     }
   }
-  
+
   db_query("INSERT INTO sg_ledger (pid, points, code_text, description, timestamp) " .
            "VALUES (%d, %d, '%s', '%s', %d)",
            $pid, $points, $code_text, $description, time());
-  
+
   // Check if the new points affect any badges
   if ($messages = summergame_player_check_badges($pid)) {
     foreach($messages as $message) {
       drupal_set_message($message);
     }
   }
-  
+
   return $points;
 }
 
