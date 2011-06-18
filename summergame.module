@@ -1254,7 +1254,7 @@ function summergame_get_prize_array() {
 function summergame_player_access($pid) {
   $access = FALSE;
 
-  if (user_access('administer sopac')) {
+  if (user_access('administer summergame')) {
     $access = TRUE;
   }
   else {
