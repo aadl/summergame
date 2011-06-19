@@ -1152,8 +1152,28 @@ function summergame_twilio_respond($incoming) {
                              'incoming' => 0);
   $responses = array();
 
-  // Keyword responses
-  if (strtolower($incoming['text']) == 'newplayer') {
+  if (preg_match('/^S?[ART]G[\d]{5}$/', $incoming['text'])) {
+    $game_card_text = TRUE;
+  }
+  else {
+    // check if it's a game code
+    $gc = db_fetch_object(db_query("SELECT * FROM sg_game_codes WHERE text = '%s'", strtoupper($incoming['text'])));
+    if ($gc->code_id) {
+      $game_code_text = TRUE;
+    }
+  }
+  if ($game_card_text || $game_code_text) {
+    // check if we need a new player
+    $player = summergame_player_load(array('phone' => $incoming['phone']));
+    if (!$player) {
+      $new_player_needed = TRUE;
+    }
+  }
+  
+  // New Player handling
+  if (strtolower($incoming['text']) == 'newplayer' ||
+      strtolower($incoming['text']) == 'new player' ||
+      $new_player_needed) {
     $new_player = array('phone' => $incoming['phone']);
     $player = summergame_player_save($new_player);
     $response = $response_template;
@@ -1166,31 +1186,35 @@ function summergame_twilio_respond($incoming) {
     $response['text'] = "Earned $points Summer Game points for signing up!";
     $responses[] = $response;
   }
-  // Check if player record exists for this number
-  $res = db_query('SELECT pid FROM sg_players WHERE phone = %d', $incoming['phone']);
-  while ($player_info = db_fetch_object($res)) {
-    $player = summergame_player_load(array('pid' => $player_info->pid));
-    // Associate a gamecard with the player if a game card ID
-    if (preg_match('/^S?[ART]G[\d]{5}$/', $incoming['text'])) {
-      $player['gamecard'] = $incoming['text'];
-      summergame_player_save($player);
-      $response = $response_template;
-      $response['text'] .= 'Updated your player record with the scorecard ID ' . $incoming['text'];
-      $responses[] = $response;
-    }
-    else {
-      // Try to redeem text as a game code
-      $status = summergame_redeem_code($player['pid'], $incoming['text']);
-      if ($status['success'] || $status['error']) {
+
+  if ($game_card_text || $game_code_text) {
+    // Process results for ALL Player records with this number
+    $res = db_query('SELECT pid FROM sg_players WHERE phone = %d', $incoming['phone']);
+    while ($player_info = db_fetch_object($res)) {
+      $player = summergame_player_load(array('pid' => $player_info->pid));
+      // Associate a gamecard with the player if a game card ID
+      if ($game_card_text) {
+        $player['gamecard'] = $incoming['text'];
+        summergame_player_save($player);
         $response = $response_template;
-        $response['text'] .= $status['success'] . $status['error'];
+        $response['text'] .= 'Updated your player record with the scorecard ID ' . $incoming['text'];
         $responses[] = $response;
       }
-      // If not recognized, no response to allow other handlers to respond
+      else {
+        // Try to redeem text as a game code
+        $status = summergame_redeem_code($player['pid'], $incoming['text']);
+        if ($status['success'] || $status['error']) {
+          $response = $response_template;
+          $response['text'] .= $status['success'] . $status['error'];
+          $responses[] = $response;
+        }
+        // If not recognized, no response to allow other handlers to respond
+      }
     }
   }
+  
   // Check if Trivia is active
-  if (variable_get('summergame_trivia_active', FALSE) && empty($response['text'])) {
+  if (variable_get('summergame_trivia_active', FALSE) && !count($responses)) {
     $guess = $incoming['text'];
     $answer = variable_get('summergame_trivia_answer', '');
 
@@ -1351,7 +1375,7 @@ function summergame_player_delete($player_info) {
  * UTILITY: Redeem a game code for a player
  */
 function summergame_redeem_code($pid, $code_text) {
-  $code = db_fetch_object(db_query("SELECT * FROM sg_game_codes WHERE text = '%s'", strtolower($code_text)));
+  $code = db_fetch_object(db_query("SELECT * FROM sg_game_codes WHERE text = '%s'", strtoupper($code_text)));
 
   if ($code->code_id) {
     // Existing code
