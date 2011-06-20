@@ -286,9 +286,11 @@ function summergame_code_edit_form($form_state, $game_code) {
 
 function summergame_code_edit_form_validate($form, &$form_state) {
   // Check whether game code is unique
-  $res = db_query("SELECT code_id FROM sg_game_codes WHERE text LIKE '%s'", $form_state['values']['text']);
-  if ($code = db_fetch_object($res)) {
-    form_set_error('text', 'Code text is already in use. Please select another code.');
+  if (!$form_state['values']['code_id']) {
+    $res = db_query("SELECT code_id FROM sg_game_codes WHERE text LIKE '%s'", $form_state['values']['text']);
+    if ($code = db_fetch_object($res)) {
+      form_set_error('text', 'Code text is already in use. Please select another code.');
+    }
   }
   if (intval($form_state['values']['points']) < 1) {
     form_set_error('points', 'Please enter a number for the point value');
