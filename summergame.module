@@ -1117,7 +1117,7 @@ function summergame_leaderboard_page() {
     else {
       $player_name = 'Player #' . $lb_player['pid'];
     }
-    if ($lb_player['show_myscore']) {
+    if ($lb_player['show_myscore'] || user_access('administer summergame')) {
       $player_name = l($player_name, 'summergame/player/' . $lb_player['pid']);
     }
     $leaderboard[] = array(
