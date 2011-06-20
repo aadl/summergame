@@ -1001,8 +1001,13 @@ function summergame_player_page($pid = 0) {
       drupal_goto('summergame');
     }
     else {
-      $new_player = array('uid' => $user->uid);
-      $content = drupal_get_form('summergame_player_form', $new_player);
+      if ($user->uid) {
+        $new_player = array('uid' => $user->uid);
+        $content = drupal_get_form('summergame_player_form', $new_player);
+      }
+      else {
+        drupal_goto('https://www.aadl.org/login', array('destination' => 'summergame/player'));
+      }
     }
   }
 
