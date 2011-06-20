@@ -876,6 +876,7 @@ function summergame_player_page($pid = 0) {
 
     // Player Details
     if ($player_access) {
+      // Translate privacy details
       $privacy_details .= '<ul>';
       if ($player['show_leaderboard']) {
         $privacy_details .= '<li>Show Nickname & Total Score on Public Leaderboard</li>';
@@ -895,6 +896,16 @@ function summergame_player_page($pid = 0) {
         array('<strong>Age Group:</strong>', ucwords($player['agegroup'])),
         array('<strong>Privacy Options:</strong>', $privacy_details),
       );
+
+      // Lookup drupal user if admin
+      if (user_access('administer summergame')) {
+        if ($account = user_load(array('uid' => $player['uid']))) {
+          $player_table[] = array(
+            '<strong>Website User:</strong>',
+            user_access('administer users') ? l($account->name, 'user/' . $account->uid) : $account->name,
+          );
+        }
+      }
 
       $header = array(
         'Player Details',
