@@ -87,7 +87,7 @@ function summergame_menu() {
   $items['summergame/leaderboard'] = array(
     'title' => 'Summer Game Leaderboard',
     'page callback' => 'summergame_leaderboard_page',
-    'access arguments' => array('access summergame'),
+    'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
   );
   $items['summergame/badges'] = array(
@@ -1169,7 +1169,7 @@ function summergame_twilio_respond($incoming) {
       $new_player_needed = TRUE;
     }
   }
-  
+
   // New Player handling
   if (strtolower($incoming['text']) == 'newplayer' ||
       strtolower($incoming['text']) == 'new player' ||
@@ -1212,7 +1212,7 @@ function summergame_twilio_respond($incoming) {
       }
     }
   }
-  
+
   // Check if Trivia is active
   if (variable_get('summergame_trivia_active', FALSE) && !count($responses)) {
     $guess = $incoming['text'];
