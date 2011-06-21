@@ -493,15 +493,16 @@ function summergame_consume_form($form_state, $pid, $bnum = 0) {
   $bib = array();
 
   if ($bnum) {
-    $bib = $locum->get_bib_item($bnum);
-    $title = title_case($bib['title']);
-    if ($bib['title_medium']) {
-      $title .= ' ' . title_case($bib['title_medium']);
+    if ($bib = $locum->get_bib_item($bnum)) {
+      $form['bib'] = array(
+        '#type' => 'value',
+        '#value' => $bib,
+      );
+      $title = title_case($bib['title']);
+      if ($bib['title_medium']) {
+        $title .= ' ' . title_case($bib['title_medium']);
+      }
     }
-    $form['bnum'] = array(
-      '#type' => 'value',
-      '#value' => $bnum,
-    );
   }
 
   $form['pid'] = array(
@@ -510,7 +511,7 @@ function summergame_consume_form($form_state, $pid, $bnum = 0) {
   );
   $form['mat_code'] = array(
     '#type' => 'select',
-    '#title' => t('I finished a'),
+    '#title' => t("I've been enjoying this"),
     '#default_value' => $bib['mat_code'],
     '#options' => $locum->locum_config['formats'],
     '#prefix' => "<div class=\"container-inline\">",
@@ -518,7 +519,7 @@ function summergame_consume_form($form_state, $pid, $bnum = 0) {
   );
   $form['title'] = array(
     '#type' => 'textfield',
-    '#title' => t('Item Title'),
+    '#title' => t('Titled'),
     '#default_value' => $title,
     '#size' => 64,
     '#maxlength' => 64,
@@ -526,18 +527,15 @@ function summergame_consume_form($form_state, $pid, $bnum = 0) {
   );
   $form['duration'] = array(
     '#type' => 'textfield',
-    '#title' => t('Duration'),
+    '#title' => t('for this many minutes or pages (optional)'),
     '#size' => 16,
     '#maxlength' => 16,
-    '#description' => t('Enter the # of pages OR the length in minutes for additional points! (Maximum 500 points)'),
+    '#description' => t('Enter the # of pages OR the length in minutes for 1 point per page or minute! (Maximum 500 points)'),
   );
-  $form['id'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Item Identifier'),
-    '#default_value' => $bib['bnum'],
-    '#size' => 32,
-    '#maxlength' => 32,
-    '#description' => t('Identifier Code for this item (ISBN, ASIN, Catalog Record Number)'),
+  $form['finished'] = array(
+    '#type' => 'checkbox',
+    '#title' => 'and I finished it!',
+    '#description' => 'check this box to receive a 100 point bonus for finishing this item (optional)',
   );
   $form['inline'] = array(
     '#prefix' => "<div class=\"container-inline\">",
@@ -545,7 +543,7 @@ function summergame_consume_form($form_state, $pid, $bnum = 0) {
   );
   $form['inline']['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Submit'),
+    '#value' => t('Score!'),
   );
   $form['inline']['cancel'] = array(
     '#value' => l('Cancel', 'summergame/player/' . $pid),
@@ -555,23 +553,27 @@ function summergame_consume_form($form_state, $pid, $bnum = 0) {
 }
 
 function summergame_consume_form_submit($form, &$form_state) {
-  $points = 100;
+  $points = 0;
   $pid = $form_state['values']['pid'];
   $title = $form_state['values']['title'];
   $description = $title;
-  if ($form_state['values']['bnum']) {
+  if ($form_state['values']['bib']) {
     // Use the trusted bnum as the id instead of a user-entered id
-    $description .= ' bnum:' . $form_state['values']['bnum'];
+    $description .= ' bnum:' . $form_state['values']['bib']['bnum'];
   }
   else if ($form_state['values']['id']) {
     $description .= ' id:' . $form_state['values']['id'];
   }
-  // Duration bonus
-  if ($form_state['values']['duration'] > $points) {
-    $points = ($form_state['values']['duration'] > 500 ? 500 : $form_state['values']['duration']);
+  // Duration score
+  if ($form_state['values']['duration']) {
+    $points += min($form_state['values']['duration'], 500);
+  }
+  // Finish score
+  if ($form_state['values']['finished']) {
+    $points += 100;
   }
   $points = summergame_player_points($pid, $points, 'mat_code:' . $form_state['values']['mat_code'], $description);
-  drupal_set_message("Earned $points points for finishing $title");
+  drupal_set_message("Earned $points points for $title");
   drupal_goto('summergame/player/' . $pid);
 }
 
@@ -920,7 +922,7 @@ function summergame_player_page($pid = 0) {
       $content .= '<h2>Earn Summer Game Points:</h2>';
       $content .= '<ul>';
       $content .= '<li class="button">' . l('I have a Game Code!', 'summergame/player/gamecode/' . $player['pid']) . '</li>';
-      $content .= '<li class="button">' . l('I Finished an Item!', 'summergame/player/consume/' . $player['pid']) . '</li>';
+      $content .= '<li class="button">' . l('I Read, Listened to, or Watched something!', 'summergame/player/consume/' . $player['pid']) . '</li>';
       $content .= '</ul>';
       $content .= '</div>';
 
@@ -938,7 +940,7 @@ function summergame_player_page($pid = 0) {
     while ($row = db_fetch_array($res)) {
       // Translate material code to catalog material type
       if (preg_match('/mat_code:([a-z])/', $row['code_text'], $matches)) {
-        $row['code_text'] = 'Finished ' .
+        $row['code_text'] = 'Points for ' .
                             $locum->locum_config['formats'][$matches[1]];
       }
       // Change bnum: code to a link to the bib record
@@ -1096,7 +1098,7 @@ function summergame_player_consume_page($pid = 0, $bnum = 0) {
     }
   }
 
-  $content .= '<h1>Report ' . ($player['nickname'] ? $player['nickname'] : $player['name']) . ' Finished an item</h1>';
+  $content .= '<h1>Score Points for ' . ($player['nickname'] ? $player['nickname'] : $player['name']) . ':</h1>';
   $content .= '<p>Did you read a book, listen to a CD, or watch a DVD? Enjoyed another item? Report it here to earn points:</p>';
   $content .= '<p><em>HINT: If you are reporting an item from our catalog, click the "I FINISHED THIS" button on the full catalog page to automatically fill this form.</em></p>';
   $content .= drupal_get_form('summergame_consume_form', $player['pid'], $bnum);
