@@ -86,6 +86,14 @@ function summergame_menu() {
     'access arguments' => array(3),
     'type' => MENU_CALLBACK,
   );
+  $items['summergame/player/deletescore'] = array(
+    'title' => t('Delete Player Score'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('summergame_delete_score'),
+    'access callback' => 'summergame_player_access',
+    'access arguments' => array(3),
+    'type' => MENU_CALLBACK,
+  );
   $items['summergame/leaderboard'] = array(
     'title' => 'Summer Game Leaderboard',
     'page callback' => 'summergame_leaderboard_page',
@@ -525,6 +533,7 @@ function summergame_consume_form($form_state, $pid, $bnum = 0) {
     '#size' => 64,
     '#maxlength' => 64,
     '#description' => t('Title of the Book/Movie/Music that you are reporting'),
+    '#required' => TRUE,
   );
   $form['duration'] = array(
     '#type' => 'textfield',
@@ -841,6 +850,14 @@ function summergame_player_form_submit($form, &$form_state) {
 }
 
 /**
+ * FORM: Delete score form
+ */
+function summergame_delete_score(&$form_state, $pid = 0, $lid = 0) {
+  $ledger_row = db_fetch_object(db_query("SELECT * FROM sg_ledger WHERE pid = %d AND lid = %d", $pid, $lid));
+  drupal_set_message('<pre>' . print_r($ledger_row,1) . '</pre>');
+}
+
+/**
  * PAGE: Summer Game Player Account page
  */
 function summergame_player_page($pid = 0) {
@@ -852,181 +869,238 @@ function summergame_player_page($pid = 0) {
     domain_goto($summergame_domain);
   }
 
-  $pid = intval($pid);
-
-  if ($pid) {
-    $player = summergame_player_load(array('pid' => $pid));
-  }
-  else if ($user->uid) {
-    // Default to the logged in player if none specified
-    $player = summergame_player_load(array('uid' => $user->uid));
-  }
-
-  if ($player) {
-    $player_access = summergame_player_access($player['pid']);
-    // Check if player's score card is private and we don't have access
-    if (!$player['show_myscore'] && !$player_access) {
-      drupal_set_message("Player #$pid's Score Card is private", 'error');
-      drupal_goto('summergame');
-    }
-
-    drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
-    $playername = $player['pid'] . ': ' . ($player['nickname'] ? $player['nickname'] : $player['name']);
-    $content .= '<div id="summergame-player-page">';
-    $content .= "<h1>Summer Game Player #$playername</h1>";
-    if ($player['uid'] == $user->uid) {
-      $content .= "<em>that's you!</em>";
-    }
-
-    // Player Details
-    if ($player_access) {
-      // Translate privacy details
-      $privacy_details .= '<ul>';
-      if ($player['show_leaderboard']) {
-        $privacy_details .= '<li>Show Nickname & Total Score on Public Leaderboard</li>';
-      }
-      if ($player['show_myscore']) {
-        $privacy_details .= '<li>Show Player Page Score Card and Badges</li>';
-      }
-      if ($player['show_titles']) {
-        $privacy_details .= '<li>Show Titles of Books/Movies/Music in the Score Card</li>';
-      }
-      $privacy_details .= '</ul>';
-
-      $player_table = array(
-        array('<strong>Real Name:</strong>', $player['name']),
-        array('<strong>Nickname:</strong>', $player['nickname']),
-        array('<strong>Cell Phone:</strong>', $player['phone']),
-        array('<strong>Age Group:</strong>', ucwords($player['agegroup'])),
-        array('<strong>Privacy Options:</strong>', $privacy_details),
-      );
-
-      // Lookup drupal user if admin
-      if (user_access('administer summergame')) {
-        if ($account = user_load(array('uid' => $player['uid']))) {
-          $player_table[] = array(
-            '<strong>Website User:</strong>',
-            user_access('administer users') ? l($account->name, 'user/' . $account->uid) : $account->name,
-          );
-        }
-      }
-
-      $header = array(
-        'Player Details',
-        array(
-          'data' => '[ ' . l('Edit Player Info', 'summergame/player/edit/' . $player['pid']) . ' ]',
-          'style' => 'text-align: right',
-        ),
-      );
-
-      // Link to Points Forms
-      $content .= '<div id="player-earn-links">';
-      $content .= '<h2>Earn Summer Game Points:</h2>';
-      $content .= '<ul>';
-      $content .= '<li class="button">' . l('I have a Game Code!', 'summergame/player/gamecode/' . $player['pid']) . '</li>';
-      $content .= '<li class="button">' . l('I Read, Listened to, or Watched something!', 'summergame/player/consume/' . $player['pid']) . '</li>';
-      $content .= '</ul>';
-      $content .= '</div>';
-
-      $content .= '<div id="player-info-table">' . theme('table', $header, $player_table) . '</div>';
-    }
-
-    // Player Score
-    $locum = sopac_get_locum();
-    $content .= '<h1>Score Card</h1>';
-    $res = db_query('SELECT * FROM sg_ledger WHERE pid = %d ORDER BY timestamp ASC', $player['pid']);
-
-    $current = 0;
-    $net = 0;
-    $score_table = array();
-    while ($row = db_fetch_array($res)) {
-      // Translate material code to catalog material type
-      if (preg_match('/mat_code:([a-z])/', $row['code_text'], $matches)) {
-        $row['code_text'] = 'Points for ' .
-                            $locum->locum_config['formats'][$matches[1]];
-      }
-      // Change bnum: code to a link to the bib record
-      if (preg_match('/bnum:([\d]{7})/', $row['description'], $matches)) {
-        $row['description'] = trim(str_replace($matches[0], '', $row['description']));
-        $row['description'] = l($row['description'], 'http://www.aadl.org/catalog/record/' . $matches[1]);
-      }
-      // Strip the id: code from the description field
-      $description = preg_replace('/id:[^\s]+/', '', $row['description']);
-      // Obscure game codes
-      if (!$player_access) {
-        $code_check = db_fetch_object(db_query("SELECT code_id FROM sg_game_codes WHERE text = '%s'", $row['code_text']));
-        if ($code_check->code_id) {
-          $row['code_text'] = '[GAME CODE]';
-        }
-      }
-      $score_table[] = array(
-        'Date' => date('F j, Y, g:i a', $row['timestamp']),
-        'Code' => $row['code_text'],
-        'Description' => ($player['show_titles'] || $player_access ? $description : ''),
-        'Points' => $row['points'],
-      );
-      $current += $row['points'];
-      if ($row['points'] > 0) {
-        $net += $row['points'];
-      }
-    }
-    if (count($score_table)) {
-      $total_row = array(
-        array(
-          'data' => '<strong>Current Balance:</strong>',
-          'colspan' => 3,
-          'style' => 'text-align: right',
-        ),
-        '<strong>' . $current . '</strong>',
-      );
-      $score_table[] = $total_row;
-      $content .= theme('table', array_keys($score_table[0]), $score_table);
-    }
-    $content .= '<div id="scorecard-total">';
-    $content .= "<h1>Total Points Earned: $net</h1>";
-    $content .= '</div>'; // #scorecard-total
-
-    // Badges
-    $content .= '<h1>Badges</h1>';
-    $sg_path = base_path() . drupal_get_path('module', 'summergame');
-
-    $res = db_query("SELECT * FROM sg_players_badges, sg_badges WHERE sg_players_badges.pid = %d AND sg_players_badges.bid = sg_badges.bid", $player['pid']);
-    $badge_table = array();
-    while ($badge = db_fetch_array($res)) {
-      $badge_table[] = array(
-        'image' => '<img src="' . $sg_path . '/images/' . $badge['image'] . '_100.png">',
-        'text' => '<h3>' . $badge['title'] . '</h3>' .
-                  '<p>' . $badge['description'] . '</p>' .
-                  '<p><em>Received on ' . date('F j, Y g:i A', $badge['timestamp']) . '</em></p>',
-      );
-    }
-
-    if (count($badge_table)) {
-      $content .= theme('table', array(), $badge_table);
+  if ($pid === 'extra') {
+    if ($player = summergame_player_load(array('uid' => $user->uid))) {
+      drupal_set_message("Use the form below to add an extra player to your website account. " .
+                         "You will be able to enter game codes and report reading / listening / " .
+                         "watching activities for points. However this player won't receive " .
+                         "points for website contributions such as commenting, tagging or writing reviews. " .
+                         "If you wish this player to receive points for website contributions, please log " .
+                         "out and create a new aadl.org account before signing up for the Summer Game.");
+      $new_player = array('uid' => $user->uid);
+      $content = drupal_get_form('summergame_player_form', $new_player);
     }
     else {
-      $content .= "<p>This player hasn't earned any badges yet.</p>";
+      // If no player has signed up yet, redirect to the player page
+      drupal_goto('summergame/player');
     }
-
-    $content .= '<p>[ ' . l('See All Available Badges', 'summergame/badges') . ' ]</p>';
-    $content .= '</div>'; // #summergame-player-page
   }
   else {
-    // invalid PID or not authorized
+    $pid = intval($pid);
+
     if ($pid) {
-      drupal_set_message('Invalid Player ID: ' . $pid, 'error');
-      drupal_goto('summergame');
+      $player = summergame_player_load(array('pid' => $pid));
     }
-    else {
-      if ($user->uid) {
-        $new_player = array('uid' => $user->uid);
-        $content = drupal_get_form('summergame_player_form', $new_player);
+    else if ($user->uid) {
+      // Default to the logged in player if none specified
+      $player = summergame_player_load(array('uid' => $user->uid));
+    }
+
+    if ($player) {
+      $player_access = summergame_player_access($player['pid']);
+      // Check if player's score card is private and we don't have access
+      if (!$player['show_myscore'] && !$player_access) {
+        drupal_set_message("Player #$pid's Score Card is private", 'error');
+        drupal_goto('summergame');
+      }
+
+      drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
+      $playername = $player['pid'] . ': ' . ($player['nickname'] ? $player['nickname'] : $player['name']);
+      $content .= '<div id="summergame-player-page">';
+      $content .= "<h1>Summer Game Player #$playername</h1>";
+      if ($player['uid'] == $user->uid) {
+        $content .= "<p><em>that's you!</em> ";
+        $extra_link = l('Sign up an extra player', 'summergame/player/extra');
+        $content .= "Want to record another player's reading/listening/watching activity and game codes? $extra_link.</p>";
+      }
+
+      // Player Details
+      if ($player_access) {
+        $content .= theme_summergame_player_info($player);
+        // Extra Players
+        $all_players = summergame_player_load_all($player['uid']);
+        // pop first player off the list to determine primary player
+        $primary_player = array_shift($all_players);
+
+        if (count($all_players)) {
+          if ($player['pid'] == $primary_player['pid']) {
+            // We're on the primary player page
+            foreach ($all_players as $extra_player) {
+              if ($extra_player['pid'] != $player['pid']) {
+                // Show Extra Player Info
+                $extra_playername = $extra_player['nickname'] ? $extra_player['nickname'] : $extra_player['name'];
+                $extra_playername = l($extra_playername, 'summergame/player/' . $extra_player['pid']);
+                $content .= '<div id="summergame-extra-player">';
+                $content .= "<h1>Extra Player: $extra_playername</h1>";
+                $content .= theme_summergame_player_info($extra_player);
+                $content .= '</div>';
+              }
+            }
+          }
+          else {
+            // We're on an extra player page
+            $content .= '<p>[ ' . l('Return to main player page', 'summergame/player/' . $primary_player['pid']) . ' ]</p>';
+          }
+        }
+      }
+
+      // Player Score
+      $locum = sopac_get_locum();
+      $content .= '<h1>Score Card</h1>';
+      $res = db_query('SELECT * FROM sg_ledger WHERE pid = %d ORDER BY timestamp ASC', $player['pid']);
+
+      $current = 0;
+      $net = 0;
+      $score_table = array();
+      while ($row = db_fetch_array($res)) {
+        // Translate material code to catalog material type
+        if (preg_match('/mat_code:([a-z])/', $row['code_text'], $matches)) {
+          $row['code_text'] = 'Points for ' .
+                              $locum->locum_config['formats'][$matches[1]];
+        }
+        // Change bnum: code to a link to the bib record
+        if (preg_match('/bnum:([\d]{7})/', $row['description'], $matches)) {
+          $row['description'] = trim(str_replace($matches[0], '', $row['description']));
+          $row['description'] = l($row['description'], 'http://www.aadl.org/catalog/record/' . $matches[1]);
+        }
+        // Strip the id: code from the description field
+        $description = preg_replace('/id:[^\s]+/', '', $row['description']);
+        // Obscure game codes
+        if (!$player_access) {
+          $code_check = db_fetch_object(db_query("SELECT code_id FROM sg_game_codes WHERE text = '%s'", $row['code_text']));
+          if ($code_check->code_id) {
+            $row['code_text'] = '[GAME CODE]';
+          }
+        }
+        $score_table[] = array(
+          'Date' => date('F j, Y, g:i a', $row['timestamp']),
+          'Code' => $row['code_text'],
+          'Description' => ($player['show_titles'] || $player_access ? $description : ''),
+          'Points' => $row['points'],
+        );
+        $current += $row['points'];
+        if ($row['points'] > 0) {
+          $net += $row['points'];
+        }
+      }
+      if (count($score_table)) {
+        $total_row = array(
+          array(
+            'data' => '<strong>Current Balance:</strong>',
+            'colspan' => 3,
+            'style' => 'text-align: right',
+          ),
+          '<strong>' . $current . '</strong>',
+        );
+        $score_table[] = $total_row;
+        $content .= theme('table', array_keys($score_table[0]), $score_table);
+      }
+      $content .= '<div id="scorecard-total">';
+      $content .= "<h1>Total Points Earned: $net</h1>";
+      $content .= '</div>'; // #scorecard-total
+
+      // Badges
+      $content .= '<h1>Badges</h1>';
+      $sg_path = base_path() . drupal_get_path('module', 'summergame');
+
+      $res = db_query("SELECT * FROM sg_players_badges, sg_badges WHERE sg_players_badges.pid = %d AND sg_players_badges.bid = sg_badges.bid", $player['pid']);
+      $badge_table = array();
+      while ($badge = db_fetch_array($res)) {
+        $badge_table[] = array(
+          'image' => '<img src="' . $sg_path . '/images/' . $badge['image'] . '_100.png">',
+          'text' => '<h3>' . $badge['title'] . '</h3>' .
+                    '<p>' . $badge['description'] . '</p>' .
+                    '<p><em>Received on ' . date('F j, Y g:i A', $badge['timestamp']) . '</em></p>',
+        );
+      }
+
+      if (count($badge_table)) {
+        $content .= theme('table', array(), $badge_table);
       }
       else {
-        drupal_goto('https://www.aadl.org/login', array('destination' => 'summergame/player'));
+        $content .= "<p>This player hasn't earned any badges yet.</p>";
+      }
+
+      $content .= '<p>[ ' . l('See All Available Badges', 'summergame/badges') . ' ]</p>';
+      $content .= '</div>'; // #summergame-player-page
+    }
+    else {
+      // invalid PID or not authorized
+      if ($pid) {
+        drupal_set_message('Invalid Player ID: ' . $pid, 'error');
+        drupal_goto('summergame');
+      }
+      else {
+        if ($user->uid) {
+          $new_player = array('uid' => $user->uid);
+          $content = drupal_get_form('summergame_player_form', $new_player);
+        }
+        else {
+          drupal_goto('https://www.aadl.org/login', array('destination' => 'summergame/player'));
+        }
       }
     }
   }
+
+  return $content;
+}
+
+/**
+ * UTILITY: Theme player info table
+ */
+function theme_summergame_player_info($player) {
+  // Link to Points Forms
+  $content .= '<div id="player-earn-links">';
+  $content .= '<h2>Earn Game Points:</h2>';
+  $content .= '<ul>';
+  $content .= '<li class="button">' . l('I have a Game Code!', 'summergame/player/gamecode/' . $player['pid']) . '</li>';
+  $content .= '<li class="button">' . l('I Read, Listened to, or Watched something!', 'summergame/player/consume/' . $player['pid']) . '</li>';
+  $content .= '</ul>';
+  $content .= '</div>';
+
+  // Translate privacy details
+  $privacy_details .= '<ul>';
+  if ($player['show_leaderboard']) {
+    $privacy_details .= '<li>Show Nickname & Total Score on Public Leaderboard</li>';
+  }
+  if ($player['show_myscore']) {
+    $privacy_details .= '<li>Show Player Page Score Card and Badges</li>';
+  }
+  if ($player['show_titles']) {
+    $privacy_details .= '<li>Show Titles of Books/Movies/Music in the Score Card</li>';
+  }
+  $privacy_details .= '</ul>';
+
+  $player_table = array(
+    array('<strong>Real Name:</strong>', $player['name']),
+    array('<strong>Nickname:</strong>', $player['nickname']),
+    array('<strong>Cell Phone:</strong>', $player['phone']),
+    array('<strong>Game Card:</strong>', $player['gamecard']),
+    array('<strong>Age Group:</strong>', ucwords($player['agegroup'])),
+    array('<strong>Privacy Options:</strong>', $privacy_details),
+  );
+
+  // Lookup drupal user if admin
+  if (user_access('administer summergame')) {
+    if ($account = user_load(array('uid' => $player['uid']))) {
+      $player_table[] = array(
+        '<strong>Website User:</strong>',
+        user_access('administer users') ? l($account->name, 'user/' . $account->uid) : $account->name,
+      );
+    }
+  }
+
+  $header = array(
+    'Player Details',
+    array(
+      'data' => '[ ' . l('Edit Player Info', 'summergame/player/edit/' . $player['pid']) . ' ]',
+      'style' => 'text-align: right',
+    ),
+  );
+
+  $content .= '<div id="player-info-table">';
+  $content .= theme('table', $header, $player_table);
+  $content .= '</div>';
 
   return $content;
 }
@@ -1343,9 +1417,22 @@ function summergame_player_load($player_info = array()) {
       $params[] = $value;
     }
   }
-  $result = db_query('SELECT * FROM {sg_players} WHERE ' . implode(' AND ', $query), $params);
+  $result = db_query('SELECT * FROM {sg_players} WHERE ' . implode(' AND ', $query) . ' ORDER BY pid ASC LIMIT 1', $params);
 
   return db_fetch_array($result);
+}
+
+/**
+ * UTILITY: Load ALL players associated with a user
+ */
+function summergame_player_load_all($uid) {
+  $result = db_query("SELECT * FROM sg_players WHERE uid = %d ORDER BY pid ASC", $uid);
+  $players = array();
+  while ($player = db_fetch_array($result)) {
+    $players[] = $player;
+  }
+
+  return $players;
 }
 
 /**

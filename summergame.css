@@ -1,6 +1,5 @@
 #summergame-player-page table {
   width: 100%;
-  max-width: 512px;
 }
 
 #summergame-player-page #player-info-table {
@@ -14,8 +13,16 @@
 
 #summergame-player-page #player-earn-links h2 {
   margin-top: 0;
+  text-align: right;
 }
 
 #summergame-player-page #scorecard-total {
   text-align: right;
+}
+
+#summergame-player-page #summergame-extra-player {
+  background-color: #EEE;
+  padding: 10px;
+  border: 1px solid #CCC;
+  margin-top: 10px;
 }
