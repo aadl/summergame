@@ -502,6 +502,7 @@ function summergame_consume_form($form_state, $pid, $bnum = 0) {
       if ($bib['title_medium']) {
         $title .= ' ' . title_case($bib['title_medium']);
       }
+      $finished_default = 1;
     }
   }
 
@@ -535,6 +536,7 @@ function summergame_consume_form($form_state, $pid, $bnum = 0) {
   $form['finished'] = array(
     '#type' => 'checkbox',
     '#title' => 'and I finished it!',
+    '#default_value' => $finished_default,
     '#description' => 'check this box to receive a 100 point bonus for finishing this item (optional)',
   );
   $form['inline'] = array(
