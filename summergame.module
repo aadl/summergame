@@ -22,9 +22,16 @@ function summergame_perm() {
   return array('access summergame', 'administer summergame');
 }
 
+/**
+ * Implementation of hook_init()
+ * Turns off caching for all summergame pages
+ */
 function summergame_init() {
-  $GLOBALS['conf']['cache'] = FALSE;
+  if (strpos($_GET['q'], 'summergame') === 0) {
+    $GLOBALS['conf']['cache'] = FALSE;
+  }
 }
+
 /**
  * Implementation of hook_menu().
  */
