@@ -22,6 +22,9 @@ function summergame_perm() {
   return array('access summergame', 'administer summergame');
 }
 
+function summergame_init() {
+  $GLOBALS['conf']['cache'] = FALSE;
+}
 /**
  * Implementation of hook_menu().
  */
