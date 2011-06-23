@@ -626,13 +626,6 @@ function summergame_player_form($form_state, $player = NULL) {
     $submit_text = 'Sign Up!';
   }
 
-  if ($player['uid']) {
-    $form['uid'] = array(
-      '#type' => 'value',
-      '#value' => $player['uid'],
-    );
-  }
-
   $form['name'] = array(
     '#type' => 'textfield',
     '#title' => t('Name'),
@@ -749,6 +742,24 @@ function summergame_player_form($form_state, $player = NULL) {
     ),
     '#description' => t('Please let us know your upcoming grade if you\'re a student'),
   );
+
+  if (user_access('administer users')) {
+    $form['uid'] = array(
+      '#type' => 'textfield',
+      '#title' => t('User ID'),
+      '#default_value' => $player['uid'],
+      '#size' => 8,
+      '#maxlength' => 8,
+      '#description' => t("AADL.org Account's User ID to connect this player (find it with " . l('Accountfix', 'accountfix') . " if needed)"),
+    );
+  }
+  else if ($player['uid']) {
+    $form['uid'] = array(
+      '#type' => 'value',
+      '#value' => $player['uid'],
+    );
+  }
+
   if (user_access('administer summergame')) {
     // Set up default values
     $prize_array = summergame_get_prize_array();
