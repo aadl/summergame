@@ -411,7 +411,8 @@ function summergame_admin_players($search_term = '') {
           'School' => $player['school'],
           'Grade' => $player['grade'],
           'Show On' => implode(', ', $show),
-          'Edit' => l('edit', 'summergame/player/edit/' . $player['pid']),
+          'Edit Player' => l('Edit', 'summergame/player/edit/' . $player['pid']),
+          'Scorecard' => l('Scorecard', 'summergame/player/' . $player['pid']),
         );
       }
       $content .= theme('table', array_keys($rows[0]), $rows);
@@ -601,7 +602,10 @@ function summergame_player_form($form_state, $player = NULL) {
       '#value' => $player['pid'],
     );
     $form['title'] = array(
-      '#value' => '<h1>Edit Summer Game Player Information</h1>',
+      '#value' => '<p style="float: right">' .
+                  l('Back to Player Score Card page', 'summergame/player/' . $player['pid']) .
+                  '</p>' .
+                  '<h1>Edit Summer Game Player Information</h1>',
     );
     $submit_text = 'Save Player Changes';
   }
@@ -1603,13 +1607,14 @@ function summergame_player_check_badges($pid) {
   $res = db_query("SELECT * FROM sg_badges WHERE formula != ''");
   while ($badge = db_fetch_object($res)) {
     if (!in_array($badge->bid, $player_bids)) {
+      $awarded = FALSE;
       if (strpos($badge->formula, '::')) {
         // Multiple of a code text formula
         list($count_limit, $text_pattern) = explode('::', $badge->formula);
         $lid_count = db_fetch_object(db_query("SELECT COUNT(lid) AS lid_count FROM sg_ledger WHERE pid = %d AND code_text LIKE '%%%s%%'", $pid, $text_pattern));
         if ($lid_count->lid_count >= $count_limit) {
           summergame_player_award_badge($pid, $badge->bid);
-          $messages[] = "Earned the $badge->title Badge!";
+          $awarded = TRUE;
         }
       }
       else {
@@ -1624,7 +1629,18 @@ function summergame_player_check_badges($pid) {
         }
         if ($eligible) {
           summergame_player_award_badge($pid, $badge->bid);
-          $messages[] = "Earned the $badge->title Badge!";
+          $awarded = TRUE;
+        }
+      }
+
+      if ($awarded) {
+        $messages[] = "Earned the $badge->title Badge!";
+        // check if a bonus should be applied
+        if ($badge->points) {
+          db_query("INSERT INTO sg_ledger (pid, points, code_text, description, timestamp) " .
+                   "VALUES (%d, %d, '%s', '%s', %d)",
+                   $pid, $badge->points, 'Badge Bonus', "Earned the $badge->title Badge", time());
+          $messages[] = "Received $badge->points bonus points for earning the $badge->title Badge";
         }
       }
     }
