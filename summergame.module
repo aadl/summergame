@@ -853,8 +853,32 @@ function summergame_player_form_submit($form, &$form_state) {
  * FORM: Delete score form
  */
 function summergame_delete_score(&$form_state, $pid = 0, $lid = 0) {
-  $ledger_row = db_fetch_object(db_query("SELECT * FROM sg_ledger WHERE pid = %d AND lid = %d", $pid, $lid));
-  drupal_set_message('<pre>' . print_r($ledger_row,1) . '</pre>');
+  $ledger = db_fetch_object(db_query("SELECT * FROM sg_ledger WHERE pid = %d AND lid = %d", $pid, $lid));
+
+  $form = array();
+  $form['#ledger'] = $ledger;
+  $description = trim(preg_replace('/[\w]+:[\w]+/', '', $ledger->description));
+  $prompt = "Are you sure you want to delete $ledger->points points for \"$description\"?";
+
+  return confirm_form(
+    $form,
+    $prompt,
+    'node/' . $comment->nid,
+    $prompt . ' ' . t('This action cannot be undone.'),
+    t('Delete'),
+    t('Cancel'),
+    'summergame_delete_score'
+  );
+}
+
+/**
+ * FORM HANDLER: Delete score and return player to their page
+ */
+function summergame_delete_score_submit($form, &$form_state) {
+  $ledger = $form['#ledger'];
+  db_query("DELETE FROM sg_ledger WHERE lid = %d", $ledger->lid);
+  drupal_set_message("Removed score worth $ledger->points from your player score card");
+  drupal_goto('summergame/player/' . $ledger->pid);
 }
 
 /**
@@ -972,12 +996,16 @@ function summergame_player_page($pid = 0) {
             $row['code_text'] = '[GAME CODE]';
           }
         }
-        $score_table[] = array(
+        $table_row = array(
           'Date' => date('F j, Y, g:i a', $row['timestamp']),
           'Code' => $row['code_text'],
           'Description' => ($player['show_titles'] || $player_access ? $description : ''),
           'Points' => $row['points'],
         );
+        if ($player_access) {
+          $table_row['Remove?'] = l('DELETE', 'summergame/player/deletescore/' . $player['pid'] . '/' . $row['lid']);
+        }
+        $score_table[] = $table_row;
         $current += $row['points'];
         if ($row['points'] > 0) {
           $net += $row['points'];
@@ -992,6 +1020,10 @@ function summergame_player_page($pid = 0) {
           ),
           '<strong>' . $current . '</strong>',
         );
+        if ($player_access) {
+          // Add an extra cell in the total row to line up with the Delete column
+          $total_row[] = '';
+        }
         $score_table[] = $total_row;
         $content .= theme('table', array_keys($score_table[0]), $score_table);
       }
