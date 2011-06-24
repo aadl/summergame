@@ -99,7 +99,15 @@ function summergame_menu() {
   $items['summergame/player/deletescore'] = array(
     'title' => t('Delete Player Score'),
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('summergame_delete_score'),
+    'page arguments' => array('summergame_delete_score_form'),
+    'access callback' => 'summergame_player_access',
+    'access arguments' => array(3),
+    'type' => MENU_CALLBACK,
+  );
+  $items['summergame/player/delete'] = array(
+    'title' => t('Delete Player'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('summergame_delete_player_form'),
     'access callback' => 'summergame_player_access',
     'access arguments' => array(3),
     'type' => MENU_CALLBACK,
@@ -799,6 +807,14 @@ function summergame_player_form($form_state, $player = NULL) {
   $form['inline']['cancel'] = array(
     '#value' => l('Cancel', 'summergame/player/' . $player['pid']),
   );
+  if ($player['pid']) {
+    $form['inline']['delete'] = array(
+      '#value' => l('Delete Player',
+                    'summergame/player/delete/' . $player['pid'],
+                    array('attributes' => array('style' => 'padding-left: 100px; color: red'))
+                    ),
+    );
+  }
 
   return $form;
 }
@@ -876,9 +892,39 @@ function summergame_player_form_submit($form, &$form_state) {
 }
 
 /**
+ * FORM: Delete Player form
+ */
+function summergame_delete_player_form(&$form_state, $pid = 0) {
+  if ($player = summergame_player_load(array('pid' => $pid))) {
+    $form = array();
+    $form['#player'] = $player;
+    $player_name = ($player['nickname'] ? $player['nickname'] : $player['name']);
+    $prompt = "Are you sure you want to delete player $player_name? All associated scores and badges will be deleted as well. ";
+
+    return confirm_form(
+      $form,
+      $prompt,
+      'summergame/player/' . $pid,
+      $prompt . ' ' . t('This action cannot be undone.'),
+      t('Delete'),
+      t('Cancel'),
+      'summergame_delete_player_form'
+    );
+  }
+}
+
+function summergame_delete_player_form_submit($form, &$form_state) {
+  $player = $form['#player'];
+  summergame_player_delete(array('pid' => $player['pid']));
+  $player_name = ($player['nickname'] ? $player['nickname'] : $player['name']);
+  drupal_set_message("Deleted player $player_name and all associated points and badges");
+  drupal_goto('summergame/player');
+}
+
+/**
  * FORM: Delete score form
  */
-function summergame_delete_score(&$form_state, $pid = 0, $lid = 0) {
+function summergame_delete_score_form(&$form_state, $pid = 0, $lid = 0) {
   $ledger = db_fetch_object(db_query("SELECT * FROM sg_ledger WHERE pid = %d AND lid = %d", $pid, $lid));
 
   $form = array();
@@ -889,18 +935,18 @@ function summergame_delete_score(&$form_state, $pid = 0, $lid = 0) {
   return confirm_form(
     $form,
     $prompt,
-    'node/' . $comment->nid,
+    'summergame/player/' . $pid,
     $prompt . ' ' . t('This action cannot be undone.'),
     t('Delete'),
     t('Cancel'),
-    'summergame_delete_score'
+    'summergame_delete_score_form'
   );
 }
 
 /**
  * FORM HANDLER: Delete score and return player to their page
  */
-function summergame_delete_score_submit($form, &$form_state) {
+function summergame_delete_score_form_submit($form, &$form_state) {
   $ledger = $form['#ledger'];
   db_query("DELETE FROM sg_ledger WHERE lid = %d", $ledger->lid);
   drupal_set_message("Removed score worth $ledger->points from your player score card");
@@ -1537,6 +1583,8 @@ function summergame_player_delete($player_info) {
   if ($player = summergame_player_load($player_info)) {
     // Delete points
     db_query("DELETE FROM sg_ledger WHERE pid = %d", $player['pid']);
+    // Delete badges
+    db_query("DELETE FROM sg_players_badges WHERE pid = %d", $player['pid']);
     // Delete player info
     db_query("DELETE FROM sg_players WHERE pid = %d", $player['pid']);
   }
