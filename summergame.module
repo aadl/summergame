@@ -832,8 +832,8 @@ function summergame_player_form_submit($form, &$form_state) {
     $player_info[$name] = ($value ? 1 : 0);
   }
 
+  $completed = FALSE;
   if ($form_state['values']['prizes']) {
-    $completed = FALSE;
     $prizes = array();
     foreach ($form_state['values']['prizes'] as $prize) {
       if ($prize) {
@@ -844,12 +844,6 @@ function summergame_player_form_submit($form, &$form_state) {
       }
     }
     $player_info['prizes'] = implode(',', $prizes);
-    if ($completed && !($form_state['values']['completed'])) {
-      // Game Completion Bonus
-      $points = summergame_player_points($form_state['values']['pid'], 1000, 'Completed',
-                                         'Completed the Classic Summer Game');
-      drupal_set_message("Earned $points Summer Game points for completing the Classic Summer Game");
-    }
   }
 
   if ($form_state['values']['uid']) {
@@ -869,6 +863,13 @@ function summergame_player_form_submit($form, &$form_state) {
     $points = summergame_player_points($player['pid'], 100, 'Signup',
                                        'Signed Up for the Summer Game');
     drupal_set_message("Earned $points Summer Game points for signing up!");
+  }
+
+  // Game Completion Bonus
+  if ($completed && !($form_state['values']['completed'])) {
+    $points = summergame_player_points($player['pid'], 1000, 'Completed',
+                                       'Completed the Classic Summer Game');
+    drupal_set_message("Earned $points Summer Game points for completing the Classic Summer Game");
   }
 
   drupal_goto('summergame/player/' . $player['pid']);
