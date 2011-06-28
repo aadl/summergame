@@ -1338,10 +1338,14 @@ function summergame_badges_page() {
   $rows = array();
   $res = db_query("SELECT * FROM sg_badges ORDER BY title ASC");
   while ($badge = db_fetch_array($res)) {
-    $rows[] = array(
+    $row = array(
       'Image' => '<img src="' . $sg_image_path . $badge['image'] . '_100.png">',
       'Description' => '<strong>' . $badge['title'] . '</strong><p>' . $badge['description'] . '</p>',
     );
+    if ($badge['points']) {
+      $row['Description'] .= '<p><em>' . $badge['points'] . ' point bonus when earned</em></p>';
+    }
+    $rows[] = $row;
   }
   $content .= theme('table', array(), $rows);
 
