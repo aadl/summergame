@@ -1067,8 +1067,8 @@ function summergame_player_page($pid = 0) {
           $ledger_row['description'] = trim(str_replace($matches[0], '', $ledger_row['description']));
           $ledger_row['description'] = l($ledger_row['description'], 'http://www.aadl.org/catalog/record/' . $matches[1]);
         }
-        // Strip the id: code from the description field
-        $description = preg_replace('/id:[^\s]+/', '', $ledger_row['description']);
+        // Strip the nid: and id: code from the description field
+        $description = preg_replace('/n?id:[^\s]+/', '', $ledger_row['description']);
         // Obscure game codes
         if (!$player_access) {
           $code_check = db_fetch_object(db_query("SELECT code_id FROM sg_game_codes WHERE text = '%s'", $ledger_row['code_text']));
@@ -1467,6 +1467,29 @@ function summergame_comment($action, $op) {
 }
 
 /**
+ * HOOK: Add points when someone views a node
+ */
+function summergame_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
+  if ($op == 'view' && $page) {
+    // check if user has already received points for viewing this node
+    global $user;
+    if ($player = summergame_player_load(array('uid' => $user->uid))) {
+      $res = db_query("SELECT lid FROM sg_ledger WHERE pid = %d AND code_text = 'Read a Post' " .
+                      "AND description LIKE '%%nid:%d' LIMIT 1",
+                      $player['pid'], $node->nid);
+      $rate_count = db_fetch_object($res);
+      if (!$rate_count->lid) {
+        $node_link = l($node->title, 'node/' . $node->nid);
+        $points = summergame_player_points($player['pid'], 10, 'Read a Post',
+                                           'Read a website post: ' . $node_link . ' nid:' . $node->nid);
+        $points_link = l($points . ' Summer Game points', 'summergame/player');
+        drupal_set_message("Earned $points_link for reading a website post");
+      }
+    }
+  }
+}
+
+/**
  * UTILITY: Return the prize description array
  */
 function summergame_get_prize_array() {
@@ -1662,7 +1685,8 @@ function summergame_redeem_code($pid, $code_text) {
  */
 function summergame_player_points($pid, $points, $code_text = '', $description = '') {
   if (strpos($code_text, 'mat_code:') !== FALSE ||
-      $code_text == 'Checkout History') {
+      $code_text == 'Checkout History' ||
+      $code_text == 'Read a Post') {
     $point_limit = 1000;
     $day_start = mktime(0, 0, 0);
 
