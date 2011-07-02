@@ -177,7 +177,7 @@ function summergame_admin() {
   $content .= '<h2 class="title">Game Codes</h2>';
   $rows = array();
   $creators = array();
-  $res = db_query("SELECT * FROM sg_game_codes ORDER BY created DESC LIMIT 25");
+  $res = db_query("SELECT * FROM sg_game_codes ORDER BY created DESC");
   while ($game_code = db_fetch_array($res)) {
     // Load creator info
     $creator_uid = $game_code['creator_uid'];
