@@ -965,7 +965,7 @@ function summergame_player_page($pid = 0) {
     domain_goto($summergame_domain);
   }
 
-  if ($pid === 'extra') {
+  if ($user->uid && $pid === 'extra') {
     if ($player = summergame_player_load(array('uid' => $user->uid))) {
       drupal_set_message("Use the form below to add an extra player to your website account. " .
                          "You will be able to enter game codes and report reading / listening / " .
@@ -1023,30 +1023,32 @@ function summergame_player_page($pid = 0) {
       // Player Details
       if ($player_access) {
         $content .= theme_summergame_player_info($player);
-        // Extra Players
-        $all_players = summergame_player_load_all($player['uid']);
-        // pop first player off the list to determine primary player
-        $primary_player = array_shift($all_players);
+        // Extra Players if player has web account
+        if ($player['uid']) {
+          $all_players = summergame_player_load_all($player['uid']);
+          // pop first player off the list to determine primary player
+          $primary_player = array_shift($all_players);
 
-        if (count($all_players)) {
-          if ($player['pid'] == $primary_player['pid']) {
-            // We're on the primary player page
-            foreach ($all_players as $extra_player) {
-              if ($extra_player['pid'] != $player['pid']) {
-                // Show Extra Player Info
-                $extra_player_points = summergame_get_player_points($extra_player['pid']);
-                $extra_playername = $extra_player['nickname'] ? $extra_player['nickname'] : $extra_player['name'];
-                $extra_playername = l($extra_playername, 'summergame/player/' . $extra_player['pid']);
-                $content .= '<div id="summergame-extra-player">';
-                $content .= "<h1>Extra Player: $extra_playername (" . $extra_player_points['total'] . " points)</h1>";
-                $content .= theme_summergame_player_info($extra_player);
-                $content .= '</div>';
+          if (count($all_players)) {
+            if ($player['pid'] == $primary_player['pid']) {
+              // We're on the primary player page
+              foreach ($all_players as $extra_player) {
+                if ($extra_player['pid'] != $player['pid']) {
+                  // Show Extra Player Info
+                  $extra_player_points = summergame_get_player_points($extra_player['pid']);
+                  $extra_playername = $extra_player['nickname'] ? $extra_player['nickname'] : $extra_player['name'];
+                  $extra_playername = l($extra_playername, 'summergame/player/' . $extra_player['pid']);
+                  $content .= '<div id="summergame-extra-player">';
+                  $content .= "<h1>Extra Player: $extra_playername (" . $extra_player_points['total'] . " points)</h1>";
+                  $content .= theme_summergame_player_info($extra_player);
+                  $content .= '</div>';
+                }
               }
             }
-          }
-          else {
-            // We're on an extra player page
-            $content .= '<p>[ ' . l('Return to main player page', 'summergame/player/' . $primary_player['pid']) . ' ]</p>';
+            else {
+              // We're on an extra player page
+              $content .= '<p>[ ' . l('Return to main player page', 'summergame/player/' . $primary_player['pid']) . ' ]</p>';
+            }
           }
         }
       }
