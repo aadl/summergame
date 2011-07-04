@@ -1470,9 +1470,9 @@ function summergame_comment($action, $op) {
  * HOOK: Add points when someone views a node
  */
 function summergame_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
-  if ($op == 'view' && $page) {
+  global $user;
+  if ($user->uid && $op == 'view' && $page) {
     // check if user has already received points for viewing this node
-    global $user;
     if ($player = summergame_player_load(array('uid' => $user->uid))) {
       $res = db_query("SELECT lid FROM sg_ledger WHERE pid = %d AND code_text = 'Read a Post' " .
                       "AND description LIKE '%%nid:%d' LIMIT 1",
