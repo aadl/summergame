@@ -1597,7 +1597,8 @@ function summergame_get_player_points($pid) {
   while ($row = db_fetch_array($res)) {
     $player_points['ledger'][] = $row;
     $player_points['balance'] += $row['points'];
-    if ($row['points'] > 0) {
+    if ($row['points'] > 0 && strpos($row['code_text'], 'Shop') !== 0) {
+      // Don't count shop refunds in the total
       $player_points['total'] += $row['points'];
     }
   }
