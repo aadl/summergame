@@ -1851,13 +1851,45 @@ function summergame_player_award_badge($pid, $bid) {
 /**
  * PAGE: Generate and return a PDF version of the game card PDF
  */
-function summergame_pdf($type = 'adult') {
+function summergame_pdf($type = 'adult', $code_id = 0) {
   require_once('/usr/local/lib/libphp-aadl/contrib/fpdf/fpdf.php');
   require_once('/usr/local/lib/libphp-aadl/contrib/fpdi/fpdi.php');
   require_once('/usr/local/lib/libphp-aadl/contrib/redisent/redisent.php');
   $file_path = drupal_get_path('module', 'summergame') . '/pdf/';
   $redis = new Redisent('multivac');
 
+  if ($type == 'gamecode') {
+    $gamecode = db_fetch_object(db_query("SELECT * FROM sg_game_codes WHERE code_id = %d", $code_id));
+
+    $event_code = strtoupper($gamecode->text); // Code for the event, Need to be in all CAPS
+    $event_points = $gamecode->points . ' Points'; // Points for the event
+    $event_title = $gamecode->description; // Title of event
+
+    // initiate FPDI
+    $pdf =& new FPDI('L', 'mm', 'Letter');
+    $pdf->SetAutoPageBreak(FALSE);
+
+    $pdf->AddPage();
+    // set the sourcefile
+    $pdf->setSourceFile($file_path . 'code_template.pdf');
+    $tplidx = $pdf->importPage(1);
+    $pdf->useTemplate($tplidx);
+
+    // now write some text
+    $pdf->AddFont('StantonICG', '', 'StantonICG.php');
+    $pdf->SetFont('StantonICG', '', 110);
+    $pdf->SetXY(20, 45);
+    $pdf->Cell(0, 10, $event_code, 0, 1, 'C');
+
+    $pdf->SetXY(80, 130);
+    $pdf->Cell(0, 10, $event_points, 0, 1);
+
+    $pdf->SetFont('Helvetica', 'B', 12);
+    $pdf->SetXY(10, 200);
+    $pdf->Cell(0, 10, $event_title, 0, 1);
+
+    $pdf->Output($event_code . '_code.pdf', 'D');
+  }
   if ($type == 'adult2') {
     // initiate FPDI
     $pdf =& new FPDI('P', 'mm', 'Letter');
