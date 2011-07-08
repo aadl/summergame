@@ -2,6 +2,12 @@
   width: 100%;
 }
 
+#summergame-player-page .badge-grid {
+  float: left;
+  width: 120px;
+  text-align: center;
+}
+
 #summergame-player-page #player-info-table {
   margin-right: 220px;
 }

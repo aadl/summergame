@@ -1112,6 +1112,28 @@ function summergame_player_page($pid = 0) {
         }
       }
 
+      // Badges
+      $content .= '<h1>Badges</h1>';
+      $sg_image_path = base_path() . file_directory_path() . '/sg_images/';
+      $badge_grid = '';
+      $res = db_query("SELECT * FROM sg_players_badges, sg_badges WHERE sg_players_badges.pid = %d AND sg_players_badges.bid = sg_badges.bid", $player['pid']);
+      while ($badge = db_fetch_array($res)) {
+        $img_title = $badge['description'] . "\n" . 'Received on ' . date('F j, Y g:i A', $badge['timestamp']);
+        $badge_grid .= '<div class="badge-grid">';
+        $badge_grid .= '<img title="' . $img_title . '" src="' . $sg_image_path . $badge['image'] . '_100.png">';
+        $badge_grid .= '<h3>' . $badge['title'] . '</h3>';
+        $badge_grid .= '</div>';
+      }
+
+      if ($badge_grid) {
+        $content .= $badge_grid;
+      }
+      else {
+        $content .= "<p>This player hasn't earned any badges yet.</p>";
+      }
+
+      $content .= '<p style="clear: both">[ ' . l('See All Available Badges', 'summergame/badges') . ' ]</p>';
+
       // Player Score
       $locum = sopac_get_locum();
       $content .= '<h1>Score Card</h1>';
@@ -1174,29 +1196,6 @@ function summergame_player_page($pid = 0) {
       $content .= "<h1>Total Points Earned: " . $player_points['total'] . "</h1>";
       $content .= '</div>'; // #scorecard-total
 
-      // Badges
-      $content .= '<h1>Badges</h1>';
-      $sg_image_path = base_path() . file_directory_path() . '/sg_images/';
-
-      $res = db_query("SELECT * FROM sg_players_badges, sg_badges WHERE sg_players_badges.pid = %d AND sg_players_badges.bid = sg_badges.bid", $player['pid']);
-      $badge_table = array();
-      while ($badge = db_fetch_array($res)) {
-        $badge_table[] = array(
-          'image' => '<img src="' . $sg_image_path . $badge['image'] . '_100.png">',
-          'text' => '<h3>' . $badge['title'] . '</h3>' .
-                    '<p>' . $badge['description'] . '</p>' .
-                    '<p><em>Received on ' . date('F j, Y g:i A', $badge['timestamp']) . '</em></p>',
-        );
-      }
-
-      if (count($badge_table)) {
-        $content .= theme('table', array(), $badge_table);
-      }
-      else {
-        $content .= "<p>This player hasn't earned any badges yet.</p>";
-      }
-
-      $content .= '<p>[ ' . l('See All Available Badges', 'summergame/badges') . ' ]</p>';
       $content .= '</div>'; // #summergame-player-page
     }
     else {
