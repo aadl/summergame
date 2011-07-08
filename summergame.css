@@ -26,3 +26,25 @@
   border: 1px solid #CCC;
   margin-top: 10px;
 }
+
+#summergame-admin-page .create-new-code {
+  float: right;
+  padding: 0;
+  margin: 0;
+}
+
+#summergame-admin-page .create-new-code .button {
+  margin-bottom: 0;
+}
+
+#summergame-admin-page table {
+  width: 100%;
+}
+
+#summergame-admin-page h2.game-codes {
+  padding-top: .5em;
+}
+
+#summergame-admin-page p.more {
+  text-align: right;
+}

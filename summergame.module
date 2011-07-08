@@ -40,19 +40,25 @@ function summergame_menu() {
 
   $items['summergame/admin'] = array(
     'title' => 'Summer Game Admin',
-    'description' => 'View, plublish, and respond to Patron Comments.',
+    'description' => 'Administer the Summer Game',
     'page callback' => 'summergame_admin',
     'access arguments' => array('administer summergame'),
     'type' => MENU_NORMAL_ITEM,
   );
-   $items['summergame/admin/add'] = array(
-    'title' => 'Add new Summer Game code',
+  $items['summergame/admin/gamecodes'] = array(
+    'title' => 'Administer Game Codes',
+    'page callback' => 'summergame_admin_gamecodes',
+    'access arguments' => array('administer summergame'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['summergame/admin/add'] = array(
+    'title' => 'Add new Summer Game Code',
     'page callback' => 'summergame_admin_edit',
     'access arguments' => array('administer summergame'),
     'type' => MENU_CALLBACK,
   );
   $items['summergame/admin/edit'] = array(
-    'title' => 'Edit Summer Game code',
+    'title' => 'Edit Summer Game Code',
     'page callback' => 'summergame_admin_edit',
     'access arguments' => array('administer summergame'),
     'type' => MENU_CALLBACK,
@@ -159,6 +165,8 @@ function summergame_menu() {
  * PAGE: Summer Game Admin overview
  */
 function summergame_admin() {
+  drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
+  $content .= '<div id="summergame-admin-page">';
   $content .= '<h1>Summer Game Admin Page</h1>';
 
   // Players
@@ -174,7 +182,68 @@ function summergame_admin() {
   $content .= '</ul>';
 
   // Game Codes
-  $content .= '<h2 class="title">Game Codes</h2>';
+  $content .= '<ul class="create-new-code"><li class="button green">' . l("Create New Game Code", 'summergame/admin/add') . '</li></ul>';
+  $content .= '<h2 class="title game-codes">Game Codes</h2>';
+  $limit = 25;
+  $rows = array();
+  $creators = array();
+  $res = db_query("SELECT * FROM sg_game_codes ORDER BY created DESC LIMIT $limit");
+  while ($game_code = db_fetch_array($res)) {
+    // Load creator info
+    $creator_uid = $game_code['creator_uid'];
+    if (!$creators[$creator_uid]) {
+      $creators[$creator_uid] = user_load($creator_uid);
+    }
+    $creator = $creators[$creator_uid];
+
+    $valid_start = $game_code['valid_start'] ? date('n/d/Y H:i:s', $game_code['valid_start']) : 'Now';
+    $valid_end = date('n/d/Y H:i:s', $game_code['valid_end']);
+    $rows[] = array(
+      'Text' => $game_code['text'],
+      'Description' => $game_code['description'],
+      'Points' => $game_code['points'],
+      'Created' => date('n/d/Y', $game_code['created']),
+      'Created By' => $creator->name,
+      'Valid Dates' => $valid_start . '-<br />' . $valid_end,
+      'Redemptions' => $game_code['num_redemptions'] . ' of ' . $game_code['max_redemptions'],
+      'Edit' => l('edit', 'summergame/admin/edit/' . $game_code['code_id']),
+    );
+  }
+  $content .= theme('table', array_keys($rows[0]), $rows);
+  $more_link = l('See all Game Codes', 'summergame/admin/gamecodes');
+  $content .= "<p class=\"more\">Showing latest $limit game codes, $more_link</p>";
+
+  // Badges
+  $content .= '<h2 class="title">Badges</h2>';
+  $sg_image_path = base_path() . file_directory_path() . '/sg_images/';
+  $rows = array();
+  $res = db_query("SELECT * FROM sg_badges ORDER BY title ASC");
+  while ($badge = db_fetch_array($res)) {
+    $rows[] = array(
+      'Badge ID' => $badge['bid'],
+      'Image' => '<img src="' . $sg_image_path . $badge['image'] . '_100.png">',
+      'Title' => '<strong>' . $badge['title'] . '</strong>',
+      'Description' => $badge['description'],
+      'Formula' => $badge['formula'],
+    );
+  }
+  $content .= theme('table', array_keys($rows[0]), $rows);
+
+  $content .= '</div>'; // #summergame-admin-page
+
+  return $content;
+}
+
+/**
+ * PAGE: Show all game codes
+ */
+function summergame_admin_gamecodes() {
+  drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
+  $content .= '<div id="summergame-admin-page">';
+
+  // Game Codes
+  $content .= '<ul class="create-new-code"><li class="button green">' . l("Create New Game Code", 'summergame/admin/add') . '</li></ul>';
+  $content .= '<h2 class="title game-codes">Game Codes</h2>';
   $rows = array();
   $creators = array();
   $res = db_query("SELECT * FROM sg_game_codes ORDER BY created DESC");
@@ -200,23 +269,7 @@ function summergame_admin() {
     );
   }
   $content .= theme('table', array_keys($rows[0]), $rows);
-  $content .= '<ul><li class="button green">' . l("Create New Game Code", 'summergame/admin/add') . '</li></ul>';
-
-  // Badges
-  $content .= '<h2 class="title">Badges</h2>';
-  $sg_image_path = base_path() . file_directory_path() . '/sg_images/';
-  $rows = array();
-  $res = db_query("SELECT * FROM sg_badges ORDER BY title ASC");
-  while ($badge = db_fetch_array($res)) {
-    $rows[] = array(
-      'Badge ID' => $badge['bid'],
-      'Image' => '<img src="' . $sg_image_path . $badge['image'] . '_100.png">',
-      'Title' => '<strong>' . $badge['title'] . '</strong>',
-      'Description' => $badge['description'],
-      'Formula' => $badge['formula'],
-    );
-  }
-  $content .= theme('table', array_keys($rows[0]), $rows);
+  $content .= '</div>';
 
   return $content;
 }
