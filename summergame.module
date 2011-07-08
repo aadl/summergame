@@ -206,6 +206,7 @@ function summergame_admin() {
       'Created By' => $creator->name,
       'Valid Dates' => $valid_start . '-<br />' . $valid_end,
       'Redemptions' => $game_code['num_redemptions'] . ' of ' . $game_code['max_redemptions'],
+      'Print Sign' => l('print', 'summergame/pdf/gamecode/' . $game_code['code_id']),
       'Edit' => l('edit', 'summergame/admin/edit/' . $game_code['code_id']),
     );
   }
@@ -265,6 +266,7 @@ function summergame_admin_gamecodes() {
       'Created By' => $creator->name,
       'Valid Dates' => $valid_start . '-<br />' . $valid_end,
       'Redemptions' => $game_code['num_redemptions'] . ' of ' . $game_code['max_redemptions'],
+      'Print Sign' => l('print', 'summergame/pdf/gamecode/' . $game_code['code_id']),
       'Edit' => l('edit', 'summergame/admin/edit/' . $game_code['code_id']),
     );
   }
