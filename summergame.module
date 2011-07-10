@@ -1763,7 +1763,8 @@ function summergame_player_points($pid, $points, $code_text = '', $description =
            "WHERE pid = %d " .
            "AND timestamp > %d " .
            "AND (code_text LIKE 'mat_code:%' " .
-           "OR code_text LIKE 'Checkout History')";
+           "OR code_text LIKE 'Checkout History' " .
+           "OR code_text LIKE 'Read a Post')";
     $total = db_fetch_object(db_query($sql, $pid, $day_start));
     if ($total->total > $point_limit) {
       drupal_set_message("Sorry, you are over the limit of $point_limit points for today for this category of points", 'error');
