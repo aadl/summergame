@@ -1354,13 +1354,26 @@ function summergame_player_consume_page($pid = 0, $bnum = 0) {
 /**
  * PAGE: Leaderboard Page
  */
-function summergame_leaderboard_page() {
-  $content .= '<h1>Summer Game Leaderboard</h1>';
+function summergame_leaderboard_page($range = 'alltime') {
+  // Determine range
+  if ($range == 'day') {
+    $range_query = 'AND sg_ledger.timestamp > ' . (time() - (60 * 60 * 24)) . ' ';
+    $range_text = 'Today (Last 24 hours)';
+  }
+  else if ($range == 'week') {
+    $range_query = 'AND sg_ledger.timestamp > ' . (time() - (60 * 60 * 24 * 7)) . ' ';
+    $range_text = 'This Week (Last 7 Days)';
+  }
+  else {
+    $range_query = '';
+    $range_text = 'All Time';
+  }
 
   $leader_query = 'SELECT *, SUM(points) AS ptotal ' .
                   'FROM sg_players, sg_ledger ' .
                   'WHERE sg_players.pid = sg_ledger.pid ' .
                   'AND sg_ledger.points > 0 ' .
+                  $range_query .
                   'GROUP BY sg_players.pid ' .
                   'ORDER BY ptotal DESC ' .
                   'LIMIT 100';
@@ -1384,7 +1397,23 @@ function summergame_leaderboard_page() {
       'Total Score' => $lb_player['ptotal'],
     );
   }
-  $content .= theme('table', array_keys($leaderboard[0]), $leaderboard);
+
+  $content .= "<h1>Summer Game Leaderboard for $range_text</h1>";
+
+  $content .= '<p><strong>Change timeframe:</strong> ';
+  $content .= ($range == 'today' ? 'Today' : l('Today', 'summergame/leaderboard/day'));
+  $content .= ' | ';
+  $content .= ($range == 'week' ? 'This Week' : l('This Week', 'summergame/leaderboard/week'));
+  $content .= ' | ';
+  $content .= ($range == 'alltime' ? 'All Time' : l('All Time', 'summergame/leaderboard/alltime'));
+  $content .= '</p>';
+
+  if (count($leaderboard)) {
+    $content .= theme('table', array_keys($leaderboard[0]), $leaderboard);
+  }
+  else {
+    $content .= "<p>No scores for $range_text</p>";
+  }
 
   return $content;
 }
