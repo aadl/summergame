@@ -38,6 +38,14 @@ function summergame_init() {
 function summergame_menu() {
   $items = array();
 
+  $items['admin/settings/summergame'] = array(
+    'title' => 'Summer Game Settings',
+    'description' => 'Site Settings for the Summer Game',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('summergame_settings'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_NORMAL_ITEM,
+  );
   $items['summergame/admin'] = array(
     'title' => 'Summer Game Admin',
     'description' => 'Administer the Summer Game',
@@ -159,6 +167,37 @@ function summergame_menu() {
     'file' => 'summergame.trivia.inc',
   );
   return $items;
+}
+
+/**
+ * PAGE: Summer Game Site Settings
+ */
+function summergame_settings() {
+  $form['summergame_user_search_path'] = array(
+    '#type' => 'textfield',
+    '#title' => t("User Search Path"),
+    '#default_value' => variable_get('summergame_user_search_path', 'search/user'),
+    '#size' => 32,
+    '#maxlength' => 32,
+    '#description' => t("Path to your user search form"),
+  );
+  $form['summergame_catalog_domain'] = array(
+    '#type' => 'textfield',
+    '#title' => t("Catalog Domain"),
+    '#default_value' => variable_get('summergame_catalog_domain', ''),
+    '#size' => 32,
+    '#maxlength' => 32,
+    '#description' => t("Links to catalog pages will be directed to this domain. Leave blank for same domain. (No http:// or trailing slash)"),
+  );
+  $form['summergame_libphp_path'] = array(
+    '#type' => 'textfield',
+    '#title' => t("LibPHP path"),
+    '#default_value' => variable_get('summergame_libphp_path', ''),
+    '#size' => 32,
+    '#maxlength' => 32,
+    '#description' => t('Path to PHP libraries. Needs "contrib/fpdf", "contrib/fpdi", and "contrib/redisent" directories'),
+  );
+  return system_settings_form($form);
 }
 
 /**
@@ -807,13 +846,16 @@ function summergame_player_form($form_state, $player = NULL) {
   );
 
   if (user_access('administer users')) {
+    if ($summergame_user_search_path = variable_get('summergame_user_search_path', FALSE)) {
+      $search_link = ' (' . l('Search for user accounts if needed', $summergame_user_search_path) . ')';
+    }
     $form['uid'] = array(
       '#type' => 'textfield',
       '#title' => t('User ID'),
       '#default_value' => $player['uid'],
       '#size' => 8,
       '#maxlength' => 8,
-      '#description' => t("AADL.org Account's User ID to connect this player (find it with " . l('Accountfix', 'accountfix') . " if needed)"),
+      '#description' => t("Website User ID to connect this player") . $search_link,
     );
   }
   else if ($player['uid']) {
@@ -1033,7 +1075,7 @@ function summergame_player_page($pid = 0) {
                          "watching activities for points. However this player won't receive " .
                          "points for website contributions such as commenting, tagging or writing reviews. " .
                          "If you wish this player to receive points for website contributions, please log " .
-                         "out and create a new aadl.org account before signing up for the Summer Game.");
+                         "out and create a new website account before signing up for the Summer Game.");
       $new_player = array('uid' => $user->uid);
       $content = drupal_get_form('summergame_player_form', $new_player);
     }
@@ -1131,6 +1173,9 @@ function summergame_player_page($pid = 0) {
 
       // Player Score
       $locum = sopac_get_locum();
+      if ($catalog_domain = variable_get('summergame_catalog_domain', '')) {
+        $catalog_domain = 'http://' . $catalog_domain . '/';
+      }
       $content .= '<h1>Score Card</h1>';
 
       $score_table = array();
@@ -1143,7 +1188,7 @@ function summergame_player_page($pid = 0) {
         // Change bnum: code to a link to the bib record
         if (preg_match('/bnum:([\d]{7})/', $ledger_row['description'], $matches)) {
           $ledger_row['description'] = trim(str_replace($matches[0], '', $ledger_row['description']));
-          $ledger_row['description'] = l($ledger_row['description'], 'http://www.aadl.org/catalog/record/' . $matches[1]);
+          $ledger_row['description'] = l($ledger_row['description'], $catalog_domain . 'catalog/record/' . $matches[1]);
         }
         // Strip the nid: and id: code from the description field
         $description = preg_replace('/n?id:[^\s]+/', '', $ledger_row['description']);
@@ -1205,7 +1250,10 @@ function summergame_player_page($pid = 0) {
           $content = drupal_get_form('summergame_player_form', $new_player);
         }
         else {
-          drupal_goto('https://www.aadl.org/login', array('destination' => 'summergame/player'));
+          if ($catalog_domain = variable_get('summergame_catalog_domain', '')) {
+            $catalog_domain = 'https://' . $catalog_domain . '/';
+          }
+          drupal_goto($catalog_domain . 'login', array('destination' => 'summergame/player'));
         }
       }
     }
@@ -1877,9 +1925,10 @@ function summergame_player_award_badge($pid, $bid) {
  * PAGE: Generate and return a PDF version of the game card PDF
  */
 function summergame_pdf($type = 'adult', $code_id = 0) {
-  require_once('/usr/local/lib/libphp-aadl/contrib/fpdf/fpdf.php');
-  require_once('/usr/local/lib/libphp-aadl/contrib/fpdi/fpdi.php');
-  require_once('/usr/local/lib/libphp-aadl/contrib/redisent/redisent.php');
+  $libphp_path = variable_get('summergame_libphp_path', '');
+  require_once($libphp_path . 'contrib/fpdf/fpdf.php');
+  require_once($libphp_path . 'contrib/fpdi/fpdi.php');
+  require_once($libphp_path . 'contrib/redisent/redisent.php');
   $file_path = drupal_get_path('module', 'summergame') . '/pdf/';
   $redis = new Redisent('multivac');
 
