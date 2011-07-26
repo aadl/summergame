@@ -1181,10 +1181,10 @@ function summergame_player_page($pid = 0) {
       $i = 0;
       $score_table = array();
       $ledger_count = count($player_points['ledger']);
-      if ($ledger_count > 1000) {
-        // Only show last 1000 rows in the table
-        $content .= "<p>Latest 1000 scores out of $ledger_count shown</p>";
-        $i = $ledger_count - 1000;
+      if ($ledger_count > 5000) {
+        // Only show last 5000 rows in the table
+        $content .= "<p><em>Latest 5000 scores out of $ledger_count shown</em></p>";
+        $i = $ledger_count - 5000;
       }
       while ($i < $ledger_count) {
         // Translate material code to catalog material type
