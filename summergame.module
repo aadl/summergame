@@ -1172,49 +1172,57 @@ function summergame_player_page($pid = 0) {
       $content .= '</div>';
 
       // Player Score
+      $content .= '<h1>Score Card</h1>';
+
       $locum = sopac_get_locum();
       if ($catalog_domain = variable_get('summergame_catalog_domain', '')) {
         $catalog_domain = 'http://' . $catalog_domain . '/';
       }
-      $content .= '<h1>Score Card</h1>';
-
+      $i = 0;
       $score_table = array();
-      foreach ($player_points['ledger'] as $ledger_row) {
+      $ledger_count = count($player_points['ledger']);
+      if ($ledger_count > 1000) {
+        // Only show last 1000 rows in the table
+        $content .= "<p>Latest 1000 scores out of $ledger_count shown</p>";
+        $i = $ledger_count - 1000;
+      }
+      while ($i < $ledger_count) {
         // Translate material code to catalog material type
-        if (preg_match('/mat_code:([a-z])/', $ledger_row['code_text'], $matches)) {
-          $ledger_row['code_text'] = 'Points for ' .
+        if (preg_match('/mat_code:([a-z])/', $player_points['ledger'][$i]['code_text'], $matches)) {
+          $player_points['ledger'][$i]['code_text'] = 'Points for ' .
                               $locum->locum_config['formats'][$matches[1]];
         }
         // Change bnum: code to a link to the bib record
-        if (preg_match('/bnum:([\d]{7})/', $ledger_row['description'], $matches)) {
-          $ledger_row['description'] = trim(str_replace($matches[0], '', $ledger_row['description']));
-          $ledger_row['description'] = l($ledger_row['description'], $catalog_domain . 'catalog/record/' . $matches[1]);
+        if (preg_match('/bnum:([\d]{7})/', $player_points['ledger'][$i]['description'], $matches)) {
+          $player_points['ledger'][$i]['description'] = trim(str_replace($matches[0], '', $player_points['ledger'][$i]['description']));
+          $player_points['ledger'][$i]['description'] = l($player_points['ledger'][$i]['description'], $catalog_domain . 'catalog/record/' . $matches[1]);
         }
         // Strip the nid: and id: code from the description field
-        $description = preg_replace('/n?id:[^\s]+/', '', $ledger_row['description']);
+        $description = preg_replace('/n?id:[^\s]+/', '', $player_points['ledger'][$i]['description']);
         // Obscure game codes
         if (!$player_access) {
-          $code_check = db_fetch_object(db_query("SELECT code_id FROM sg_game_codes WHERE text = '%s'", $ledger_row['code_text']));
+          $code_check = db_fetch_object(db_query("SELECT code_id FROM sg_game_codes WHERE text = '%s'", $player_points['ledger'][$i]['code_text']));
           if ($code_check->code_id) {
-            $ledger_row['code_text'] = '[GAME CODE]';
+            $player_points['ledger'][$i]['code_text'] = '[GAME CODE]';
           }
         }
         $table_row = array(
-          'Date' => date('F j, Y, g:i a', $ledger_row['timestamp']),
-          'Code' => $ledger_row['code_text'],
+          'Date' => date('F j, Y, g:i a', $player_points['ledger'][$i]['timestamp']),
+          'Code' => $player_points['ledger'][$i]['code_text'],
           'Description' => ($player['show_titles'] || $player_access ? $description : ''),
-          'Points' => $ledger_row['points'],
+          'Points' => $player_points['ledger'][$i]['points'],
         );
         if ($player_access) {
-          if (strpos($ledger_row['code_text'], 'Shop') === 0) {
+          if (strpos($player_points['ledger'][$i]['code_text'], 'Shop') === 0) {
             // No delete link for shop points
             $table_row['Remove?'] = '';
           }
           else {
-            $table_row['Remove?'] = l('DELETE', 'summergame/player/deletescore/' . $player['pid'] . '/' . $ledger_row['lid']);
+            $table_row['Remove?'] = l('DELETE', 'summergame/player/deletescore/' . $player['pid'] . '/' . $player_points['ledger'][$i]['lid']);
           }
         }
         $score_table[] = $table_row;
+        $i++;
       }
       if (count($score_table)) {
         $total_row = array(
