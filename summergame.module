@@ -83,6 +83,12 @@ function summergame_menu() {
     'access arguments' => array('administer summergame'),
     'type' => MENU_CALLBACK,
   );
+  $items['summergame/admin/players/merge'] = array(
+    'title' => 'Administer Players',
+    'page callback' => 'summergame_admin_players_merge',
+    'access arguments' => array('administer summergame'),
+    'type' => MENU_CALLBACK,
+  );
   $items['summergame/player'] = array(
     'title' => 'Summer Game Player Page',
     'page callback' => 'summergame_player_page',
@@ -492,13 +498,13 @@ function summergame_admin_players($search_term = '') {
       drupal_set_message("Single Player Found to match your search: \"$search_term\". Edit player information below:");
       drupal_goto('summergame/player/edit/' . $player['pid']);
     }
-    else if ($count > 25) {
-      $content .= "<h2>Your search returned more than 25 matches: ($count)<h2>";
+    else if ($count > 100) {
+      $content .= "<h2>Your search returned more than 100 matches: ($count)<h2>";
       $content .= "<h3>Please search again</h3>";
       $content .= drupal_get_form('summergame_player_search_form');
     }
     else {
-      // Found 2-25 matches, display them in a table
+      // Found 2-100 matches, display them in a table
       $content .= "<h2>Your search returned $count matches</h2>";
       while ($player = db_fetch_array($res)) {
         // Prep for display
@@ -866,6 +872,11 @@ function summergame_player_form($form_state, $player = NULL) {
   }
 
   if (user_access('administer summergame')) {
+    $form['admin'] = array(
+      '#prefix' => '<fieldset><legend>STAFF ONLY</legend>',
+      '#suffix' => '</fieldset>',
+    );
+
     // Set up default values
     $prize_array = summergame_get_prize_array();
     $default_prizes = array();
@@ -882,15 +893,24 @@ function summergame_player_form($form_state, $player = NULL) {
         $default_prizes[$prize_code] = 0;
       }
     }
-    $form['prizes'] = array(
+    $form['admin']['prizes'] = array(
       '#type' => 'checkboxes',
-      '#title' => t('Staff Only: CHECK PRIZE GIVEN WHEN GAME IS COMPLETED'),
+      '#title' => t('CHECK PRIZE GIVEN WHEN GAME IS COMPLETED'),
       '#options' => $prize_array,
       '#default_value' => $default_prizes,
     );
-    $form['completed'] = array(
+    $form['admin']['completed'] = array(
       '#type' => 'value',
       '#value' => $completed,
+    );
+    $form['admin']['merge_id'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Merge this player into Player ID'),
+      '#size' => 8,
+      '#maxlength' => 8,
+      '#description' => t("Enter another Player ID number to merge this player infomation into that player record"),
+      '#prefix' => "<fieldset class=\"collapsible collapsed\"><legend>MERGE PLAYER</legend>",
+      '#suffix' => "</fieldset>",
     );
   }
   $form['inline'] = array(
@@ -917,6 +937,11 @@ function summergame_player_form($form_state, $player = NULL) {
 }
 
 function summergame_player_form_submit($form, &$form_state) {
+  // Check for merge ID
+  if ($form_state['values']['pid'] && $form_state['values']['merge_id']) {
+    drupal_goto('summergame/admin/players/merge/' . $form_state['values']['merge_id'] . '/' . $form_state['values']['pid']);
+  }
+  
   $player_info = array(
     'name' => $form_state['values']['name'],
     'nickname' => $form_state['values']['nickname'],
@@ -959,7 +984,7 @@ function summergame_player_form_submit($form, &$form_state) {
     $player_info['prizes'] = implode(',', $prizes);
   }
 
-  if ($form_state['values']['uid']) {
+  if (isset($form_state['values']['uid'])) {
     $player_info['uid'] = $form_state['values']['uid'];
   }
 
@@ -2049,4 +2074,130 @@ function summergame_pdf($type = 'adult', $code_id = 0) {
 
     $pdf->Output('AGSummer_Game.pdf', 'D');
   }
+}
+
+/**
+ * Page: Merge Two Player Records
+ */
+function summergame_admin_players_merge($pid1, $pid2, $confirm = '') {
+  if ($confirm) {
+    summergame_players_merge($pid1, $pid2);
+    drupal_set_message("Player #$pid2 merged into Player #$pid1");
+    drupal_goto("summergame/player/$pid1");
+  }
+
+  $p1 = summergame_player_load(array('pid' => $pid1));
+  $p2 = summergame_player_load(array('pid' => $pid2));
+
+  if ($p1['pid'] && $p2['pid']) {
+    $p1_points = summergame_get_player_points($pid1);
+    $p1['balance'] = $p1_points['balance'];
+    $p1['total'] = $p1_points['total'];
+
+    $p2_points = summergame_get_player_points($pid2);
+    $p2['balance'] = $p2_points['balance'];
+    $p2['total'] = $p2_points['total'];
+
+    $merge_table = array();
+    foreach ($p2 as $field => $p2_data) {
+      $arrows = (!empty($p2_data) && empty($p1[$field]) ? '<strong>>>></strong>' : '');
+      $merge_table[] = array("<strong>$field</strong>", $p2_data, $arrows, $p1[$field]);
+    }
+
+    $content = "<H1>Merge These Player Records?</H1>";
+
+    $content .= theme('table', array('', 'Player 2', '>>>', 'Player 1'), $merge_table);
+
+    $content .= '<ul>';
+    $content .= '<li class="button green">' . l('MERGE', $_GET['q'] . '/1') . '</li>';
+    $content .= '<li class="button red">' .l('Cancel', 'summergame/admin') . '</li>';
+    $content .= '</ul>';
+
+    return $content;
+  }
+  else {
+    drupal_set_message('Invalid Player IDs', 'error');
+    drupal_goto('summergame/admin');
+  }
+}
+
+/**
+ * UTILITY: Merge Two Player Records
+ * Additional info from player 2 is added to player 1
+ */
+function summergame_players_merge($pid1, $pid2) {
+  $p1 = summergame_player_load(array('pid' => $pid1));
+  $p2 = summergame_player_load(array('pid' => $pid2));
+  if (!empty($p1['prizes'])) {
+    $p1_prizes = explode(',', $p1['prizes']);
+  }
+  else {
+    $p1_prizes = array();
+  }
+
+  // Update Player Data Fields
+  foreach ($p2 as $field => $data) {
+    if ($field == 'prizes') {
+      // Special handling for prizes field
+      foreach(explode(',', $data) as $prize) {
+        if (!in_array($prize, $p1_prizes)) {
+          $p1_prizes[] = $prize;
+        }
+      }
+    }
+    else {
+      if (empty($p1[$field])) {
+        $p1[$field] = $data;
+      }
+    }
+  }
+  $p1['prizes'] = implode(',', $p1_prizes);
+  summergame_player_save($p1);
+
+  // Check for duplicate Game Codes and remove from old player
+  $duplicate_codes = array();
+  $res = db_query("SELECT * FROM " .
+                  "(SELECT COUNT(sg_ledger.lid) AS ledger_count, sg_ledger.* " .
+                  "FROM sg_ledger, sg_game_codes " .
+                  "WHERE sg_ledger.code_text = sg_game_codes.text " .
+                  "AND (sg_ledger.pid = %d OR sg_ledger.pid = %d) " .
+                  "GROUP BY sg_ledger.code_text) AS x " .
+                  "WHERE ledger_count > 1",
+                  $pid1, $pid2);
+  while ($ledger_row = db_fetch_object($res)) {
+    $duplicate_codes[] = "'$ledger_row->code_text'";
+  }
+  if (count($duplicate_codes)) {
+    $duplicate_codes_string = implode(', ', $duplicate_codes);
+    db_query("DELETE FROM sg_ledger WHERE pid = %d AND code_text IN ($duplicate_codes_string)", $pid2);
+  }
+
+  // Remove duplicate Signup and Completed bonuses
+  $res = db_query("SELECT COUNT(lid) AS count FROM sg_ledger WHERE code_text = 'Signup' AND (pid = %d OR pid = %d)", $pid1, $pid2);
+  $ledger = db_fetch_object($res);
+  if ($ledger->count > 1) {
+    db_query("DELETE FROM sg_ledger WHERE pid = %d AND code_text = 'Signup'", $pid2);
+  }
+  $res = db_query("SELECT COUNT(lid) AS count FROM sg_ledger WHERE code_text = 'Completed' AND (pid = %d OR pid = %d)", $pid1, $pid2);
+  $ledger = db_fetch_object($res);
+  if ($ledger->count > 1) {
+    db_query("DELETE FROM sg_ledger WHERE pid = %d AND code_text = 'Completed'", $pid2);
+  }
+
+  // Remove duplicate badges and bonuses
+  $badges = array();
+  $res = db_query("SELECT * FROM sg_badges, sg_players_badges WHERE sg_badges.bid = sg_players_badges.bid AND sg_players_badges.pid = %d", $pid1);
+  while ($badge = db_fetch_object($res)) {
+    $badges[] = $badge;
+  }
+  foreach($badges as $badge) {
+    db_query("DELETE FROM sg_players_badges WHERE pid = %d and bid = %d", $pid2, $badge->bid);
+    $badge_description = "Earned the $badge->title Badge";
+    db_query("DELETE FROM sg_ledger WHERE pid = %d AND code_text = 'Badge Bonus' AND description = '%s'", $pid2, $badge_description);
+  }
+
+  // Update remaing player2 data to point at player1 and delete player 2
+  db_query("UPDATE sg_ledger SET pid = %d WHERE pid = %d", $pid1, $pid2);
+  db_query("UPDATE sg_players_badges SET pid = %d WHERE pid = %d", $pid1, $pid2);
+  db_query("DELETE FROM sg_players WHERE pid = %d", $pid2);
 }
