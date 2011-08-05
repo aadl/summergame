@@ -664,7 +664,7 @@ function summergame_consume_form($form_state, $pid, $bnum = 0) {
     '#title' => t('Titled'),
     '#default_value' => $title,
     '#size' => 64,
-    '#maxlength' => 64,
+    '#maxlength' => 128,
     '#description' => t('Title of the Book/Movie/Music that you are reporting'),
     '#required' => TRUE,
   );
