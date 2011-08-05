@@ -487,6 +487,20 @@ function summergame_admin_players($search_term = '') {
     $res = db_query($sql, $params);
     $count = mysqli_num_rows($res);
 
+    // Rerun query with OR on terms if no results
+    if ($count == 0 && strpos($search_term, ' ') !== FALSE) {
+      $params = array();
+      $sql = "SELECT * FROM sg_players WHERE (0 ";
+      foreach (explode(' ', $search_term) as $term) {
+        $sql .= "OR name LIKE '%%%s%%' OR nickname LIKE '%%%s%%'";
+        $params[] = $term;
+        $params[] = $term;
+      }
+      $sql .= ")";
+      $res = db_query($sql, $params);
+      $count = mysqli_num_rows($res);
+    }
+
     if ($count == 0) {
       // No matches, create a new player
       drupal_set_message("No existing players to match your search \"$search_term\". Create a new player with that information below:");
@@ -941,7 +955,7 @@ function summergame_player_form_submit($form, &$form_state) {
   if ($form_state['values']['pid'] && $form_state['values']['merge_id']) {
     drupal_goto('summergame/admin/players/merge/' . $form_state['values']['merge_id'] . '/' . $form_state['values']['pid']);
   }
-  
+
   $player_info = array(
     'name' => $form_state['values']['name'],
     'nickname' => $form_state['values']['nickname'],
