@@ -1335,6 +1335,28 @@ function theme_summergame_player_info($player) {
   }
   $privacy_details .= '</ul>';
 
+  // Determine Classic Reading Game prizes
+  $player_prizes = array();
+  $prize_array = summergame_get_prize_array();
+
+  foreach (explode(',', $player['prizes']) as $player_prize) {
+    if (array_key_exists($player_prize, $prize_array)) {
+      $player_prizes[] = 'Received ' . preg_replace('/ \([^)]+\)/', '', $prize_array[$player_prize]);
+    }
+  }
+  if (count($player_prizes)) {
+    $player_prizes = 'Yes, ' . implode(', ', $player_prizes);
+  }
+  else {
+    $player_prizes = 'Not yet! Complete a game card and visit the library to receive one of the following:<ul>';
+    foreach ($prize_array as $prize) {
+      if (stripos($prize, $player['agegroup']) !== FALSE) {
+        $player_prizes .= '<li>' . preg_replace('/ \([^)]+\)/', '', $prize) . '</li>';
+      }
+    }
+    $player_prizes .= '</ul>';
+  }
+
   $player_table = array(
     array('<strong>Real Name:</strong>', $player['name']),
     array('<strong>Nickname:</strong>', $player['nickname']),
@@ -1342,6 +1364,7 @@ function theme_summergame_player_info($player) {
     array('<strong>Game Card:</strong>', $player['gamecard']),
     array('<strong>Age Group:</strong>', ucwords($player['agegroup'])),
     array('<strong>Privacy Options:</strong>', $privacy_details),
+    array('<strong>Completed Classic Reading Game?:</strong>', $player_prizes),
   );
 
   // Lookup drupal user if admin
@@ -1682,7 +1705,7 @@ function summergame_get_prize_array() {
     'bucket' => 'Bucket (Youth Mid-Way)',
     'silly' => 'Silly Putty (Youth Mid-Way)',
     'ybook' => 'Book (Youth Completion)',
-    'raffle' => 'Raffle (Teen Completion)',
+    'raffle' => 'Raffle entry into drawing for iPad2, iPod Touch, or Nintendo 3DS (Teen Completion)',
     'tbook' => 'Book (Teen Completion)',
     'fine' => 'Fine Forgiveness Coupon (Teen or Adult Completion)',
     'plum' => 'Plum Market Coupon (Teen or Adult Completion)',
