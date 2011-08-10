@@ -599,6 +599,7 @@ function summergame_redeem_form($form_state, $pid) {
     '#title' => t('Code Text'),
     '#size' => 32,
     '#maxlength' => 32,
+    '#default_value' => ($_GET['text'] ? $_GET['text'] : ''),
   );
   $form['submit'] = array(
     '#type' => 'submit',
