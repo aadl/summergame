@@ -506,12 +506,6 @@ function summergame_admin_players($search_term = '') {
       drupal_set_message("No existing players to match your search \"$search_term\". Create a new player with that information below:");
       $content .= drupal_get_form('summergame_player_form', $new_player);
     }
-    else if ($count == 1) {
-      // Exact match, goto the existing player page
-      $player = db_fetch_array($res);
-      drupal_set_message("Single Player Found to match your search: \"$search_term\". Edit player information below:");
-      drupal_goto('summergame/player/edit/' . $player['pid']);
-    }
     else if ($count > 100) {
       $content .= "<h2>Your search returned more than 100 matches: ($count)<h2>";
       $content .= "<h3>Please search again</h3>";
@@ -519,10 +513,11 @@ function summergame_admin_players($search_term = '') {
     }
     else {
       // Found 2-100 matches, display them in a table
-      $content .= "<h2>Your search returned $count matches</h2>";
+      $content .= "<h2>Your search returned $count match" . ($count == 1 ? '' : 'es') . "</h2>";
       while ($player = db_fetch_array($res)) {
         // Prep for display
         $account = $player['uid'] ? user_load($player['uid']) : NULL;
+        $player['points'] = summergame_get_player_points($player['pid']);
 
         $show = array();
         if ($player['leaderboard']) {
@@ -543,6 +538,7 @@ function summergame_admin_players($search_term = '') {
           'School' => $player['school'],
           'Grade' => $player['grade'],
           'Show On' => implode(', ', $show),
+          'Point Total' => $player['points']['total'],
           'Edit Player' => l('Edit', 'summergame/player/edit/' . $player['pid']),
           'Scorecard' => l('Scorecard', 'summergame/player/' . $player['pid']),
         );
