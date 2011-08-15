@@ -1516,7 +1516,7 @@ function summergame_leaderboard_page($range = 'alltime') {
   $content .= "<h1>Summer Game Leaderboard for $range_text</h1>";
 
   $content .= '<p><strong>Change timeframe:</strong> ';
-  $content .= ($range == 'today' ? 'Today' : l('Today', 'summergame/leaderboard/day'));
+  $content .= ($range == 'day' ? 'Today' : l('Today', 'summergame/leaderboard/day'));
   $content .= ' | ';
   $content .= ($range == 'week' ? 'This Week' : l('This Week', 'summergame/leaderboard/week'));
   $content .= ' | ';
