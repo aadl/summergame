@@ -1487,7 +1487,7 @@ function summergame_leaderboard_page($range = 'alltime') {
   $leader_query = 'SELECT *, SUM(points) AS ptotal ' .
                   'FROM sg_players, sg_ledger ' .
                   'WHERE sg_players.pid = sg_ledger.pid ' .
-                  'AND sg_ledger.points > 0 ' .
+                  "AND sg_ledger.code_text NOT LIKE 'Shop%' " .
                   $range_query .
                   'GROUP BY sg_players.pid ' .
                   'ORDER BY ptotal DESC ' .
