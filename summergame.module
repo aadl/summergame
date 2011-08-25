@@ -179,6 +179,12 @@ function summergame_menu() {
  * PAGE: Summer Game Site Settings
  */
 function summergame_settings() {
+  $form['summergame_points_enabled'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Summergame Points Enabled'),
+    '#default_value' => variable_get('summergame_points_enabled', 0),
+    '#description' => t('Allow players to earn points?'),
+  );
   $form['summergame_user_search_path'] = array(
     '#type' => 'textfield',
     '#title' => t("User Search Path"),
@@ -739,10 +745,13 @@ function summergame_player_form($form_state, $player = NULL) {
     $submit_text = 'Save Player Changes';
   }
   else {
-    $form['title'] = array(
-      '#value' => '<h1>Summer Game Player Signup</h1>',
-    );
-    $submit_text = 'Sign Up!';
+    if (variable_get('summergame_points_enabled', 0)) {
+      $form['title'] = array(
+        '#value' => '<h1>Summer Game Player Signup</h1>',
+      );
+      $submit_text = 'Sign Up!';
+    }
+    return (array('message' => array('#value' => '<h1>Signup Disabled</h1><p>The Summer Game is currently closed to new players</p>')));
   }
 
   $form['name'] = array(
@@ -1008,17 +1017,19 @@ function summergame_player_form_submit($form, &$form_state) {
 
   $player = summergame_player_save($player_info);
 
-  if ($new_player) {
-    $points = summergame_player_points($player['pid'], 100, 'Signup',
-                                       'Signed Up for the Summer Game');
-    drupal_set_message("Earned $points Summer Game points for signing up!");
-  }
+  if (variable_get('summergame_points_enabled', 0)) {
+    if ($new_player) {
+      $points = summergame_player_points($player['pid'], 100, 'Signup',
+                                         'Signed Up for the Summer Game');
+      drupal_set_message("Earned $points Summer Game points for signing up!");
+    }
 
-  // Game Completion Bonus
-  if ($completed && !($form_state['values']['completed'])) {
-    $points = summergame_player_points($player['pid'], 1000, 'Completed',
-                                       'Completed the Classic Summer Game');
-    drupal_set_message("Earned $points Summer Game points for completing the Classic Summer Game");
+    // Game Completion Bonus
+    if ($completed && !($form_state['values']['completed'])) {
+      $points = summergame_player_points($player['pid'], 1000, 'Completed',
+                                         'Completed the Classic Summer Game');
+      drupal_set_message("Earned $points Summer Game points for completing the Classic Summer Game");
+    }
   }
 
   drupal_goto('summergame/player/' . $player['pid']);
@@ -1311,13 +1322,15 @@ function summergame_player_page($pid = 0) {
  */
 function theme_summergame_player_info($player) {
   // Link to Points Forms
-  $content .= '<div id="player-earn-links">';
-  $content .= '<h2>Earn Game Points:</h2>';
-  $content .= '<ul>';
-  $content .= '<li class="button">' . l('I have a Game Code!', 'summergame/player/gamecode/' . $player['pid']) . '</li>';
-  $content .= '<li class="button">' . l('I Read, Listened to, or Watched something!', 'summergame/player/consume/' . $player['pid']) . '</li>';
-  $content .= '</ul>';
-  $content .= '</div>';
+  if (variable_get('summergame_points_enabled', 0)) {
+    $content .= '<div id="player-earn-links">';
+    $content .= '<h2>Earn Game Points:</h2>';
+    $content .= '<ul>';
+    $content .= '<li class="button">' . l('I have a Game Code!', 'summergame/player/gamecode/' . $player['pid']) . '</li>';
+    $content .= '<li class="button">' . l('I Read, Listened to, or Watched something!', 'summergame/player/consume/' . $player['pid']) . '</li>';
+    $content .= '</ul>';
+    $content .= '</div>';
+  }
 
   // Translate privacy details
   $privacy_details .= '<ul>';
@@ -1409,29 +1422,34 @@ function summergame_player_edit_page($pid = 0) {
  * PAGE: Game Code Redeem Page
  */
 function summergame_player_redeem_page($pid = 0) {
-  if ($pid) {
-    if (summergame_player_access($pid)) {
-      $player = summergame_player_load(array('pid' => $pid));
+  if (variable_get('summergame_points_enabled', 0)) {
+    if ($pid) {
+      if (summergame_player_access($pid)) {
+        $player = summergame_player_load(array('pid' => $pid));
+      }
+      else {
+        drupal_set_message("Invalid ID or no access for player #$pid", 'error');
+        drupal_goto('summergame/player');
+      }
     }
     else {
-      drupal_set_message("Invalid ID or no access for player #$pid", 'error');
-      drupal_goto('summergame/player');
+      // try to default to the logged in player
+      global $user;
+      $player = summergame_player_load(array('uid' => $user->uid));
+      if (empty($player)) {
+        drupal_set_message("No player found for your logged in account", 'error');
+        drupal_goto('summergame/player');
+      }
     }
+
+    $content .= '<h1>Redeem a Game Code for ' . ($player['nickname'] ? $player['nickname'] : $player['name']) . '</h1>';
+    $content .= '<p>You can find game codes for attending events, or by finding them around the library.</p>';
+    $content .= drupal_get_form('summergame_redeem_form', $player['pid']);
   }
   else {
-    // try to default to the logged in player
-    global $user;
-    $player = summergame_player_load(array('uid' => $user->uid));
-    if (empty($player)) {
-      drupal_set_message("No player found for your logged in account", 'error');
-      drupal_goto('summergame/player');
-    }
+    drupal_set_message("Sorry, earning Summer Game points for game codes isn't active at this time.");
+    drupal_goto('summergame/player');
   }
-
-  $content .= '<h1>Redeem a Game Code for ' . ($player['nickname'] ? $player['nickname'] : $player['name']) . '</h1>';
-  $content .= '<p>You can find game codes for attending events, or by finding them around the library.</p>';
-  $content .= drupal_get_form('summergame_redeem_form', $player['pid']);
-
   return $content;
 }
 
@@ -1439,29 +1457,35 @@ function summergame_player_redeem_page($pid = 0) {
  * PAGE: Game Code Redeem Page
  */
 function summergame_player_consume_page($pid = 0, $bnum = 0) {
-  if ($pid) {
-    if (summergame_player_access($pid)) {
-      $player = summergame_player_load(array('pid' => $pid));
+  if (variable_get('summergame_points_enabled', 0)) {
+    if ($pid) {
+      if (summergame_player_access($pid)) {
+        $player = summergame_player_load(array('pid' => $pid));
+      }
+      else {
+        drupal_set_message("Invalid ID or no access for player #$pid", 'error');
+        drupal_goto('summergame/player');
+      }
     }
     else {
-      drupal_set_message("Invalid ID or no access for player #$pid", 'error');
-      drupal_goto('summergame/player');
+      // try to default to the logged in player
+      global $user;
+      $player = summergame_player_load(array('uid' => $user->uid));
+      if (empty($player)) {
+        drupal_set_message("No player found for your logged in account", 'error');
+        drupal_goto('summergame/player');
+      }
     }
+
+    $content .= '<h1>Score Points for ' . ($player['nickname'] ? $player['nickname'] : $player['name']) . ':</h1>';
+    $content .= '<p>Did you read a book, listen to a CD, or watch a DVD? Enjoyed another item? Report it here to earn points:</p>';
+    $content .= '<p><em>HINT: If you are reporting an item from our catalog, click the "I FINISHED THIS" button on the full catalog page to automatically fill this form.</em></p>';
+    $content .= drupal_get_form('summergame_consume_form', $player['pid'], $bnum);
   }
   else {
-    // try to default to the logged in player
-    global $user;
-    $player = summergame_player_load(array('uid' => $user->uid));
-    if (empty($player)) {
-      drupal_set_message("No player found for your logged in account", 'error');
-      drupal_goto('summergame/player');
-    }
+    drupal_set_message("Sorry, earning Summer Game points for finishing items isn't active at this time.");
+    drupal_goto('summergame/player');
   }
-
-  $content .= '<h1>Score Points for ' . ($player['nickname'] ? $player['nickname'] : $player['name']) . ':</h1>';
-  $content .= '<p>Did you read a book, listen to a CD, or watch a DVD? Enjoyed another item? Report it here to earn points:</p>';
-  $content .= '<p><em>HINT: If you are reporting an item from our catalog, click the "I FINISHED THIS" button on the full catalog page to automatically fill this form.</em></p>';
-  $content .= drupal_get_form('summergame_consume_form', $player['pid'], $bnum);
 
   return $content;
 }
@@ -1662,11 +1686,13 @@ function summergame_twilio_respond($incoming) {
  * HOOK: Add points when someone comments
  */
 function summergame_comment($action, $op) {
-  if ($op == 'publish') {
-    if ($player = summergame_player_load(array('uid' => $action['uid']))) {
-      $points = summergame_player_points($player['pid'], 50, 'Added Comment',
-                                         'Commented on a website post nid:' . $action['nid']);
-      drupal_set_message("Earned $points Summer Game points for commenting on a website post");
+  if (variable_get('summergame_points_enabled', 0)) {
+    if ($op == 'publish') {
+      if ($player = summergame_player_load(array('uid' => $action['uid']))) {
+        $points = summergame_player_points($player['pid'], 50, 'Added Comment',
+                                           'Commented on a website post nid:' . $action['nid']);
+        drupal_set_message("Earned $points Summer Game points for commenting on a website post");
+      }
     }
   }
 }
@@ -1675,20 +1701,22 @@ function summergame_comment($action, $op) {
  * HOOK: Add points when someone views a node
  */
 function summergame_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
-  global $user;
-  if ($user->uid && $op == 'view' && $page) {
-    // check if user has already received points for viewing this node
-    if ($player = summergame_player_load(array('uid' => $user->uid))) {
-      $res = db_query("SELECT lid FROM sg_ledger WHERE pid = %d AND code_text = 'Read a Post' " .
-                      "AND description LIKE '%%nid:%d' LIMIT 1",
-                      $player['pid'], $node->nid);
-      $rate_count = db_fetch_object($res);
-      if (!$rate_count->lid) {
-        $node_link = l($node->title, 'node/' . $node->nid);
-        $points = summergame_player_points($player['pid'], 10, 'Read a Post',
-                                           'Read a website post: ' . $node_link . ' nid:' . $node->nid);
-        $points_link = l($points . ' Summer Game points', 'summergame/player');
-        drupal_set_message("Earned $points_link for reading a website post");
+  if (variable_get('summergame_points_enabled', 0)) {
+    global $user;
+    if ($user->uid && $op == 'view' && $page) {
+      // check if user has already received points for viewing this node
+      if ($player = summergame_player_load(array('uid' => $user->uid))) {
+        $res = db_query("SELECT lid FROM sg_ledger WHERE pid = %d AND code_text = 'Read a Post' " .
+                        "AND description LIKE '%%nid:%d' LIMIT 1",
+                        $player['pid'], $node->nid);
+        $rate_count = db_fetch_object($res);
+        if (!$rate_count->lid) {
+          $node_link = l($node->title, 'node/' . $node->nid);
+          $points = summergame_player_points($player['pid'], 10, 'Read a Post',
+                                             'Read a website post: ' . $node_link . ' nid:' . $node->nid);
+          $points_link = l($points . ' Summer Game points', 'summergame/player');
+          drupal_set_message("Earned $points_link for reading a website post");
+        }
       }
     }
   }
