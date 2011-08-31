@@ -191,7 +191,7 @@ function summergame_settings() {
     '#default_value' => variable_get('summergame_current_game_term', ''),
     '#size' => 32,
     '#maxlength' => 32,
-    '#description' => t("Default Game Term to apply to earned points (e.g. sg2011)"),
+    '#description' => t("Default Game Term to apply to earned points (e.g. SummerGame2011)"),
   );
   $form['summergame_user_search_path'] = array(
     '#type' => 'textfield',
