@@ -1173,7 +1173,7 @@ function summergame_player_page($pid = 0) {
       drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
       $playername = $player['pid'] . ': ' . ($player['nickname'] ? $player['nickname'] : $player['name']);
       $content .= '<div id="summergame-player-page">';
-      $content .= "<h1>Summer Game Player #$playername (" . $player_points['total'] . " points)</h1>";
+      $content .= "<h1>Summer Game Player #$playername (" . $player_points['career'] . " career points)</h1>";
       if ($player['uid'] == $user->uid) {
         $content .= "<p><em>that's you!</em> ";
         $extra_link = l('Sign up an extra player', 'summergame/player/extra');
@@ -1199,7 +1199,7 @@ function summergame_player_page($pid = 0) {
                   $extra_playername = $extra_player['nickname'] ? $extra_player['nickname'] : $extra_player['name'];
                   $extra_playername = l($extra_playername, 'summergame/player/' . $extra_player['pid']);
                   $content .= '<div id="summergame-extra-player">';
-                  $content .= "<h1>Extra Player: $extra_playername (" . $extra_player_points['total'] . " points)</h1>";
+                  $content .= "<h1>Extra Player: $extra_playername (" . $extra_player_points['career'] . " career points)</h1>";
                   $content .= theme_summergame_player_info($extra_player);
                   $content .= '</div>';
                 }
@@ -1228,79 +1228,83 @@ function summergame_player_page($pid = 0) {
       $content .= '<p>[ ' . l('See All Available Badges', 'summergame/badges') . ' ]</p>';
       $content .= '</div>';
 
-      // Player Score
-      $content .= '<h1>Score Card</h1>';
+      // Player Score //////////////////////////////////////////////////////////
 
       $locum = sopac_get_locum();
       if ($catalog_domain = variable_get('summergame_catalog_domain', '')) {
         $catalog_domain = 'http://' . $catalog_domain . '/';
       }
-      $i = 0;
-      $score_table = array();
-      $ledger_count = count($player_points['ledger']);
-      if ($ledger_count > 5000) {
-        // Only show last 5000 rows in the table
-        $content .= "<p><em>Latest 5000 scores out of $ledger_count shown</em></p>";
-        $i = $ledger_count - 5000;
-      }
-      while ($i < $ledger_count) {
-        // Translate material code to catalog material type
-        if (preg_match('/mat_code:([a-z])/', $player_points['ledger'][$i]['code_text'], $matches)) {
-          $player_points['ledger'][$i]['code_text'] = 'Points for ' .
-                              $locum->locum_config['formats'][$matches[1]];
-        }
-        // Change bnum: code to a link to the bib record
-        if (preg_match('/bnum:([\d]{7})/', $player_points['ledger'][$i]['description'], $matches)) {
-          $player_points['ledger'][$i]['description'] = trim(str_replace($matches[0], '', $player_points['ledger'][$i]['description']));
-          $player_points['ledger'][$i]['description'] = l($player_points['ledger'][$i]['description'], $catalog_domain . 'catalog/record/' . $matches[1]);
-        }
-        // Strip the nid: and id: code from the description field
-        $description = preg_replace('/n?id:[^\s]+/', '', $player_points['ledger'][$i]['description']);
-        // Obscure game codes
-        if (!$player_access) {
-          $code_check = db_fetch_object(db_query("SELECT code_id FROM sg_game_codes WHERE text = '%s'", $player_points['ledger'][$i]['code_text']));
-          if ($code_check->code_id) {
-            $player_points['ledger'][$i]['code_text'] = '[GAME CODE]';
-          }
-        }
-        $table_row = array(
-          'Date' => date('F j, Y, g:i a', $player_points['ledger'][$i]['timestamp']),
-          'Code' => $player_points['ledger'][$i]['code_text'],
-          'Description' => ($player['show_titles'] || $player_access ? $description : ''),
-          'Points' => $player_points['ledger'][$i]['points'],
-        );
-        if ($player_access) {
-          if (strpos($player_points['ledger'][$i]['code_text'], 'Shop') === 0) {
-            // No delete link for shop points
-            $table_row['Remove?'] = '';
-          }
-          else {
-            $table_row['Remove?'] = l('DELETE', 'summergame/player/deletescore/' . $player['pid'] . '/' . $player_points['ledger'][$i]['lid']);
-          }
-        }
-        $score_table[] = $table_row;
-        $i++;
-      }
-      if (count($score_table)) {
-        $total_row = array(
-          array(
-            'data' => '<strong>Current Balance:</strong>',
-            'colspan' => 3,
-            'style' => 'text-align: right',
-          ),
-          '<strong>' . $player_points['balance'] . '</strong>',
-        );
-        if ($player_access) {
-          // Add an extra cell in the total row to line up with the Delete column
-          $total_row[] = '';
-        }
-        $score_table[] = $total_row;
-        $content .= theme('table', array_keys($score_table[0]), $score_table);
-      }
-      $content .= '<div id="scorecard-total">';
-      $content .= "<h1>Total Points Earned: " . $player_points['total'] . "</h1>";
-      $content .= '</div>'; // #scorecard-total
 
+      foreach ($player_points as $game_term => $player_game_points) {
+        $i = 0;
+        if (is_array($player_game_points)) {
+          $content .= '<h2 class="title">' . $game_term . ' Score Card:</h2>';
+          $score_table = array();
+          $ledger_count = count($player_game_points['ledger']);
+          if ($ledger_count > 5000) {
+            // Only show last 5000 rows in the table
+            $content .= "<p><em>Latest 5000 scores out of $ledger_count shown</em></p>";
+            $i = $ledger_count - 5000;
+          }
+          while ($i < $ledger_count) {
+            // Translate material code to catalog material type
+            if (preg_match('/mat_code:([a-z])/', $player_game_points['ledger'][$i]['code_text'], $matches)) {
+              $player_game_points['ledger'][$i]['code_text'] = 'Points for ' .
+                                                               $locum->locum_config['formats'][$matches[1]];
+            }
+            // Change bnum: code to a link to the bib record
+            if (preg_match('/bnum:([\d]{7})/', $player_game_points['ledger'][$i]['description'], $matches)) {
+              $player_game_points['ledger'][$i]['description'] = trim(str_replace($matches[0], '', $player_game_points['ledger'][$i]['description']));
+              $player_game_points['ledger'][$i]['description'] = l($player_game_points['ledger'][$i]['description'], $catalog_domain . 'catalog/record/' . $matches[1]);
+            }
+            // Strip the nid: and id: code from the description field
+            $description = preg_replace('/n?id:[^\s]+/', '', $player_game_points['ledger'][$i]['description']);
+            // Obscure game codes
+            if (!$player_access) {
+              $code_check = db_fetch_object(db_query("SELECT code_id FROM sg_game_codes WHERE text = '%s'", $player_game_points['ledger'][$i]['code_text']));
+              if ($code_check->code_id) {
+                $player_game_points['ledger'][$i]['code_text'] = '[GAME CODE]';
+              }
+            }
+            $table_row = array(
+              'Date' => date('F j, Y, g:i a', $player_game_points['ledger'][$i]['timestamp']),
+              'Code' => $player_game_points['ledger'][$i]['code_text'],
+              'Description' => ($player['show_titles'] || $player_access ? $description : ''),
+              'Points' => $player_game_points['ledger'][$i]['points'],
+            );
+            if ($player_access) {
+              if (strpos($player_game_points['ledger'][$i]['code_text'], 'Shop') === 0) {
+                // No delete link for shop points
+                $table_row['Remove?'] = '';
+              }
+              else {
+                $table_row['Remove?'] = l('DELETE', 'summergame/player/deletescore/' . $player['pid'] . '/' . $player_game_points['ledger'][$i]['lid']);
+              }
+            }
+            $score_table[] = $table_row;
+            $i++;
+          }
+          if (count($score_table)) {
+            $total_row = array(
+              array(
+                'data' => "<strong>Current $game_term Points Balance:</strong>",
+                'colspan' => 3,
+                'style' => 'text-align: right',
+              ),
+              '<strong>' . $player_game_points['balance'] . '</strong>',
+            );
+            if ($player_access) {
+              // Add an extra cell in the total row to line up with the Delete column
+              $total_row[] = '';
+            }
+            $score_table[] = $total_row;
+            $content .= theme('table', array_keys($score_table[0]), $score_table);
+          }
+          $content .= '<div id="scorecard-total">';
+          $content .= "<h3>Total $game_term Points Earned: " . $player_game_points['total'] . "</h3>";
+          $content .= '</div>'; // #scorecard-total
+        }
+      }
       $content .= '</div>'; // #summergame-player-page
     }
     else {
@@ -1813,17 +1817,19 @@ function summergame_player_load_all($uid) {
  */
 function summergame_get_player_points($pid) {
   $player_points = array(
-    'ledger' => array(),
-    'balance' => 0,
-    'total' => 0,
+    'career' => 0,
   );
+
   $res = db_query('SELECT * FROM sg_ledger WHERE pid = %d ORDER BY timestamp ASC', $pid);
+
   while ($row = db_fetch_array($res)) {
-    $player_points['ledger'][] = $row;
-    $player_points['balance'] += $row['points'];
+    $game_term = $row['game_term'];
+    $player_points[$game_term]['ledger'][] = $row;
+    $player_points[$game_term]['balance'] += $row['points'];
     if ($row['points'] > 0 && strpos($row['code_text'], 'Shop') !== 0) {
       // Don't count shop refunds in the total
-      $player_points['total'] += $row['points'];
+      $player_points[$game_term]['total'] += $row['points'];
+      $player_points['career'] += $row['points'];
     }
   }
 
@@ -2005,9 +2011,10 @@ function summergame_player_check_badges($pid) {
         $messages[] = "Earned the $badge->title Badge!";
         // check if a bonus should be applied
         if ($badge->points) {
-          db_query("INSERT INTO sg_ledger (pid, points, code_text, description, timestamp) " .
-                   "VALUES (%d, %d, '%s', '%s', %d)",
-                   $pid, $badge->points, 'Badge Bonus', "Earned the $badge->title Badge", time());
+          db_query("INSERT INTO sg_ledger (pid, points, code_text, description, game_term, timestamp) " .
+                   "VALUES (%d, %d, '%s', '%s', '%s', %d)",
+                   $pid, $badge->points, 'Badge Bonus', "Earned the $badge->title Badge",
+                   variable_get('summergame_current_game_term', ''), time());
           $messages[] = "Received $badge->points bonus points for earning the $badge->title Badge";
         }
       }
