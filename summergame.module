@@ -1526,9 +1526,15 @@ function summergame_leaderboard_page($range = 'alltime') {
     $range_query = 'AND sg_ledger.timestamp > ' . (time() - (60 * 60 * 24 * 7)) . ' ';
     $range_text = 'This Week (Last 7 Days)';
   }
-  else {
+  else if ($range == 'alltime') {
     $range_query = '';
     $range_text = 'All Time';
+  }
+  else if ($range) {
+    // Limit to a game term
+    $range_query = 'AND sg_ledger.game_term LIKE "%s" ';
+    $arg = $range;
+    $range_text = $range;
   }
 
   $leader_query = 'SELECT *, SUM(points) AS ptotal ' .
@@ -1539,7 +1545,13 @@ function summergame_leaderboard_page($range = 'alltime') {
                   'GROUP BY sg_players.pid ' .
                   'ORDER BY ptotal DESC ' .
                   'LIMIT 100';
-  $res = db_query($leader_query);
+
+  if ($arg) {
+    $res = db_query($leader_query, $arg);
+  }
+  else {
+    $res = db_query($leader_query);
+  }
 
   $leaderboard = array();
   $place = 0;
@@ -1562,13 +1574,15 @@ function summergame_leaderboard_page($range = 'alltime') {
 
   $content .= "<h1>Summer Game Leaderboard for $range_text</h1>";
 
-  $content .= '<p><strong>Change timeframe:</strong> ';
-  $content .= ($range == 'day' ? 'Today' : l('Today', 'summergame/leaderboard/day'));
-  $content .= ' | ';
-  $content .= ($range == 'week' ? 'This Week' : l('This Week', 'summergame/leaderboard/week'));
-  $content .= ' | ';
-  $content .= ($range == 'alltime' ? 'All Time' : l('All Time', 'summergame/leaderboard/alltime'));
-  $content .= '</p>';
+  if ($range == 'day' || $range == 'week' || $range == 'alltime') {
+    $content .= '<p><strong>Change timeframe:</strong> ';
+    $content .= ($range == 'day' ? 'Today' : l('Today', 'summergame/leaderboard/day'));
+    $content .= ' | ';
+    $content .= ($range == 'week' ? 'This Week' : l('This Week', 'summergame/leaderboard/week'));
+    $content .= ' | ';
+    $content .= ($range == 'alltime' ? 'All Time' : l('All Time', 'summergame/leaderboard/alltime'));
+    $content .= '</p>';
+  }
 
   if (count($leaderboard)) {
     $content .= theme('table', array_keys($leaderboard[0]), $leaderboard);
