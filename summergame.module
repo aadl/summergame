@@ -260,10 +260,11 @@ function summergame_admin() {
     $rows[] = array(
       'Text' => $game_code['text'],
       'Description' => $game_code['description'],
-      'Points' => $game_code['points'],
+      'Points' => $game_code['points'] . ($game_code['diminishing'] ? ' (diminishing)' : ''),
       'Created' => date('n/d/Y', $game_code['created']),
       'Created By' => $creator->name,
       'Valid Dates' => $valid_start . '-<br />' . $valid_end,
+      'Game Term' => $game_code['game_term'],
       'Redemptions' => $game_code['num_redemptions'] . ' of ' . $game_code['max_redemptions'],
       'Print Sign' => l('print', 'summergame/pdf/gamecode/' . $game_code['code_id']),
       'Edit' => l('edit', 'summergame/admin/edit/' . $game_code['code_id']),
@@ -320,10 +321,11 @@ function summergame_admin_gamecodes() {
     $rows[] = array(
       'Text' => $game_code['text'],
       'Description' => $game_code['description'],
-      'Points' => $game_code['points'],
+      'Points' => $game_code['points'] . ($game_code['diminishing'] ? ' (diminishing)' : ''),
       'Created' => date('n/d/Y', $game_code['created']),
       'Created By' => $creator->name,
       'Valid Dates' => $valid_start . '-<br />' . $valid_end,
+      'Game Term' => $game_code['game_term'],
       'Redemptions' => $game_code['num_redemptions'] . ' of ' . $game_code['max_redemptions'],
       'Print Sign' => l('print', 'summergame/pdf/gamecode/' . $game_code['code_id']),
       'Edit' => l('edit', 'summergame/admin/edit/' . $game_code['code_id']),
@@ -367,11 +369,9 @@ function summergame_code_edit_form($form_state, $game_code) {
     '#description' => t('Keyword text for this game code (e.g. APPLESAUCE)'),
   );
   $form['description'] = array(
-    '#type' => 'textfield',
+    '#type' => 'textarea',
     '#title' => t('Description'),
     '#default_value' => $game_code['description'],
-    '#size' => 64,
-    '#maxlength' => 128,
     '#description' => t('Description of the game code award (e.g. Attended Apple Peeling Event)'),
   );
   $form['points'] = array(
@@ -381,6 +381,12 @@ function summergame_code_edit_form($form_state, $game_code) {
     '#size' => 16,
     '#maxlength' => 8,
     '#description' => t('Points to be awarded for the game code (e.g. 100)'),
+  );
+  $form['diminishing'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Diminishing?'),
+    '#default_value' => $game_code['diminishing'],
+    '#description' => 'Each successive redemption of the game code will be worth 1 less than the previous redemption',
   );
   $form['max_redemptions'] = array(
     '#type' => 'select',
@@ -416,6 +422,14 @@ function summergame_code_edit_form($form_state, $game_code) {
     '#maxlength' => 32,
     '#description' => t('Date/Time for when the code stops being active (e.g. "2011-09-01 9:00 PM")'),
   );
+  $form['game_term'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Game Term'),
+    '#default_value' => $game_code['game_term'] ? $game_code['game_term'] : variable_get('summergame_current_game_term', ''),
+    '#size' => 32,
+    '#maxlength' => 32,
+    '#description' => t('Points will be awarded under this Game Term'),
+  );
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save'),
@@ -446,20 +460,20 @@ function summergame_code_edit_form_submit($form, &$form_state) {
   }
   if ($form_state['values']['code_id']) {
     // Update existing code
-    db_query("UPDATE sg_game_codes SET text = '%s', description = '%s', points = %d, max_redemptions = %d, " .
-             "valid_start = %d, valid_end = %d WHERE code_id = %d",
+    db_query("UPDATE sg_game_codes SET text = '%s', description = '%s', points = %d, diminishing = %d, max_redemptions = %d, " .
+             "valid_start = %d, valid_end = %d, game_term = '%s' WHERE code_id = %d",
              strtoupper($form_state['values']['text']), $form_state['values']['description'], $form_state['values']['points'],
-             $form_state['values']['max_redemptions'], strtotime($form_state['values']['valid_start']),
-             strtotime($form_state['values']['valid_end']), $form_state['values']['code_id']);
+             $form_state['values']['diminishing'], $form_state['values']['max_redemptions'], strtotime($form_state['values']['valid_start']),
+             strtotime($form_state['values']['valid_end']), $form_state['values']['game_term'], $form_state['values']['code_id']);
     drupal_set_message('Game Code ' . $form_state['values']['text'] . ' Updated');
   }
   else {
     db_query("INSERT INTO sg_game_codes " .
-             "(creator_uid, created, text, description, points, max_redemptions, valid_start, valid_end) " .
-             "VALUES (%d, %d, '%s', '%s', %d, %d, %d, %d)",
+             "(creator_uid, created, text, description, points, diminishing, max_redemptions, valid_start, valid_end, game_term) " .
+             "VALUES (%d, %d, '%s', '%s', %d, %d, %d, %d, %d, '%s')",
              $user->uid, time(), strtoupper($form_state['values']['text']), $form_state['values']['description'],
-             $form_state['values']['points'], $form_state['values']['max_redemptions'],
-             strtotime($form_state['values']['valid_start']), strtotime($form_state['values']['valid_end']));
+             $form_state['values']['points'], $form_state['values']['diminishing'], $form_state['values']['max_redemptions'],
+             strtotime($form_state['values']['valid_start']), strtotime($form_state['values']['valid_end']),  $form_state['values']['game_term']);
     drupal_set_message('Game Code ' . $form_state['values']['text'] . ' Created');
   }
 
@@ -1917,8 +1931,12 @@ function summergame_redeem_code($pid, $code_text) {
     }
     // Go ahead and redeem
     db_query("UPDATE sg_game_codes SET num_redemptions = num_redemptions + 1 WHERE code_id = %d", $code->code_id);
-    $points = summergame_player_points($pid, $code->points, $code->text, $code->description);
-    return array('success' => "Redeemed code \"$code->text\" for $points points");
+    // Adjust points if diminishing
+    if ($code->diminishing) {
+      $code->points -= $code->num_redemptions;
+    }
+    $points = summergame_player_points($pid, $code->points, $code->text, $code->description, $code->game_term);
+    return array('success' => "Redeemed code \"$code->text\" for $points $code->game_term points");
   }
   else {
     return array('warning' => "Code is not recognized");
@@ -2011,11 +2029,12 @@ function summergame_player_check_badges($pid) {
         $messages[] = "Earned the $badge->title Badge!";
         // check if a bonus should be applied
         if ($badge->points) {
+          $game_term = ($badge->game_term ? $badge->game_term : variable_get('summergame_current_game_term', ''));
           db_query("INSERT INTO sg_ledger (pid, points, code_text, description, game_term, timestamp) " .
                    "VALUES (%d, %d, '%s', '%s', '%s', %d)",
                    $pid, $badge->points, 'Badge Bonus', "Earned the $badge->title Badge",
-                   variable_get('summergame_current_game_term', ''), time());
-          $messages[] = "Received $badge->points bonus points for earning the $badge->title Badge";
+                   $game_term, time());
+          $messages[] = "Received $badge->points bonus $game_term points for earning the $badge->title Badge";
         }
       }
     }
