@@ -441,7 +441,7 @@ function summergame_code_edit_form($form_state, $game_code) {
 function summergame_code_edit_form_validate($form, &$form_state) {
   // Remove non-alphanumerics from Game Code text
   $form_state['values']['text'] = preg_replace('/[^A-Za-z0-9]/', '', $form_state['values']['text']);
-  
+
   // Check whether game code is unique
   if (!$form_state['values']['code_id']) {
     $res = db_query("SELECT code_id FROM sg_game_codes WHERE text LIKE '%s'", $form_state['values']['text']);
@@ -1575,7 +1575,7 @@ function summergame_leaderboard_page($range = 'alltime') {
     );
   }
 
-  $content .= "<h1>Summer Game Leaderboard for $range_text</h1>";
+  $content .= "<h1>$range_text Summer Game Leaderboard</h1>";
 
   if ($range == 'day' || $range == 'week' || $range == 'alltime') {
     $content .= '<p><strong>Change timeframe:</strong> ';
@@ -1924,7 +1924,7 @@ function summergame_player_delete($player_info) {
 function summergame_redeem_code($pid, $code_text) {
   // Remove non-alphanumerics from Game Code text
   $code_text = preg_replace('/[^A-Za-z0-9]/', '', $code_text);
-  
+
   $code = db_fetch_object(db_query("SELECT * FROM sg_game_codes WHERE text = '%s'", strtoupper($code_text)));
 
   if ($code->code_id) {
