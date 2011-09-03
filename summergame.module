@@ -1523,21 +1523,21 @@ function summergame_leaderboard_page($range = 'alltime') {
   // Determine range
   if ($range == 'day') {
     $range_query = 'AND sg_ledger.timestamp > ' . (time() - (60 * 60 * 24)) . ' ';
-    $range_text = 'Today (Last 24 hours)';
+    $lb_title = 'Summer Game Leaderboard for Today (Last 24 hours)';
   }
   else if ($range == 'week') {
     $range_query = 'AND sg_ledger.timestamp > ' . (time() - (60 * 60 * 24 * 7)) . ' ';
-    $range_text = 'This Week (Last 7 Days)';
+    $lb_title = 'Summer Game Leaderboard for This Week (Last 7 Days)';
   }
   else if ($range == 'alltime') {
     $range_query = '';
-    $range_text = 'All Time';
+    $lb_title = 'Summer Game Leaderboard for All Time';
   }
   else if ($range) {
     // Limit to a game term
     $range_query = 'AND sg_ledger.game_term LIKE "%s" ';
     $arg = $range;
-    $range_text = $range;
+    $lb_title = $range . ' Leaderboard';
   }
 
   $leader_query = 'SELECT *, SUM(points) AS ptotal ' .
@@ -1575,7 +1575,7 @@ function summergame_leaderboard_page($range = 'alltime') {
     );
   }
 
-  $content .= "<h1>$range_text Summer Game Leaderboard</h1>";
+  $content .= "<h1>$lb_title</h1>";
 
   if ($range == 'day' || $range == 'week' || $range == 'alltime') {
     $content .= '<p><strong>Change timeframe:</strong> ';
