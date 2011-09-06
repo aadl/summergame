@@ -54,10 +54,14 @@
   text-align: right;
 }
 
+div#block-summergame-0 div.content {
+  background-color: #FFF3A5;
+  padding-bottom: 1em;
+}
+
 div#block-summergame-0 div.content h3 {
-  background-color: #736F49;
-  border-bottom: 1px solid #8C8863;
-  color: #FFFFFF;
+  background-color: #2DA0A3;
+  color: #000;
   padding-left: 10px;
   font-size: 1em;
   font-weight: normal;
