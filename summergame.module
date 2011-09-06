@@ -133,7 +133,7 @@ function summergame_menu() {
     'type' => MENU_CALLBACK,
   );
   $items['summergame/leaderboard'] = array(
-    'title' => 'Summer Game Leaderboard',
+    'title' => 'Game Leaderboard',
     'page callback' => 'summergame_leaderboard_page',
     'access arguments' => array('access summergame'),
     'type' => MENU_CALLBACK,
@@ -173,6 +173,54 @@ function summergame_menu() {
     'file' => 'summergame.trivia.inc',
   );
   return $items;
+}
+
+function summergame_block($op = 'list', $delta = 0, $edit = array()) {
+  if ($op == 'list') {
+    $blocks[0] = array(
+      'info' => t('Leaderboard Filter Block'),
+      'visibility' => 1,
+      'pages' => "summergame/leaderboard\nsummergame/leaderboard/*",
+    );
+    return $blocks;
+  }
+  else if ($op == 'view') {
+    if ($delta == 0) {
+      $block = array(
+        'subject' => t('Filter Leaderboard'),
+        'content' => summergame_leaderboard_filter_block_content(),
+      );
+    }
+    return $block;
+  }
+}
+
+function summergame_leaderboard_filter_block_content() {
+  $path_components = explode('/', $_GET['q']);
+  $term = $path_components[2];
+  $range = $path_components[3];
+
+  $content .= '<h3>Scores by Game</h3><ul>';
+  $content .= '<li>' . ($term == '' ? 'All Games' : l('All Games', "summergame/leaderboard//$range")) . '</li>';
+  $res = db_query('SELECT DISTINCT game_term FROM `sg_ledger` ORDER BY game_term ASC');
+  while ($row = db_fetch_object($res)) {
+    $content .= '<li>' .
+                       ($term == $row->game_term ? $term : l($row->game_term, "summergame/leaderboard/$row->game_term/$range")) .
+                       '</li>';
+  }
+  $content .= '</ul>';
+
+  $time_ranges = array('All Time' => '', 'This Week' => 'week', 'Today' => 'day');
+
+  $content .= '<h3>Scores by Time</h3><ul>';
+  foreach ($time_ranges as $text => $code) {
+    $content .= '<li>' .
+                   ($range == $code ? $text : l($text, "summergame/leaderboard/$term/$code")) .
+                   '</li>';
+  }
+  $content .= '</ul>';
+
+  return $content;
 }
 
 /**
@@ -1519,42 +1567,46 @@ function summergame_player_consume_page($pid = 0, $bnum = 0) {
 /**
  * PAGE: Leaderboard Page
  */
-function summergame_leaderboard_page($range = 'alltime') {
+function summergame_leaderboard_page($type = '', $range = '') {
+  drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
+  $args = array();
+
+  // Determine type
+  if ($type) {
+    $type_query = 'AND sg_ledger.game_term LIKE "%s" ';
+    $args[] = $type;
+    $lb_title = $type;
+  }
+  else {
+    $type_query = '';
+    $lb_title = 'Career';
+  }
+
+  $lb_title .= ' Leaderboard';
+
   // Determine range
   if ($range == 'day') {
     $range_query = 'AND sg_ledger.timestamp > ' . (time() - (60 * 60 * 24)) . ' ';
-    $lb_title = 'Summer Game Leaderboard for Today (Last 24 hours)';
+    $lb_title .= ' for Today (Last 24 hours)';
   }
   else if ($range == 'week') {
     $range_query = 'AND sg_ledger.timestamp > ' . (time() - (60 * 60 * 24 * 7)) . ' ';
-    $lb_title = 'Summer Game Leaderboard for This Week (Last 7 Days)';
+    $lb_title .= ' for This Week (Last 7 Days)';
   }
-  else if ($range == 'alltime') {
+  else {
     $range_query = '';
-    $lb_title = 'Summer Game Leaderboard for All Time';
-  }
-  else if ($range) {
-    // Limit to a game term
-    $range_query = 'AND sg_ledger.game_term LIKE "%s" ';
-    $arg = $range;
-    $lb_title = $range . ' Leaderboard';
+    $lb_title .= ' for All Time';
   }
 
-  $leader_query = 'SELECT *, SUM(points) AS ptotal ' .
+  $res = db_query('SELECT *, SUM(points) AS ptotal ' .
                   'FROM sg_players, sg_ledger ' .
                   'WHERE sg_players.pid = sg_ledger.pid ' .
                   "AND sg_ledger.code_text NOT LIKE 'Shop%' " .
+                  $type_query .
                   $range_query .
                   'GROUP BY sg_players.pid ' .
                   'ORDER BY ptotal DESC ' .
-                  'LIMIT 100';
-
-  if ($arg) {
-    $res = db_query($leader_query, $arg);
-  }
-  else {
-    $res = db_query($leader_query);
-  }
+                  'LIMIT 100', $args);
 
   $leaderboard = array();
   $place = 0;
@@ -1577,21 +1629,11 @@ function summergame_leaderboard_page($range = 'alltime') {
 
   $content .= "<h1>$lb_title</h1>";
 
-  if ($range == 'day' || $range == 'week' || $range == 'alltime') {
-    $content .= '<p><strong>Change timeframe:</strong> ';
-    $content .= ($range == 'day' ? 'Today' : l('Today', 'summergame/leaderboard/day'));
-    $content .= ' | ';
-    $content .= ($range == 'week' ? 'This Week' : l('This Week', 'summergame/leaderboard/week'));
-    $content .= ' | ';
-    $content .= ($range == 'alltime' ? 'All Time' : l('All Time', 'summergame/leaderboard/alltime'));
-    $content .= '</p>';
-  }
-
   if (count($leaderboard)) {
     $content .= theme('table', array_keys($leaderboard[0]), $leaderboard);
   }
   else {
-    $content .= "<p>No scores for $range_text</p>";
+    $content .= "<p>No scores found</p>";
   }
 
   return $content;

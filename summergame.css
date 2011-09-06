@@ -53,3 +53,19 @@
 #summergame-admin-page p.more {
   text-align: right;
 }
+
+div#block-summergame-0 div.content h3 {
+  background-color: #736F49;
+  border-bottom: 1px solid #8C8863;
+  color: #FFFFFF;
+  padding-left: 10px;
+  font-size: 1em;
+  font-weight: normal;
+  padding-top: .6em;
+  padding-bottom: .7em;
+}
+
+div#block-summergame-0 div.content ul {
+  list-style-type: none;
+  margin: 0 10px;
+}
