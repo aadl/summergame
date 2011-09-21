@@ -265,6 +265,15 @@ function summergame_settings() {
     '#maxlength' => 32,
     '#description' => t('Path to PHP libraries. Needs "contrib/fpdf", "contrib/fpdi", and "contrib/redisent" directories'),
   );
+  $user_roles = user_roles(TRUE);
+  $user_roles[0] = "NONE";
+  $form['summergame_staff_role_id'] = array(
+    '#type' => 'select',
+    '#title' => 'Staff Role',
+    '#options' => $user_roles,
+    '#default_value' => variable_get('summergame_staff_role_id', ''),
+    '#description' => t('Select the role that separates staff from regular players on the leaderboard'),
+  );
   return system_settings_form($form);
 }
 
@@ -1567,19 +1576,32 @@ function summergame_player_consume_page($pid = 0, $bnum = 0) {
 /**
  * PAGE: Leaderboard Page
  */
-function summergame_leaderboard_page($type = '', $range = '') {
+function summergame_leaderboard_page($type = '', $range = '', $staff = '') {
   drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
   $args = array();
+
+  // Switch for staff
+  $staff_rid = variable_get('summergame_staff_role_id', '');
+
+  if ($staff_rid) {
+    if ($staff) {
+      $lb_title .= 'Staff ';
+      $staff_query = " AND users_roles.rid = $staff_rid ";
+    }
+    else {
+      $staff_query = ' AND users_roles.rid IS NULL ';
+    }
+  }
 
   // Determine type
   if ($type) {
     $type_query = 'AND sg_ledger.game_term LIKE "%s" ';
     $args[] = $type;
-    $lb_title = $type;
+    $lb_title .= $type;
   }
   else {
     $type_query = '';
-    $lb_title = 'Career';
+    $lb_title .= 'Career';
   }
 
   $lb_title .= ' Leaderboard';
@@ -1598,12 +1620,16 @@ function summergame_leaderboard_page($type = '', $range = '') {
     $lb_title .= ' for All Time';
   }
 
+
+
   $res = db_query('SELECT *, SUM(points) AS ptotal ' .
-                  'FROM sg_players, sg_ledger ' .
+                  "FROM sg_ledger, sg_players " .
+                  "LEFT JOIN users_roles ON sg_players.uid = users_roles.uid AND users_roles.rid = $staff_rid " .
                   'WHERE sg_players.pid = sg_ledger.pid ' .
                   "AND sg_ledger.code_text NOT LIKE 'Shop%' " .
                   $type_query .
                   $range_query .
+                  $staff_query .
                   'GROUP BY sg_players.pid ' .
                   'ORDER BY ptotal DESC ' .
                   'LIMIT 100', $args);
