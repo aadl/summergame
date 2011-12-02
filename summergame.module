@@ -422,7 +422,7 @@ function summergame_code_edit_form($form_state, $game_code) {
     '#title' => t('Code Text'),
     '#default_value' => $game_code['text'],
     '#size' => 32,
-    '#maxlength' => 32,
+    '#maxlength' => 128,
     '#description' => t('Keyword text for this game code (e.g. APPLESAUCE)'),
   );
   $form['description'] = array(
@@ -682,7 +682,7 @@ function summergame_redeem_form($form_state, $pid) {
     '#type' => 'textfield',
     '#title' => t('Code Text'),
     '#size' => 32,
-    '#maxlength' => 32,
+    '#maxlength' => 128,
     '#default_value' => ($_GET['text'] ? $_GET['text'] : ''),
   );
   $form['submit'] = array(
