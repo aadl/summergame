@@ -1233,7 +1233,7 @@ function summergame_player_page($pid = 0) {
         drupal_set_message("Player #$pid's Score Card is private", 'error');
         drupal_goto('summergame');
       }
-
+/*
       // Update checkout history for logged in user
       if ($user->uid && $player['uid'] == $user->uid && $user->profile_cohist) {
         $ch_list = db_fetch_array(db_query("SELECT * FROM sopac_lists WHERE uid = %d AND title = 'Checkout History' LIMIT 1", $user->uid));
@@ -1241,7 +1241,7 @@ function summergame_player_page($pid = 0) {
           sopac_update_history($ch_list);
         }
       }
-
+*/
       // Player Title
       $player_points = summergame_get_player_points($player['pid']);
       drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
