@@ -2124,6 +2124,25 @@ function summergame_player_check_badges($pid) {
                    $game_term, time());
           $messages[] = "Received $badge->points bonus $game_term points for earning the $badge->title Badge";
         }
+        // check if an email should be sent to awardee
+        if ($badge->email_message) {
+          // Find email address attached to user account
+          $u = db_fetch_object(db_query("SELECT users.mail AS mail FROM users, sg_players WHERE users.uid = sg_players.uid AND sg_players.pid = %d", $pid));
+          if ($u->mail) {
+            $subject = "Congratulations! You've earned the $badge->title Badge";
+            $from = variable_get('site_mail', ini_get('sendmail_from'));
+            if ($badge->email_attachment) {
+              summergame_email_attachment($u->mail, $subject, $badge->email_message, $from, $badge->email_attachment);
+            }
+            else {
+              mail($u->mail, $subject, $badge->email_message, "From: $from");
+            }
+            $messages[] = "NOTE: A special message has been sent to $u->mail with further information";
+          }
+          else {
+            $messages[] = "NOTE: This Badge includes a special email message, but we could not find an email address for you";
+          }
+        }
       }
     }
   }
@@ -2386,4 +2405,75 @@ function summergame_players_merge($pid1, $pid2) {
   db_query("UPDATE sg_ledger SET pid = %d WHERE pid = %d", $pid1, $pid2);
   db_query("UPDATE sg_players_badges SET pid = %d WHERE pid = %d", $pid1, $pid2);
   db_query("DELETE FROM sg_players WHERE pid = %d", $pid2);
+}
+
+/**
+ * UTILITY: Send an email message with an attachment
+ */
+function summergame_email_attachment($to, $subject, $message, $from, $fileatt, $replyto = '') {
+  // handles mime type for better receiving
+  $ext = strrchr($fileatt , '.');
+  switch($ext) {
+    case '.doc':
+      $ftype = 'application/msword';
+      break;
+    case '.jpg':
+      $ftype = 'image/jpeg';
+      break;
+    case '.gif':
+      $ftype = 'image/gif';
+      break;
+    case '.zip':
+      $ftype = 'application/zip';
+      break;
+    case '.pdf':
+      $ftype = 'application/pdf';
+      break;
+    case '.swf':
+      $ftype = 'application/x-shockwave-flash';
+      break;
+    case '.mp3':
+      $ftype = 'audio/mpeg';
+      break;
+    case '.mp4':
+      $ftype = 'video/mp4v-es';
+      break;
+    case '.mov':
+      $ftype = 'video/quicktime';
+      break;
+    default:
+      $ftype = 'application/octet-stream';
+  }
+
+  // read file into $data var
+  $file = fopen($fileatt, 'rb');
+  $data = fread($file, filesize($fileatt));
+  fclose($file);
+
+  // split the file into chunks for attaching
+  $content = chunk_split(base64_encode($data));
+  $uid = md5(uniqid(time()));
+
+  // build the headers for attachment and html
+  $EOL = PHP_EOL;
+  $headers = "From: $from$EOL";
+  if ($replyto) {
+    $headers .= "Reply-To: $replyto$EOL";
+  }
+  $headers .= "MIME-Version: 1.0$EOL";
+  $headers .= "Content-Type: multipart/mixed; boundary=\"$uid\"$EOL$EOL";
+  $headers .= "This is a multi-part message in MIME format.$EOL";
+  $headers .= "--$uid$EOL";
+  $headers .= "Content-type:text/html; charset=iso-8859-1$EOL";
+  $headers .= "Content-Transfer-Encoding: 7bit$EOL$EOL";
+  $headers .= str_replace($EOL, '<br />', $message) . "$EOL$EOL";
+  $headers .= "--$uid$EOL";
+  $headers .= "Content-Type: $ftype; name=\"" . basename($fileatt) . "\"$EOL";
+  $headers .= "Content-Transfer-Encoding: base64$EOL";
+  $headers .= "Content-Disposition: attachment; filename=\"" . basename($fileatt) . "\"$EOL$EOL";
+  $headers .= "$content$EOL$EOL";
+  $headers .= "--$uid--";
+
+  // send mail
+  return mail($to, $subject, $message, $headers);
 }
