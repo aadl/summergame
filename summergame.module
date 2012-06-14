@@ -116,6 +116,12 @@ function summergame_menu() {
     'access arguments' => array(3),
     'type' => MENU_CALLBACK,
   );
+  $items['summergame/player/ledger'] = array(
+    'title' => 'Summer Game Player Ledger Page',
+    'page callback' => 'summergame_player_ledger_page',
+    'access arguments' => array('access summergame'),
+    'type' => MENU_CALLBACK,
+  );
   $items['summergame/player/deletescore'] = array(
     'title' => t('Delete Player Score'),
     'page callback' => 'drupal_get_form',
@@ -130,6 +136,32 @@ function summergame_menu() {
     'page arguments' => array('summergame_delete_player_form'),
     'access callback' => 'summergame_player_access',
     'access arguments' => array(3),
+    'type' => MENU_CALLBACK,
+  );
+  $items['summergame/team'] = array(
+    'title' => 'Summer Game Team Page',
+    'page callback' => 'summergame_team_page',
+    'access arguments' => array('access summergame'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['summergame/team/edit'] = array(
+    'title' => t('Edit Team'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('summergame_team_form'),
+    'access arguments' => array('access summergame'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['summergame/team/join'] = array(
+    'title' => t('Join Team'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('summergame_team_join_form'),
+    'access arguments' => array('access summergame'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['summergame/teams'] = array(
+    'title' => t('Team List'),
+    'page callback' => 'summergame_teams_list',
+    'access arguments' => array('access summergame'),
     'type' => MENU_CALLBACK,
   );
   $items['summergame/leaderboard'] = array(
@@ -199,14 +231,15 @@ function summergame_leaderboard_filter_block_content() {
   $path_components = explode('/', $_GET['q']);
   $term = $path_components[2];
   $range = $path_components[3];
+  $staff = $path_components[4];
 
   $content .= '<h3>Scores by Game</h3><ul>';
-  $content .= '<li>' . ($term == '' ? 'All Games' : l('All Games', "summergame/leaderboard//$range")) . '</li>';
+  $content .= '<li>' . ($term == '' ? 'All Games' : l('All Games', "summergame/leaderboard//$range/$staff")) . '</li>';
   $res = db_query('SELECT DISTINCT game_term FROM `sg_ledger` ORDER BY game_term ASC');
   while ($row = db_fetch_object($res)) {
     $content .= '<li>' .
-                       ($term == $row->game_term ? $term : l($row->game_term, "summergame/leaderboard/$row->game_term/$range")) .
-                       '</li>';
+                ($term == $row->game_term ? $term : l($row->game_term, "summergame/leaderboard/$row->game_term/$range/$staff")) .
+                '</li>';
   }
   $content .= '</ul>';
 
@@ -215,11 +248,20 @@ function summergame_leaderboard_filter_block_content() {
   $content .= '<h3>Scores by Time</h3><ul>';
   foreach ($time_ranges as $text => $code) {
     $content .= '<li>' .
-                   ($range == $code ? $text : l($text, "summergame/leaderboard/$term/$code")) .
-                   '</li>';
+                ($range == $code ? $text : l($text, "summergame/leaderboard/$term/$code/$staff")) .
+                '</li>';
   }
   $content .= '</ul>';
 
+  $content .= '<h3>Player Groups</h3><ul>';
+  if ($staff) {
+    $content .= '<li>' . l('Public', "summergame/leaderboard/$term/$range") . '</li>';
+    $content .= '<li>Staff</li>';
+  }
+  else {
+    $content .= '<li>Public</li>';
+    $content .= '<li>' . l('Staff', "summergame/leaderboard/$term/$range/staff") . '</li>';
+  }
   return $content;
 }
 
@@ -285,17 +327,20 @@ function summergame_admin() {
   $content .= '<div id="summergame-admin-page">';
   $content .= '<h1>Summer Game Admin Page</h1>';
 
-  // Players
-  $content .= '<h2 class="title">Players</h2>';
-  $content .= drupal_get_form('summergame_player_search_form');
-  $content .= '<ul><li class="button green">' . l("Create New Player", 'summergame/admin/players/new') . '</li></ul>';
-
   // Print game cards
+  $content .= '<div class="print-game-cards">';
   $content .= '<h2 class="title">Print Game Cards</h2>';
   $content .= '<ul>';
   $content .= '<li class="button green">' . l("Print Teen Game Card", 'summergame/pdf/teen') . '</li>';
   $content .= '<li class="button green">' . l("Print Adult Game Card", 'summergame/pdf/adult') . '</li>';
   $content .= '</ul>';
+  $content .= '</div>';
+
+  // Players
+  $content .= '<div class="admin-page-player-search">';
+  $content .= '<h2 class="title">Players</h2>';
+  $content .= drupal_get_form('summergame_player_search_form');
+  $content .= '</div>';
 
   // Game Codes
   $content .= '<ul class="create-new-code"><li class="button green">' . l("Create New Game Code", 'summergame/admin/add') . '</li></ul>';
@@ -315,8 +360,9 @@ function summergame_admin() {
     $valid_start = $game_code['valid_start'] ? date('n/d/Y H:i:s', $game_code['valid_start']) : 'Now';
     $valid_end = date('n/d/Y H:i:s', $game_code['valid_end']);
     $rows[] = array(
-      'Text' => $game_code['text'],
+      'Text' => strlen($game_code['text']) > 25 ? substr($game_code['text'], 0, 25) . '...' : $game_code['text'],
       'Description' => $game_code['description'],
+      'Hint' => $game_code['hint'],
       'Points' => $game_code['points'] . ($game_code['diminishing'] ? ' (diminishing)' : ''),
       'Created' => date('n/d/Y', $game_code['created']),
       'Created By' => $creator->name,
@@ -342,7 +388,7 @@ function summergame_admin() {
       'Image' => '<img src="' . $sg_image_path . $badge['image'] . '_100.png">',
       'Title' => '<strong>' . $badge['title'] . '</strong>',
       'Description' => $badge['description'],
-      'Formula' => $badge['formula'],
+      'Formula' => strlen($badge['formula']) > 25 ? substr($badge['formula'], 0, 25) . '...' : $badge['formula'],
     );
   }
   $content .= theme('table', array_keys($rows[0]), $rows);
@@ -431,6 +477,12 @@ function summergame_code_edit_form($form_state, $game_code) {
     '#default_value' => $game_code['description'],
     '#description' => t('Description of the game code award (e.g. Attended Apple Peeling Event)'),
   );
+  $form['hint'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Hint'),
+    '#default_value' => $game_code['hint'],
+    '#description' => t('Does this code need a hint to figuring it out? Enter a hint here to help figure it out. (e.g. This code is a kind of food made by Mott\'s)'),
+  );
   $form['points'] = array(
     '#type' => 'textfield',
     '#title' => t('Points'),
@@ -469,15 +521,15 @@ function summergame_code_edit_form($form_state, $game_code) {
     '#default_value' => date('Y-m-d H:i:s', ($game_code['valid_start'] ? $game_code['valid_start'] : time())),
     '#size' => 32,
     '#maxlength' => 32,
-    '#description' => t('Date/Time for when the code becomes active (e.g. "2011-07-01 9:00 AM")'),
+    '#description' => t('Date/Time for when the code becomes active (e.g. "2012-07-01 9:00 AM")'),
   );
   $form['valid_end'] = array(
     '#type' => 'textfield',
     '#title' => t('Code End Time Limit'),
-    '#default_value' => $game_code['valid_end'] ? date('Y-m-d H:i:s', $game_code['valid_end']) : '2011-09-06 08:00:00',
+    '#default_value' => $game_code['valid_end'] ? date('Y-m-d H:i:s', $game_code['valid_end']) : '2012-08-31 9:00 PM',
     '#size' => 32,
     '#maxlength' => 32,
-    '#description' => t('Date/Time for when the code stops being active (e.g. "2011-09-01 9:00 PM")'),
+    '#description' => t('Date/Time for when the code stops being active (e.g. "2012-08-31 9:00 PM")'),
   );
   $form['game_term'] = array(
     '#type' => 'textfield',
@@ -520,20 +572,24 @@ function summergame_code_edit_form_submit($form, &$form_state) {
   }
   if ($form_state['values']['code_id']) {
     // Update existing code
-    db_query("UPDATE sg_game_codes SET text = '%s', description = '%s', points = %d, diminishing = %d, max_redemptions = %d, " .
+    db_query("UPDATE sg_game_codes SET text = '%s', description = '%s', hint = '%s', " .
+             "points = %d, diminishing = %d, max_redemptions = %d, " .
              "valid_start = %d, valid_end = %d, game_term = '%s' WHERE code_id = %d",
-             strtoupper($form_state['values']['text']), $form_state['values']['description'], $form_state['values']['points'],
-             $form_state['values']['diminishing'], $form_state['values']['max_redemptions'], strtotime($form_state['values']['valid_start']),
-             strtotime($form_state['values']['valid_end']), $form_state['values']['game_term'], $form_state['values']['code_id']);
+             strtoupper($form_state['values']['text']), $form_state['values']['description'],
+             $form_state['values']['hint'], $form_state['values']['points'],
+             $form_state['values']['diminishing'], $form_state['values']['max_redemptions'],
+             strtotime($form_state['values']['valid_start']), strtotime($form_state['values']['valid_end']),
+             $form_state['values']['game_term'], $form_state['values']['code_id']);
     drupal_set_message('Game Code ' . $form_state['values']['text'] . ' Updated');
   }
   else {
     db_query("INSERT INTO sg_game_codes " .
-             "(creator_uid, created, text, description, points, diminishing, max_redemptions, valid_start, valid_end, game_term) " .
-             "VALUES (%d, %d, '%s', '%s', %d, %d, %d, %d, %d, '%s')",
+             "(creator_uid, created, text, description, hint, points, diminishing, max_redemptions, valid_start, valid_end, game_term) " .
+             "VALUES (%d, %d, '%s', '%s', '%s', %d, %d, %d, %d, %d, '%s')",
              $user->uid, time(), strtoupper($form_state['values']['text']), $form_state['values']['description'],
-             $form_state['values']['points'], $form_state['values']['diminishing'], $form_state['values']['max_redemptions'],
-             strtotime($form_state['values']['valid_start']), strtotime($form_state['values']['valid_end']),  $form_state['values']['game_term']);
+             $form_state['values']['hint'], $form_state['values']['points'], $form_state['values']['diminishing'],
+             $form_state['values']['max_redemptions'], strtotime($form_state['values']['valid_start']),
+             strtotime($form_state['values']['valid_end']),  $form_state['values']['game_term']);
     drupal_set_message('Game Code ' . $form_state['values']['text'] . ' Created');
   }
 
@@ -544,6 +600,8 @@ function summergame_code_edit_form_submit($form, &$form_state) {
  * PAGE: Administer Players
  */
 function summergame_admin_players($search_term = '') {
+  drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
+
   if ($search_term == 'new') {
     $content .= drupal_get_form('summergame_player_form');
   }
@@ -589,6 +647,12 @@ function summergame_admin_players($search_term = '') {
       $count = mysqli_num_rows($res);
     }
 
+    $content .= '<div style="float: right">' .
+                drupal_get_form('summergame_player_search_form', $search_term) .
+                '</div>';
+    $content .= "<h2>Your search returned $count match" . ($count == 1 ? '' : 'es') . "</h2>";
+
+
     if ($count == 0) {
       // No matches, create a new player
       drupal_set_message("No existing players to match your search \"$search_term\". Create a new player with that information below:");
@@ -597,11 +661,9 @@ function summergame_admin_players($search_term = '') {
     else if ($count > 100) {
       $content .= "<h2>Your search returned more than 100 matches: ($count)<h2>";
       $content .= "<h3>Please search again</h3>";
-      $content .= drupal_get_form('summergame_player_search_form');
     }
     else {
-      // Found 2-100 matches, display them in a table
-      $content .= "<h2>Your search returned $count match" . ($count == 1 ? '' : 'es') . "</h2>";
+      // Found 1-100 matches, display them in a table
       while ($player = db_fetch_array($res)) {
         // Prep for display
         $account = $player['uid'] ? user_load($player['uid']) : NULL;
@@ -618,20 +680,20 @@ function summergame_admin_players($search_term = '') {
           $show[] = 'Name Display';
         }
         $rows[] = array(
-          'Name' => $player['name'],
-          'Nickname' => $player['nickname'],
+          'Edit' => '[' . l('edit', 'summergame/player/edit/' . $player['pid']). ']',
+          'Real Name' => l($player['name'], 'summergame/player/' . $player['pid']),
+          'Player Name' => $player['nickname'],
           'Web User' => $account->name,
           'Phone' => $player['phone'] ? $player['phone'] : '',
           'Age Group' => $player['agegroup'],
+          'Gamecard' => $player['gamecard'],
           'School' => $player['school'],
-          'Grade' => $player['grade'],
-          'Show On' => implode(', ', $show),
-          'Point Total' => $player['points']['total'],
-          'Edit Player' => l('Edit', 'summergame/player/edit/' . $player['pid']),
-          'Scorecard' => l('Scorecard', 'summergame/player/' . $player['pid']),
+          'Grade' => $player['grade'] ? $player['grade'] : '',
+          //'Show On' => implode(', ', $show),
+          //'Point Total' => $player['points']['total'],
         );
       }
-      $content .= theme('table', array_keys($rows[0]), $rows);
+      $content .= theme('table', array_keys($rows[0]), $rows, array('id' => 'summergame-player-search-results'));
       $content .= '<ul><li class="button green">' . l("Create New Player", 'summergame/admin/players/new') . '</li></ul>';
     }
   }
@@ -642,21 +704,28 @@ function summergame_admin_players($search_term = '') {
 /**
  * FORM: Player search form
  */
-function summergame_player_search_form($form_state) {
+function summergame_player_search_form($form_state, $term = '') {
   $form = array();
   $form['inline'] = array(
-    '#prefix' => "<div class=\"container-inline\">",
-    '#suffix' => "</div>",
+    '#prefix' => '<div class="container-inline">',
+    '#suffix' => '</div>',
   );
   $form['inline']['search_term'] = array(
     '#type' => 'textfield',
     '#title' => t('Search for a Player'),
     '#size' => 32,
     '#maxlength' => 32,
+    '#default_value' => $term,
   );
   $form['inline']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Search'),
+  );
+  $form['hint'] = array(
+    '#value' => '<p>' .
+                '<em>Search by name, partial name, cell number, or game card number.<br />' .
+                '(e.g. "Anne Arbor", "Arbor", "3274200", "SRG45678")</em>' .
+                '</p>',
   );
 
   return $form;
@@ -786,12 +855,15 @@ function summergame_consume_form_submit($form, &$form_state) {
   $pid = $form_state['values']['pid'];
   $title = $form_state['values']['title'];
   $description = $title;
+  $metadata = array('mat_code' => $form_state['values']['mat_code'],
+                    'daily_limit' => 1000);
+
   if ($form_state['values']['bib']) {
     // Use the trusted bnum as the id instead of a user-entered id
-    $description .= ' bnum:' . $form_state['values']['bib']['bnum'];
+    $metadata['bnum'] = $form_state['values']['bib']['bnum'];
   }
   else if ($form_state['values']['id']) {
-    $description .= ' id:' . $form_state['values']['id'];
+    $metadata['id'] = $form_state['values']['id'];
   }
   // Duration score
   if ($form_state['values']['duration']) {
@@ -801,7 +873,7 @@ function summergame_consume_form_submit($form, &$form_state) {
   if ($form_state['values']['finished']) {
     $points += 100;
   }
-  $points = summergame_player_points($pid, $points, 'mat_code:' . $form_state['values']['mat_code'], $description);
+  $points = summergame_player_points($pid, $points, 'Read Watched Listened', $description, $metadata);
   drupal_set_message("Earned $points points for $title");
   drupal_goto('summergame/player/' . $pid);
 }
@@ -811,6 +883,7 @@ function summergame_consume_form_submit($form, &$form_state) {
  */
 function summergame_player_form($form_state, $player = NULL) {
   drupal_add_js(drupal_get_path('module', 'summergame') . '/summergame.player.js');
+
   $form = array();
 
   if ($player['pid']) {
@@ -836,6 +909,80 @@ function summergame_player_form($form_state, $player = NULL) {
     else {
       return (array('message' => array('#value' => '<h1>Signup Disabled</h1><p>The Summer Game is currently closed to new players</p>')));
     }
+  }
+
+  $form['buttons'] = array(
+    '#prefix' => '<div class="summergame-player-edit-buttons">',
+    '#suffix' => '</div>',
+  );
+  if ($player['pid']) {
+    $form['buttons']['delete'] = array(
+      '#prefix' => '<div class="summergame-player-delete-link">',
+      '#suffix' => '</div>',
+      '#value' => l('Delete Player', 'summergame/player/delete/' . $player['pid']),
+    );
+  }
+  $form['buttons']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t($submit_text),
+    '#attributes' => array('onClick' => 'resetDirty()'),
+  );
+
+  if ($player['pid']) {
+    $cancel_path = 'summergame/player/' . $player['pid'];
+  }
+  else if (strpos($_GET['q'], 'admin') !== FALSE) {
+    $cancel_path = 'summergame/admin';
+  }
+  else {
+    $cancel_path = '<front>';
+  }
+  $form['buttons']['cancel'] = array(
+    '#value' => l('Cancel', $cancel_path),
+  );
+
+
+    if (user_access('administer summergame')) {
+    $form['admin'] = array(
+      '#prefix' => '<fieldset style="float:right"><legend>STAFF ONLY</legend>',
+      '#suffix' => '</fieldset>',
+    );
+
+    // Set up default values
+    $prize_array = summergame_get_prize_array();
+    $default_prizes = array();
+    $completed = FALSE;
+
+    foreach ($prize_array as $prize_code => $prize_name) {
+      if (strpos($player['prizes'], $prize_code) !== FALSE ) {
+        $default_prizes[$prize_code] = $prize_code;
+        if ($prize_code != 'bucket' && $prize_code != 'silly') {
+          $completed = TRUE;
+        }
+      }
+      else {
+        $default_prizes[$prize_code] = 0;
+      }
+    }
+    $form['admin']['prizes'] = array(
+      '#type' => 'checkboxes',
+      '#title' => t('CHECK PRIZE GIVEN WHEN GAME IS COMPLETED'),
+      '#options' => $prize_array,
+      '#default_value' => $default_prizes,
+    );
+    $form['admin']['completed'] = array(
+      '#type' => 'value',
+      '#value' => $completed,
+    );
+    $form['admin']['merge_id'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Merge this player into Player ID'),
+      '#size' => 8,
+      '#maxlength' => 8,
+      '#description' => t("Enter another Player ID number to merge this player infomation into that player record"),
+      '#prefix' => "<fieldset class=\"collapsible collapsed\"><legend>MERGE PLAYER</legend>",
+      '#suffix' => "</fieldset>",
+    );
   }
 
   $form['name'] = array(
@@ -975,67 +1122,7 @@ function summergame_player_form($form_state, $player = NULL) {
     );
   }
 
-  if (user_access('administer summergame')) {
-    $form['admin'] = array(
-      '#prefix' => '<fieldset><legend>STAFF ONLY</legend>',
-      '#suffix' => '</fieldset>',
-    );
-
-    // Set up default values
-    $prize_array = summergame_get_prize_array();
-    $default_prizes = array();
-    $completed = FALSE;
-
-    foreach ($prize_array as $prize_code => $prize_name) {
-      if (strpos($player['prizes'], $prize_code) !== FALSE ) {
-        $default_prizes[$prize_code] = $prize_code;
-        if ($prize_code != 'bucket' && $prize_code != 'silly') {
-          $completed = TRUE;
-        }
-      }
-      else {
-        $default_prizes[$prize_code] = 0;
-      }
-    }
-    $form['admin']['prizes'] = array(
-      '#type' => 'checkboxes',
-      '#title' => t('CHECK PRIZE GIVEN WHEN GAME IS COMPLETED'),
-      '#options' => $prize_array,
-      '#default_value' => $default_prizes,
-    );
-    $form['admin']['completed'] = array(
-      '#type' => 'value',
-      '#value' => $completed,
-    );
-    $form['admin']['merge_id'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Merge this player into Player ID'),
-      '#size' => 8,
-      '#maxlength' => 8,
-      '#description' => t("Enter another Player ID number to merge this player infomation into that player record"),
-      '#prefix' => "<fieldset class=\"collapsible collapsed\"><legend>MERGE PLAYER</legend>",
-      '#suffix' => "</fieldset>",
-    );
-  }
-  $form['inline'] = array(
-    '#prefix' => "<div class=\"container-inline\">",
-    '#suffix' => "</div>",
-  );
-  $form['inline']['submit'] = array(
-    '#type' => 'submit',
-    '#value' => t($submit_text),
-  );
-  $form['inline']['cancel'] = array(
-    '#value' => l('Cancel', 'summergame/player/' . $player['pid']),
-  );
-  if ($player['pid']) {
-    $form['inline']['delete'] = array(
-      '#value' => l('Delete Player',
-                    'summergame/player/delete/' . $player['pid'],
-                    array('attributes' => array('style' => 'padding-left: 100px; color: red'))
-                    ),
-    );
-  }
+  $form['buttons2'] = $form['buttons'];
 
   return $form;
 }
@@ -1049,7 +1136,7 @@ function summergame_player_form_submit($form, &$form_state) {
   $player_info = array(
     'name' => $form_state['values']['name'],
     'nickname' => $form_state['values']['nickname'],
-    'gamecard' => strtoupper($form_state['values']['gamecard']),
+    'gamecard' => str_replace(' ', '', strtoupper($form_state['values']['gamecard'])),
     'agegroup' => $form_state['values']['agegroup'],
     'school' => $form_state['values']['school'],
     'phone' => 'NULL', // default, handled below
@@ -1080,7 +1167,7 @@ function summergame_player_form_submit($form, &$form_state) {
     foreach ($form_state['values']['prizes'] as $prize) {
       if ($prize) {
         $prizes[] = $prize;
-        if ($prize != 'bucket' && $prize != 'silly') {
+        if ($prize != 'puzzle' && $prize != 'duck') {
           $completed = TRUE;
         }
       }
@@ -1155,9 +1242,9 @@ function summergame_delete_player_form_submit($form, &$form_state) {
 function summergame_delete_score_form(&$form_state, $pid = 0, $lid = 0) {
   $ledger = db_fetch_object(db_query("SELECT * FROM sg_ledger WHERE pid = %d AND lid = %d", $pid, $lid));
 
-  // Cannot delete points from the Shop
-  if (strpos($ledger->code_text, 'Shop') === 0) {
-    drupal_set_message('You cannot delete points from the Shop', 'error');
+  // Cannot delete points that are protected (e.g. Shop points)
+  if (strpos($ledger->metadata, 'delete:no') === 0) {
+    drupal_set_message('Sorry, these points are protected and cannot be deleted', 'error');
     drupal_goto('summergame/player/' . $pid);
   }
 
@@ -1248,8 +1335,18 @@ function summergame_player_page($pid = 0) {
       $playername = $player['pid'] . ': ' . ($player['nickname'] ? $player['nickname'] : $player['name']);
       $content .= '<div id="summergame-player-page">';
       $content .= "<h1>Summer Game Player #$playername (" . $player_points['career'] . " career points)</h1>";
+
+      $points_summary = array();
+      foreach ($player_points as $game_term => $player_game_points) {
+        if (is_array($player_game_points)) {
+          $summary_text  = $player_game_points['total'] . ' ' . $game_term . ' points';
+          $points_summary[] = l($summary_text, '', array('fragment' => $game_term, 'external' => TRUE));
+        }
+      }
+      $content .= '<p>Jump to details: ' . implode(' | ', $points_summary) . '</p>';
+
       if ($player['uid'] == $user->uid) {
-        $content .= "<p><em>that's you!</em> ";
+        $content .= "<p><em>That's you!</em> ";
         $extra_link = l('Sign up an extra player', 'summergame/player/extra');
         $content .= "Want to record another player's reading/listening/watching activity and game codes? $extra_link.</p>";
       }
@@ -1287,96 +1384,64 @@ function summergame_player_page($pid = 0) {
         }
       }
 
-      // Badges
-      $content .= '<div id="player-badges">';
-      $content .= '<h1>Badges</h1>';
-      $sg_image_path = base_path() . file_directory_path() . '/sg_images/';
-      $badge_grid = '';
-      $res = db_query("SELECT * FROM sg_players_badges, sg_badges WHERE sg_players_badges.pid = %d AND sg_players_badges.bid = sg_badges.bid", $player['pid']);
-      while ($badge = db_fetch_array($res)) {
-        $img_title = $badge['title'] . "\n" . $badge['description'] . "\n" . 'Received on ' . date('F j, Y g:i A', $badge['timestamp']);
-        $badge_grid .= '<img title="' . $img_title . '" src="' . $sg_image_path . $badge['image'] . '_100.png">';
-      }
-      $content .= ($badge_grid ? $badge_grid : "<p>This player hasn't earned any badges yet.</p>");
-
-      $content .= '<p>[ ' . l('See All Available Badges', 'summergame/badges') . ' ]</p>';
-      $content .= '</div>';
-
       // Player Score //////////////////////////////////////////////////////////
-
-      $locum = sopac_get_locum();
-      if ($catalog_domain = variable_get('summergame_catalog_domain', '')) {
-        $catalog_domain = 'http://' . $catalog_domain . '/';
-      }
-
       foreach ($player_points as $game_term => $player_game_points) {
-        $i = 0;
         if (is_array($player_game_points)) {
-          $content .= '<h2 class="title">' . $game_term . ' Score Card:</h2>';
-          $score_table = array();
-          $ledger_count = count($player_game_points['ledger']);
-          if ($ledger_count > 5000) {
-            // Only show last 5000 rows in the table
-            $content .= "<p><em>Latest 5000 scores out of $ledger_count shown</em></p>";
-            $i = $ledger_count - 5000;
+          $content .= '<div class="scorecard">';
+          $content .= "<h2 class=\"title\"><a name=\"$game_term\">$game_term Scorecard</a></h2>";
+
+          // Points
+          $content .= '<div class="player-points">';
+          $content .= '<h3>Points</h3>';
+          $type_rows = array();
+          foreach ($player_game_points['types'] as $type => $type_points) {
+            $type_rows[] = array($type, $type_points);
           }
-          while ($i < $ledger_count) {
-            // Translate material code to catalog material type
-            if (preg_match('/mat_code:([a-z])/', $player_game_points['ledger'][$i]['code_text'], $matches)) {
-              $player_game_points['ledger'][$i]['code_text'] = 'Points for ' .
-                                                               $locum->locum_config['formats'][$matches[1]];
+          $type_rows[] = array('<strong>TOTAL POINTS EARNED</strong>',
+                               '<strong>' . $player_game_points['total'] . '</strong>');
+          $type_rows[] = array('<strong>Current Points Balance</strong>',
+                               '<strong>' . $player_game_points['balance'] . '</strong>');
+
+          $content .= theme('table', array('Type', 'Points'), $type_rows);
+
+          $content .= '<ul class="scorecard-buttons">' .
+                      '<li class="button">' .
+                      l('See Full Scorecard', 'summergame/player/ledger/' . $player['pid'],
+                        array('query' => array('term' => $game_term))) .
+                      '</li>' .
+                      '</ul>';
+
+          // Date Ranges
+          $earliest = reset($player_game_points['ledger']);
+          $latest = end($player_game_points['ledger']);
+          $content .= '<p>Points date range: <br />' .
+                      date('F j, Y, g:i a', $earliest['timestamp']) . ' - <br />' .
+                      date('F j, Y, g:i a', $latest['timestamp']) .
+                      '</p>';
+
+          $content .= '</div>';
+
+          // Badges
+          $content .= '<div class="player-badges">';
+          $content .= '<h3>Badges</h3>';
+          $sg_image_path = base_path() . file_directory_path() . '/sg_images/';
+          $badge_grid = '';
+          if (count($player_game_points['badges'])) {
+            foreach ($player_game_points['badges'] as $badge) {
+              $img_title = $badge['title'] . "\n" . $badge['description'] . "\n" . 'Received on ' . date('F j, Y g:i A', $badge['timestamp']);
+              $badge_grid .= '<img class="summergame-badge" title="' . $img_title . '" src="' . $sg_image_path . $badge['image'] . '_100.png">';
             }
-            // Change bnum: code to a link to the bib record
-            if (preg_match('/bnum:([\d]{7})/', $player_game_points['ledger'][$i]['description'], $matches)) {
-              $player_game_points['ledger'][$i]['description'] = trim(str_replace($matches[0], '', $player_game_points['ledger'][$i]['description']));
-              $player_game_points['ledger'][$i]['description'] = l($player_game_points['ledger'][$i]['description'], $catalog_domain . 'catalog/record/' . $matches[1]);
-            }
-            // Strip the nid: and id: code from the description field
-            $description = preg_replace('/n?id:[^\s]+/', '', $player_game_points['ledger'][$i]['description']);
-            // Obscure game codes
-            if (!$player_access) {
-              $code_check = db_fetch_object(db_query("SELECT code_id FROM sg_game_codes WHERE text = '%s'", $player_game_points['ledger'][$i]['code_text']));
-              if ($code_check->code_id) {
-                $player_game_points['ledger'][$i]['code_text'] = '[GAME CODE]';
-              }
-            }
-            $table_row = array(
-              'Date' => date('F j, Y, g:i a', $player_game_points['ledger'][$i]['timestamp']),
-              'Code' => $player_game_points['ledger'][$i]['code_text'],
-              'Description' => ($player['show_titles'] || $player_access ? $description : ''),
-              'Points' => $player_game_points['ledger'][$i]['points'],
-            );
-            if ($player_access) {
-              if (strpos($player_game_points['ledger'][$i]['code_text'], 'Shop') === 0) {
-                // No delete link for shop points
-                $table_row['Remove?'] = '';
-              }
-              else {
-                $table_row['Remove?'] = l('DELETE', 'summergame/player/deletescore/' . $player['pid'] . '/' . $player_game_points['ledger'][$i]['lid']);
-              }
-            }
-            $score_table[] = $table_row;
-            $i++;
+            $content .= $badge_grid;
           }
-          if (count($score_table)) {
-            $total_row = array(
-              array(
-                'data' => "<strong>Current $game_term Points Balance:</strong>",
-                'colspan' => 3,
-                'style' => 'text-align: right',
-              ),
-              '<strong>' . $player_game_points['balance'] . '</strong>',
-            );
-            if ($player_access) {
-              // Add an extra cell in the total row to line up with the Delete column
-              $total_row[] = '';
-            }
-            $score_table[] = $total_row;
-            $content .= theme('table', array_keys($score_table[0]), $score_table);
+          else {
+            $content .= "<p>This player hasn't earned any $game_term badges yet.</p>";
           }
-          $content .= '<div id="scorecard-total">';
-          $content .= "<h3>Total $game_term Points Earned: " . $player_game_points['total'] . "</h3>";
-          $content .= '</div>'; // #scorecard-total
+
+          $content .= '<p>[ ' . l("See All $game_term Badges", 'summergame/badges/' . $game_term) . ' ]</p>';
+          $content .= '</div>';
+
+          $content .= '<div style="clear:both"></div>';
+          $content .= '</div>'; // .scorecard
         }
       }
       $content .= '</div>'; // #summergame-player-page
@@ -1412,7 +1477,7 @@ function theme_summergame_player_info($player) {
   // Link to Points Forms
   $content .= '<div id="player-earn-links">';
   $content .= '<h2>Earn Game Points:</h2>';
-  $content .= '<ul>';
+  $content .= '<ul class="no-padding-left">';
   $content .= '<li class="button">' . l('I have a Game Code!', 'summergame/player/gamecode/' . $player['pid']) . '</li>';
   if (variable_get('summergame_points_enabled', 0)) {
     $content .= '<li class="button">' . l('I Read, Listened to, or Watched something!', 'summergame/player/consume/' . $player['pid']) . '</li>';
@@ -1490,12 +1555,117 @@ function theme_summergame_player_info($player) {
   return $content;
 }
 
+function summergame_player_ledger_page($pid = 0) {
+  global $user;
+  $pid = intval($pid);
+
+  if ($pid) {
+    $player = summergame_player_load(array('pid' => $pid));
+  }
+  else if ($user->uid) {
+    // Default to the logged in player if none specified
+    $player = summergame_player_load(array('uid' => $user->uid));
+  }
+
+  if ($player) {
+    $locum = sopac_get_locum();
+    $player_access = summergame_player_access($player['pid']);
+    $rows_per_page = 100;
+    $rows = array();
+    $args = array($player['pid']);
+    if ($_GET['term']) {
+      $term_query = " AND game_term = '%s'";
+      $args[] = $_GET['term'];
+    }
+
+    $locum = sopac_get_locum();
+    if ($catalog_domain = variable_get('summergame_catalog_domain', '')) {
+      $catalog_domain = 'http://' . $catalog_domain . '/';
+    }
+
+    $result = pager_query("SELECT * FROM sg_ledger WHERE pid = %d $term_query ORDER BY timestamp DESC",
+                          $rows_per_page, 0, NULL, $args);
+    while ($row = db_fetch_array($result)) {
+      // Change bnum: code to a link to the bib record
+      if (preg_match('/bnum:([\d]{7})/', $row['metadata'], $matches)) {
+        $row['description'] = '<img src="http://media.aadl.org/covers/' . $matches[1] . '_50.jpg"> ' . $row['description'];
+        $row['description'] = l($row['description'],
+                                $catalog_domain . 'catalog/record/' . $matches[1],
+                                array('html' => TRUE));
+      }
+      // Translate material code to catalog material type
+      if (preg_match('/mat_code:([a-z])/', $row['metadata'], $matches)) {
+        $row['description'] = 'Points for ' . $locum->locum_config['formats'][$matches[1]] .
+                              ', ' . $row['description'];
+      }
+      // handle game codes
+      if (preg_match('/gamecode:([\w]+)/', $row['metadata'], $matches)) {
+        if ($player_access) {
+          $row['type'] .= ': ' . $matches[1];
+        }
+        else {
+          // Check if there is a hint for this game code
+          $hint_row = db_fetch_object(db_query("SELECT hint FROM sg_game_codes WHERE text = '%s'", $matches[1]));
+          if ($hint_row->hint) {
+            $row['description'] = $hint_row->hint;
+          }
+        }
+      }
+      // link to nodes
+      if (preg_match('/nid:([\d]+)/', $row['metadata'], $matches)) {
+        $node = node_load($matches[1]);
+        $row['description'] .= ': ' . l($node->title, 'node/' . $node->nid);
+        // and link to comment
+        if (preg_match('/cid:([\d]+)/', $row['metadata'], $matches)) {
+          $row['description'] .= ' (' .
+                                 l('See comment', 'node/' . $node->nid,
+                                   array('fragment' => 'comment-' . $matches[1])) .
+                                 ')';
+        }
+      }
+
+
+
+      $table_row = array(
+        'Date' => date('F j, Y, g:i a', $row['timestamp']),
+        'Type' => $row['type'],
+        'Description' => ($player['show_titles'] || $player_access ? $row['description'] : ''),
+        'Points' => $row['points'],
+      );
+      if ($player_access) {
+        if (strpos($row['metadata'], 'delete:no') === 0) {
+          // No delete link for protected points
+          $table_row['Remove?'] = '';
+        }
+        else {
+          $table_row['Remove?'] = l('DELETE', 'summergame/player/deletescore/' . $player['pid'] . '/' . $row['lid']);
+        }
+      }
+      $score_table[] = $table_row;
+    }
+
+    if (count($score_table)) {
+      $content .= '<h2 class="title">' .
+                $player['name'] . ' Points: ' .
+                '</h2>';
+      $pager = theme('pager', NULL, $rows_per_page, 0);
+      $content .= $pager .  theme('table', array_keys($score_table[0]), $score_table) . $pager;
+    }
+    else {
+      $content .= '<p>No Scores Found</p>';
+    }
+  }
+
+  return $content;
+}
+
 /**
  * PAGE: Player Edit page
  */
 function summergame_player_edit_page($pid = 0) {
   $pid = intval($pid);
   if ($pid) {
+    drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
     $player = summergame_player_load(array('pid' => $pid));
     $content .= drupal_get_form('summergame_player_form', $player);
   }
@@ -1577,6 +1747,7 @@ function summergame_player_consume_page($pid = 0, $bnum = 0) {
  * PAGE: Leaderboard Page
  */
 function summergame_leaderboard_page($type = '', $range = '', $staff = '') {
+  $rows_per_page = 100;
   drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
   $args = array();
 
@@ -1620,22 +1791,20 @@ function summergame_leaderboard_page($type = '', $range = '', $staff = '') {
     $lb_title .= ' for All Time';
   }
 
-
-
   $res = db_query('SELECT *, SUM(points) AS ptotal ' .
-                  "FROM sg_ledger, sg_players " .
+                  'FROM sg_ledger, sg_players ' .
                   "LEFT JOIN users_roles ON sg_players.uid = users_roles.uid AND users_roles.rid = $staff_rid " .
                   'WHERE sg_players.pid = sg_ledger.pid ' .
-                  "AND sg_ledger.code_text NOT LIKE 'Shop%' " .
+                  "AND sg_ledger.metadata NOT LIKE '%leaderboard:no%' " .
                   $type_query .
                   $range_query .
                   $staff_query .
                   'GROUP BY sg_players.pid ' .
                   'ORDER BY ptotal DESC ' .
-                  'LIMIT 100', $args);
+                  'LIMIT 500', $args);
 
   $leaderboard = array();
-  $place = 0;
+  $place = $_GET['page'] * $rows_per_page;
   while ($lb_player = db_fetch_array($res)) {
     if ($lb_player['show_leaderboard']) {
       $player_name = $lb_player['nickname'] ? $lb_player['nickname'] : $lb_player['name'];
@@ -1653,10 +1822,11 @@ function summergame_leaderboard_page($type = '', $range = '', $staff = '') {
     );
   }
 
-  $content .= "<h1>$lb_title</h1>";
+  //$pager = theme('pager', NULL, $rows_per_page, 0);
 
+  $content .= "<h1>$lb_title</h1>";
   if (count($leaderboard)) {
-    $content .= theme('table', array_keys($leaderboard[0]), $leaderboard);
+    $content .= $pager . theme('table', array_keys($leaderboard[0]), $leaderboard) . $pager;
   }
   else {
     $content .= "<p>No scores found</p>";
@@ -1668,13 +1838,21 @@ function summergame_leaderboard_page($type = '', $range = '', $staff = '') {
 /**
  * PAGE: Badges Page
  */
-function summergame_badges_page() {
-  $content .= '<h1>Summer Game Badges</h1>';
-
+function summergame_badges_page($game_term = '') {
   $sg_image_path = base_path() . file_directory_path() . '/sg_images/';
   $rows = array();
-  $res = db_query("SELECT * FROM sg_badges ORDER BY title ASC");
+  if ($game_term) {
+    $res = db_query("SELECT * FROM sg_badges WHERE game_term = '%s' ORDER BY title ASC", $game_term);
+  }
+  else {
+    $res = db_query("SELECT * FROM sg_badges ORDER BY title ASC");
+  }
   while ($badge = db_fetch_array($res)) {
+    if ($game_term) {
+      if ($game_term == $badge['game_term']) {
+        $headline = $game_term;
+      }
+    }
     $row = array(
       'Image' => '<img src="' . $sg_image_path . $badge['image'] . '_100.png">',
       'Description' => '<strong>' . $badge['title'] . '</strong><p>' . $badge['description'] . '</p>',
@@ -1684,8 +1862,39 @@ function summergame_badges_page() {
     }
     $rows[] = $row;
   }
+
+  $content .= "<h1>$game_term Game Badges</h1>";
   $content .= theme('table', array(), $rows);
 
+  return $content;
+}
+
+function theme_summergame_badge() {
+  global $user;
+  drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
+  $sg_image_path = base_path() . file_directory_path() . '/sg_images/';
+  $content = '';
+
+  $player = summergame_player_load(array('uid' => $user->uid));
+
+  foreach (func_get_args() as $bid) {
+    $badge = db_fetch_array(db_query("SELECT * FROM sg_badges WHERE bid = %d", $bid));
+    $img_class = "summergame-badge";
+    $img_title = $badge['title'] . "\n" . $badge['description'];
+    $img_src = $sg_image_path . $badge['image'] . '_100.png';
+
+    if ($player['pid']) {
+      $earned = db_fetch_array(db_query("SELECT * FROM sg_players_badges WHERE pid = %d AND bid = %d", $player['pid'], $bid));
+      if ($earned['timestamp']) {
+        $img_title .= "\n" . 'Received on ' . date('F j, Y g:i A', $earned['timestamp']);
+      }
+      else {
+        $img_class .= ' not-earned';
+      }
+    }
+
+    $content .= "<img class=\"$img_class\" title=\"$img_title\" src=\"$img_src\">";
+  }
   return $content;
 }
 
@@ -1797,8 +2006,12 @@ function summergame_comment($action, $op) {
   if (variable_get('summergame_points_enabled', 0)) {
     if ($op == 'publish') {
       if ($player = summergame_player_load(array('uid' => $action['uid']))) {
+        $metadata = array(
+          'nid' => $action['nid'],
+          'cid' => $action['cid'],
+        );
         $points = summergame_player_points($player['pid'], 50, 'Added Comment',
-                                           'Commented on a website post nid:' . $action['nid']);
+                                           'Commented on a website post', $metadata);
         drupal_set_message("Earned $points Summer Game points for commenting on a website post");
       }
     }
@@ -1807,21 +2020,21 @@ function summergame_comment($action, $op) {
 
 /**
  * HOOK: Add points when someone views a node
- */
+ *
 function summergame_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
   if (variable_get('summergame_points_enabled', 0)) {
     global $user;
     if ($user->uid && $op == 'view' && $page) {
       // check if user has already received points for viewing this node
       if ($player = summergame_player_load(array('uid' => $user->uid))) {
-        $res = db_query("SELECT lid FROM sg_ledger WHERE pid = %d AND code_text = 'Read a Post' " .
+        $res = db_query("SELECT lid FROM sg_ledger WHERE pid = %d AND metadata = 'Read a Post' " .
                         "AND description LIKE '%%nid:%d' LIMIT 1",
                         $player['pid'], $node->nid);
         $rate_count = db_fetch_object($res);
         if (!$rate_count->lid) {
           $node_link = l($node->title, 'node/' . $node->nid);
           $points = summergame_player_points($player['pid'], 10, 'Read a Post',
-                                             'Read a website post: ' . $node_link . ' nid:' . $node->nid);
+                                             'Read a website post: ' . $node_link, 'nid:' . $node->nid);
           $points_link = l($points . ' Summer Game points', 'summergame/player');
           drupal_set_message("Earned $points_link for reading a website post");
         }
@@ -1829,20 +2042,18 @@ function summergame_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
     }
   }
 }
+ */
 
 /**
  * UTILITY: Return the prize description array
  */
 function summergame_get_prize_array() {
   return array(
-    'bucket' => 'Bucket (Youth Mid-Way)',
-    'silly' => 'Silly Putty (Youth Mid-Way)',
+    'puzzle' => 'One Piece Puzzle (Youth Mid-Way)',
+    'duck' => 'Rubber Duck (Youth Mid-Way)',
     'ybook' => 'Book (Youth Completion)',
-    'raffle' => 'Raffle entry into drawing for iPad2, iPod Touch, or Nintendo 3DS (Teen Completion)',
     'tbook' => 'Book (Teen Completion)',
     'fine' => 'Fine Forgiveness Coupon (Teen or Adult Completion)',
-    'plum' => 'Plum Market Coupon (Teen or Adult Completion)',
-    'dq' => 'Dairy Queen Coupon (Teen or Adult Completion)',
     'bread' => 'Great Harvest Bread Coupon (Teen or Adult Completion)',
   );
 }
@@ -1914,22 +2125,52 @@ function summergame_player_load_all($uid) {
 /**
  * UTILITY: Load player points
  */
-function summergame_get_player_points($pid) {
+function summergame_get_player_points($pid, $game_term = '', $type = '') {
   $player_points = array(
     'career' => 0,
   );
 
-  $res = db_query('SELECT * FROM sg_ledger WHERE pid = %d ORDER BY timestamp ASC', $pid);
+  $query = 'SELECT * FROM sg_ledger WHERE pid = %d';
+  $args = array($pid);
+  if ($game_term) {
+    $query .= " AND game_term = '%s'";
+    $args[] = $game_term;
+  }
+  if ($type) {
+    $query .= " AND type = '%s'";
+    $args[] = $type;
+  }
+  $query .= ' ORDER BY timestamp DESC';
+
+  $res = db_query($query, $args);
 
   while ($row = db_fetch_array($res)) {
     $game_term = $row['game_term'];
+    $type = $row['type'];
     $player_points[$game_term]['ledger'][] = $row;
     $player_points[$game_term]['balance'] += $row['points'];
-    if ($row['points'] > 0 && strpos($row['code_text'], 'Shop') !== 0) {
-      // Don't count shop refunds in the total
+    $player_points[$game_term]['types'][$type] += $row['points'];
+    if ($row['points'] > 0 && strpos($row['metadata'], 'leaderboard:no') === FALSE) {
+      // Don't count non-leaderboard points in the total
       $player_points[$game_term]['total'] += $row['points'];
       $player_points['career'] += $row['points'];
     }
+  }
+
+  // Sort type points
+  foreach ($player_points as $game_term => &$details) {
+    if (is_array($details['types'])) {
+      arsort($details['types']);
+    }
+  }
+
+  // Get badges
+  $res = db_query("SELECT * FROM sg_players_badges, sg_badges " .
+                  "WHERE sg_players_badges.pid = %d AND sg_players_badges.bid = sg_badges.bid " .
+                  "ORDER BY sg_players_badges.timestamp ASC", $pid);
+  while ($badge = db_fetch_array($res)) {
+    $game_term = $badge['game_term'];
+    $player_points[$game_term]['badges'][] = $badge;
   }
 
   return $player_points;
@@ -1981,6 +2222,8 @@ function summergame_player_delete($player_info) {
     db_query("DELETE FROM sg_ledger WHERE pid = %d", $player['pid']);
     // Delete badges
     db_query("DELETE FROM sg_players_badges WHERE pid = %d", $player['pid']);
+    // Delete team memberships
+    db_query("DELETE FROM sg_players_teams WHERE pid = %d", $player['pid']);
     // Delete player info
     db_query("DELETE FROM sg_players WHERE pid = %d", $player['pid']);
   }
@@ -2011,20 +2254,32 @@ function summergame_redeem_code($pid, $code_text) {
     }
     else {
       // check if player has already redeemed this code
-      $existing = db_fetch_object(db_query("SELECT * FROM sg_ledger WHERE pid = %d AND code_text = '%s'", $pid, $code->text));
-      if ($existing->lid) {
+      $res = db_query("SELECT * FROM sg_ledger WHERE pid = %d AND metadata LIKE 'gamecode:%s'", $pid, $code->text);
+      if ($existing = db_fetch_object($res)) {
         $existing_date = date('F j, Y, g:i a', $existing->timestamp);
         return array('error' => "Code \"$code->text\" already redeemed on $existing_date");
       }
     }
     // Go ahead and redeem
     db_query("UPDATE sg_game_codes SET num_redemptions = num_redemptions + 1 WHERE code_id = %d", $code->code_id);
-    // Adjust points if diminishing
-    if ($code->diminishing) {
+
+    if ($code->points_override) {
+      $code->points = $code->points_override;
+    }
+    else if ($code->diminishing) {
+      // Adjust points if diminishing
       $code->points -= $code->num_redemptions;
     }
-    $points = summergame_player_points($pid, $code->points, $code->text, $code->description, $code->game_term);
-    return array('success' => "Redeemed code \"$code->text\" for $points $code->game_term points");
+    if ($code->game_term_override) {
+      $code->game_term = $code->game_term_override;
+    }
+
+    $points = summergame_player_points($pid, $code->points, 'Game Code', $code->description, 'gamecode:' . $code->text, $code->game_term);
+    $message = "Redeemed code \"$code->text\" for $points $code->game_term points";
+    if ($code->description) {
+      $message .= ': ' . $code->description;
+    }
+    return array('success' => $message);
   }
   else {
     return array('warning' => "Code is not recognized");
@@ -2034,24 +2289,41 @@ function summergame_redeem_code($pid, $code_text) {
 /**
  * UTILITY: Apply points to a player
  */
-function summergame_player_points($pid, $points, $code_text = '', $description = '', $game_term = '') {
-  if (strpos($code_text, 'mat_code:') !== FALSE ||
-      $code_text == 'Checkout History' ||
-      $code_text == 'Read a Post') {
-    $point_limit = 1000;
-    $day_start = mktime(0, 0, 0);
+function summergame_player_points($pid, $points, $type, $description = '', $metadata = '', $game_term = '') {
+  if (is_array($metadata)) {
+    if ($limit = $metadata['daily_limit']) {
+      $day_start = mktime(0, 0, 0);
 
-    $sql = "SELECT SUM(points) AS total FROM sg_ledger " .
-           "WHERE pid = %d " .
-           "AND timestamp > %d " .
-           "AND (code_text LIKE 'mat_code:%' " .
-           "OR code_text LIKE 'Checkout History' " .
-           "OR code_text LIKE 'Read a Post')";
-    $total = db_fetch_object(db_query($sql, $pid, $day_start));
-    if ($total->total > $point_limit) {
-      drupal_set_message("Sorry, you are over the limit of $point_limit points for today for this category of points", 'error');
-      return 0;
+      $sql = "SELECT SUM(points) AS total FROM sg_ledger " .
+             "WHERE pid = %d " .
+             "AND timestamp > %d " .
+             "AND metadata LIKE '%%daily_limit:%d%%'";
+      $row = db_fetch_object(db_query($sql, $pid, $day_start, $limit));
+
+      if (($row->total + $points) > $limit) {
+        // If over the limit, cap the point total at the daily limit
+        $overage = ($row->total + $points) - $limit;
+        drupal_set_message("Sorry, your score of $points brings you over the daily limit of $limit by $overage. You may report those additional points tomorrow.", 'warning');
+        $points = $limit - $row->total;
+      }
+      else {
+        drupal_set_message("You have earned $row->total points of your daily limit of $limit for this type of scoring");
+      }
     }
+
+    // Convert metadata to string
+    $md_string = '';
+    if (count($metadata)) {
+      foreach ($metadata as $key => $value) {
+        if (!is_numeric($key)) {
+          $md_string .= $key . ':' . $value . ' ';
+        }
+        else {
+          $md_string .= $value . ' ';
+        }
+      }
+    }
+    $metadata = trim($md_string);
   }
 
   // Set game_term
@@ -2059,13 +2331,13 @@ function summergame_player_points($pid, $points, $code_text = '', $description =
     $game_term = variable_get('summergame_current_game_term', '');
   }
 
-  db_query("INSERT INTO sg_ledger (pid, points, code_text, description, game_term, timestamp) " .
-           "VALUES (%d, %d, '%s', '%s', '%s', %d)",
-           $pid, $points, $code_text, $description, $game_term, time());
+  db_query("INSERT INTO sg_ledger (pid, points, type, metadata, description, game_term, timestamp) " .
+           "VALUES (%d, %d, '%s', '%s', '%s', '%s', %d)",
+           $pid, $points, $type, $metadata, $description, $game_term, time());
 
   // Check if the new points affect any badges
   if ($messages = summergame_player_check_badges($pid)) {
-    foreach($messages as $message) {
+    foreach ($messages as $message) {
       drupal_set_message($message);
     }
   }
@@ -2084,14 +2356,15 @@ function summergame_player_check_badges($pid) {
   while ($player_badge = db_fetch_object($res)) {
     $player_bids[] = $player_badge->bid;
   }
-  $res = db_query("SELECT * FROM sg_badges WHERE formula != ''");
+  $res = db_query("SELECT * FROM sg_badges WHERE active = 1 AND formula != ''");
   while ($badge = db_fetch_object($res)) {
     if (!in_array($badge->bid, $player_bids)) {
       $awarded = FALSE;
       if (strpos($badge->formula, '::')) {
-        // Multiple of a code text formula
+        // Multiple of a ledger type formula
         list($count_limit, $text_pattern) = explode('::', $badge->formula);
-        $lid_count = db_fetch_object(db_query("SELECT COUNT(lid) AS lid_count FROM sg_ledger WHERE pid = %d AND code_text LIKE '%%%s%%'", $pid, $text_pattern));
+        $lid_count = db_fetch_object(db_query("SELECT COUNT(lid) AS lid_count FROM sg_ledger WHERE pid = %d AND (type LIKE '%%%s%%' OR metadata LIKE '%%%s%%') AND game_term = '%s'",
+                                              $pid, $text_pattern, $text_pattern, $badge->game_term));
         if ($lid_count->lid_count >= $count_limit) {
           summergame_player_award_badge($pid, $badge->bid);
           $awarded = TRUE;
@@ -2100,8 +2373,9 @@ function summergame_player_check_badges($pid) {
       else {
         // Collection Badge
         $eligible = TRUE;
-        foreach(explode(',', $badge->formula) as $code_text) {
-          $ledger = db_fetch_object(db_query("SELECT lid FROM sg_ledger WHERE pid = %d and code_text LIKE '%%%s%%' LIMIT 1", $pid, $code_text));
+        foreach (explode(',', $badge->formula) as $text_pattern) {
+          $ledger = db_fetch_object(db_query("SELECT lid FROM sg_ledger WHERE pid = %d AND (type LIKE '%%%s%%' OR metadata LIKE '%%%s%%') AND game_term = '%s' LIMIT 1",
+                                             $pid, $text_pattern, $text_pattern, $badge->game_term));
           if (!$ledger->lid) {
             $eligible = FALSE;
             break;
@@ -2117,12 +2391,21 @@ function summergame_player_check_badges($pid) {
         $messages[] = "Earned the $badge->title Badge!";
         // check if a bonus should be applied
         if ($badge->points) {
-          $game_term = ($badge->game_term ? $badge->game_term : variable_get('summergame_current_game_term', ''));
-          db_query("INSERT INTO sg_ledger (pid, points, code_text, description, game_term, timestamp) " .
-                   "VALUES (%d, %d, '%s', '%s', '%s', %d)",
-                   $pid, $badge->points, 'Badge Bonus', "Earned the $badge->title Badge",
-                   $game_term, time());
-          $messages[] = "Received $badge->points bonus $game_term points for earning the $badge->title Badge";
+          // check for points override
+          if ($badge->points_override) {
+            $badge->points = $badge->points_override;
+          }
+          if ($badge->game_term_override) {
+            $badge->game_term = $badge->game_term_override;
+          }
+          else if (empty($badge->game_term)) {
+            $badge->game_term = variable_get('summergame_current_game_term', '');
+          }
+          db_query("INSERT INTO sg_ledger (pid, points, type, metadata, description, game_term, timestamp) " .
+                   "VALUES (%d, %d, '%s', '%s', '%s', '%s', %d)",
+                   $pid, $badge->points, 'Badge Bonus', $metadata, "Earned the $badge->title Badge",
+                   $badge->game_term, time());
+          $messages[] = "Received $badge->points bonus $badge->game_term points for earning the $badge->title Badge";
         }
         // check if an email should be sent to awardee
         if ($badge->email_message) {
@@ -2364,29 +2647,29 @@ function summergame_players_merge($pid1, $pid2) {
   $res = db_query("SELECT * FROM " .
                   "(SELECT COUNT(sg_ledger.lid) AS ledger_count, sg_ledger.* " .
                   "FROM sg_ledger, sg_game_codes " .
-                  "WHERE sg_ledger.code_text = sg_game_codes.text " .
+                  "WHERE sg_ledger.metadata = sg_game_codes.text " .
                   "AND (sg_ledger.pid = %d OR sg_ledger.pid = %d) " .
-                  "GROUP BY sg_ledger.code_text) AS x " .
+                  "GROUP BY sg_ledger.metadata) AS x " .
                   "WHERE ledger_count > 1",
                   $pid1, $pid2);
   while ($ledger_row = db_fetch_object($res)) {
-    $duplicate_codes[] = "'$ledger_row->code_text'";
+    $duplicate_codes[] = "'$ledger_row->metadata'";
   }
   if (count($duplicate_codes)) {
     $duplicate_codes_string = implode(', ', $duplicate_codes);
-    db_query("DELETE FROM sg_ledger WHERE pid = %d AND code_text IN ($duplicate_codes_string)", $pid2);
+    db_query("DELETE FROM sg_ledger WHERE pid = %d AND metadata IN ($duplicate_codes_string)", $pid2);
   }
 
   // Remove duplicate Signup and Completed bonuses
-  $res = db_query("SELECT COUNT(lid) AS count FROM sg_ledger WHERE code_text = 'Signup' AND (pid = %d OR pid = %d)", $pid1, $pid2);
+  $res = db_query("SELECT COUNT(lid) AS count FROM sg_ledger WHERE metadata = 'Signup' AND (pid = %d OR pid = %d)", $pid1, $pid2);
   $ledger = db_fetch_object($res);
   if ($ledger->count > 1) {
-    db_query("DELETE FROM sg_ledger WHERE pid = %d AND code_text = 'Signup'", $pid2);
+    db_query("DELETE FROM sg_ledger WHERE pid = %d AND metadata = 'Signup'", $pid2);
   }
-  $res = db_query("SELECT COUNT(lid) AS count FROM sg_ledger WHERE code_text = 'Completed' AND (pid = %d OR pid = %d)", $pid1, $pid2);
+  $res = db_query("SELECT COUNT(lid) AS count FROM sg_ledger WHERE metadata = 'Completed' AND (pid = %d OR pid = %d)", $pid1, $pid2);
   $ledger = db_fetch_object($res);
   if ($ledger->count > 1) {
-    db_query("DELETE FROM sg_ledger WHERE pid = %d AND code_text = 'Completed'", $pid2);
+    db_query("DELETE FROM sg_ledger WHERE pid = %d AND metadata = 'Completed'", $pid2);
   }
 
   // Remove duplicate badges and bonuses
@@ -2398,7 +2681,7 @@ function summergame_players_merge($pid1, $pid2) {
   foreach($badges as $badge) {
     db_query("DELETE FROM sg_players_badges WHERE pid = %d and bid = %d", $pid2, $badge->bid);
     $badge_description = "Earned the $badge->title Badge";
-    db_query("DELETE FROM sg_ledger WHERE pid = %d AND code_text = 'Badge Bonus' AND description = '%s'", $pid2, $badge_description);
+    db_query("DELETE FROM sg_ledger WHERE pid = %d AND metadata = 'Badge Bonus' AND description = '%s'", $pid2, $badge_description);
   }
 
   // Update remaing player2 data to point at player1 and delete player 2
@@ -2476,4 +2759,331 @@ function summergame_email_attachment($to, $subject, $message, $from, $fileatt, $
 
   // send mail
   return mail($to, $subject, $message, $headers);
+}
+
+/**
+ * UTILITY: Load a team record
+ */
+function summergame_team_load($tid) {
+  $result = db_query('SELECT * FROM {sg_teams} WHERE tid = %d', $tid);
+  return db_fetch_array($result);
+}
+
+function summergame_team_members($tid) {
+  $members = array();
+
+  $result = db_query('SELECT * FROM sg_players, sg_players_teams ' .
+                     'WHERE sg_players.pid = sg_players_teams.pid ' .
+                     'AND tid = %d', $tid);
+  while ($row = db_fetch_array($result)) {
+    $members[$row['pid']] = $row;
+  }
+
+  return $members;
+}
+
+/**
+ * UTILITY: Save a team record
+ */
+function summergame_team_save($team) {
+  $query = array();
+  $params = array();
+
+  if ($tid = $team['tid']) {
+    // Update existing team record
+    unset($team['tid']);
+    foreach ($team as $key => $value) {
+      if (strtoupper($value) == 'NULL') {
+        $query[] = $key . ' = NULL';
+      }
+      else {
+        $query[] = $key . ' = ' . (is_numeric($value) ? '%d' : "'%s'");
+        $params[] = $value;
+      }
+    }
+    $params[] = $tid;
+    db_query('UPDATE sg_teams SET ' . implode($query, ', ') . ' WHERE tid = %d', $params);
+  }
+  else {
+    // New team record
+    foreach ($team as $key => $value) {
+      $query[] = $key . ' = ' . (is_numeric($value) ? '%d' : "'%s'");
+      $params[] = $value;
+    }
+    db_query('INSERT INTO sg_teams SET ' . implode($query, ', '), $params);
+    $tid = db_last_insert_id('sg_teams', 'tid');
+  }
+
+  return summergame_team_load(array('tid' => $tid));
+}
+
+/**
+ * UTILITY: Delete a team record
+ *
+ * Uses the same argument as summergame_team_load
+ */
+function summergame_team_delete($tid) {
+  if ($team = summergame_team_load($tid)) {
+    // Delete members
+    db_query("DELETE FROM sg_players_teams WHERE tid = %d", $team['tid']);
+    // Delete team info
+    db_query("DELETE FROM sg_teams WHERE tid = %d", $team['tid']);
+  }
+}
+
+function summergame_team_form($form_state, $tid = 0) {
+  global $user;
+  $team = summergame_team_load($tid);
+  $form = array();
+
+  if ($team['tid']) {
+    $form['tid'] = array(
+      '#type' => 'value',
+      '#value' => $team['tid'],
+    );
+    $submit_text = 'Save Team Changes';
+  }
+  else {
+    $submit_text = 'Create New Team';
+  }
+  $form['uid'] = array(
+    '#type' => 'value',
+    '#value' => ($team['uid'] ? $team['uid'] : $user->uid),
+  );
+  $form['name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Name'),
+    '#default_value' => $team['name'],
+    '#size' => 30,
+    '#maxlength' => 128,
+    '#description' => t('Name for your team for leaderboards'),
+  );
+  $form['description'] = array(
+    '#type' => 'textarea',
+    '#title' => 'Description',
+    '#default_value' => $team['description'],
+    '#description' => t('More details about your team if needed'),
+  );
+  $form['code'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Team Code'),
+    '#default_value' => $team['code'],
+    '#size' => 16,
+    '#maxlength' => 32,
+    '#description' => t('Want to control who joins your group? Enter a team code to restrict membership. Leave it blank to let anyone join.'),
+  );
+  $form['inline'] = array(
+    '#prefix' => "<div class=\"container-inline\">",
+    '#suffix' => "</div>",
+  );
+  $form['inline']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t($submit_text),
+  );
+  if ($team['tid']) {
+    $form['inline']['cancel'] = array(
+      '#value' => l('Cancel', 'summergame/team/' . $team['tid']),
+    );
+  }
+
+  return $form;
+}
+
+function summergame_team_form_submit($form, &$form_state) {
+  $team = array(
+    'tid' => $form_state['values']['tid'],
+    'uid' => $form_state['values']['uid'],
+    'name' => $form_state['values']['name'],
+    'description' => $form_state['values']['description'],
+    'code' => $form_state['values']['code'],
+  );
+
+  $team = summergame_team_save($team);
+
+  drupal_goto('summergame/team/' . $team['tid']);
+}
+
+function summergame_teams_list($search = NULL) {
+  $content .= '<h1>Teams List</h1>';
+
+  $res = db_query("SELECT * FROM sg_teams ORDER BY name ASC");
+  while ($team = db_fetch_array($res)) {
+    $member_count = count(summergame_team_members($team['tid']));
+    $content .= '<p>';
+    $content .= '<h2 class="title">' .
+                l($team['name'], 'summergame/team/' . $team['tid']) .
+                '</h2>';
+    $content .= $member_count . ' team member' . ($member_count == 1 ? '' : 's') . '<br />';
+    if ($team['description']) {
+      $content .= '<em>' . $team['description'] . '</em>';
+    }
+    if ($team['code']) {
+      $content .= '<br />*This team requires a code to join';
+    }
+    $content .= '</p>';
+  }
+
+  $content .= '<ul>' .
+              '<li class="button">' .
+              l('Create a New Team', 'summergame/team/edit') .
+              '</li>' .
+              '</ul>';
+
+  return $content;
+}
+
+function summergame_team_page($tid) {
+  global $user;
+  $team = summergame_team_load($tid);
+
+  if ($team['tid']) {
+    drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
+    $team['members'] = summergame_team_members($tid);
+    foreach (summergame_player_load_all($user->uid) as $user_player) {
+      if ($team['members'][$user_player['pid']]) {
+        $team_member = TRUE;
+      }
+    }
+
+    $content .= '<div class="summergame-team-title">';
+    $content .= '<ul class="summergame-team-buttons">';
+    if ($user->uid == $team['uid']) {
+      // User owns this team
+      $content .= '<li class="button">' .
+                  l('Edit Team Details', 'summergame/team/edit/' . $team['tid']) .
+                  '</li>';
+    }
+    $content .= '<li class="button">' .
+                l($team_member ? 'Leave This Team' : 'Join This Team', 'summergame/team/join/' . $team['tid']) .
+                '</li>';
+    $content .= '</ul>';
+
+    $content .= '<h1>Team ' . $team['name'] . '</h1>';
+    if ($team['description']) {
+      $content .= '<p>' . $team['description'] . '</p>';
+    }
+    $content .= '</div>'; // summergame-team-title
+
+    $content .= '<h2>' . count($team['members']) . ' Members:</h2>';
+    foreach ($team['members'] as $member) {
+      if ($member['show_leaderboard']) {
+        $player_name = $member['nickname'] ? $member['nickname'] : $member['name'];
+      }
+      else {
+        $player_name = 'Player #' . $member['pid'];
+      }
+      if ($member['show_myscore'] || user_access('administer summergame')) {
+        $player_name = l($player_name, 'summergame/player/' . $member['pid']);
+      }
+      $content .= "<p>$player_name</p>";
+    }
+  }
+  else {
+    $content .= "<p>No Team with an ID# of $tid could be found.</p>";
+  }
+
+  $content .= '<ul>' .
+              '<li class="button">' .
+              l('Back to Full List of Teams', 'summergame/teams') .
+              '</li>' .
+              '</ul>';
+  return $content;
+}
+
+function summergame_team_join_form($form_state, $tid = 0) {
+  global $user;
+  $player_options = array();
+  $player_defaults = array();
+  $team = summergame_team_load($tid);
+
+  if ($team['tid']) {
+    $team['members'] = summergame_team_members($team['tid']);
+    foreach (summergame_player_load_all($user->uid) as $player) {
+      $player_options[$player['pid']] = $player['name'];
+      if ($team['members'][$player['pid']]) {
+        // Already a member
+        $player_defaults[] = $player['pid'];
+      }
+    }
+
+    $form = array();
+
+    $title = '<p style="float: right">' .
+             l('Back to the Team page', 'summergame/team/' . $team['tid']) .
+             '</p>' .
+             '<h1>Join Team ' . $team['name'] . '</h1>';
+    if ($team['description']) {
+      $title .= '<p>' . $team['description'] . '</p>';
+    }
+    $form['title'] = array(
+      '#value' => $title,
+    );
+    $form['tid'] = array(
+      '#type' => 'value',
+      '#value' => $team['tid'],
+    );
+    $form['pids'] = array(
+      '#type' => 'checkboxes',
+      '#title' => 'Select players to join this team',
+      '#options' => $player_options,
+      '#default_value' => $player_defaults,
+    );
+
+    if ($team['code']) {
+      $form['code'] = array(
+        '#type' => 'textfield',
+        '#title' => 'Team Code',
+        '#size' => 16,
+        '#maxlength' => 32,
+        '#description' => "This team's membership is restricted, please enter the code to join",
+      );
+    }
+    $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => 'Save Membership',
+    );
+
+    return $form;
+  }
+}
+
+function summergame_team_join_form_submit($form, &$form_state) {
+  $team = summergame_team_load($form_state['values']['tid']);
+  $team['members'] = summergame_team_members($form_state['values']['tid']);
+
+  foreach ($form_state['values']['pids'] as $pid => $checked) {
+    if ($pid == $checked) {
+      // Wants to join
+      if (empty($team['members'][$pid])) {
+        // Not already a member
+        if ($team['code']) {
+          // Check team code
+          if (trim($form_state['values']['code']) == $team['code']) {
+            // Join!
+            db_query("INSERT INTO sg_players_teams SET pid =  %d, tid = %d", $pid, $team['tid']);
+            drupal_set_message('Player #' . $pid . ' joined team ' . $team['name']);
+          }
+          else {
+            drupal_set_message('Sorry, the Team Code you entered is not correct. ' .
+                               'Player #' . $pid . ' unable to join team', 'warning');
+          }
+        }
+        else {
+          // Public team, go ahead and join
+          db_query("INSERT INTO sg_players_teams SET pid =  %d, tid = %d", $pid, $team['tid']);
+          drupal_set_message('Player #' . $pid . ' joined team ' . $team['name']);
+        }
+      }
+    }
+    else {
+      // Doesn't want to be a member
+      if (!empty($team['members'][$pid])) {
+        // Already a member, wants to leave, don't require code
+        db_query("DELETE FROM sg_players_teams WHERE pid = %d AND tid = %d", $pid, $team['tid']);
+        drupal_set_message('Player #' . $pid . ' has left team ' . $team['name']);
+      }
+    }
+  }
+
+  drupal_goto('summergame/team/' . $team['tid']);
 }
