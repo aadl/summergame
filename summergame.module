@@ -1330,20 +1330,11 @@ function summergame_player_page($pid = 0) {
       }
 */
       // Player Title
-      $player_points = summergame_get_player_points($player['pid']);
+      $player['points'] = summergame_get_player_points($player['pid']);
       drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
       $playername = $player['pid'] . ': ' . ($player['nickname'] ? $player['nickname'] : $player['name']);
       $content .= '<div id="summergame-player-page">';
-      $content .= "<h1>Summer Game Player #$playername (" . $player_points['career'] . " career points)</h1>";
-
-      $points_summary = array();
-      foreach ($player_points as $game_term => $player_game_points) {
-        if (is_array($player_game_points)) {
-          $summary_text  = $player_game_points['total'] . ' ' . $game_term . ' points';
-          $points_summary[] = l($summary_text, '', array('fragment' => $game_term, 'external' => TRUE));
-        }
-      }
-      $content .= '<p>Jump to details: ' . implode(' | ', $points_summary) . '</p>';
+      $content .= "<h1>Summer Game Player #$playername (" . $player['points']['career'] . " career points)</h1>";
 
       if ($player['uid'] == $user->uid) {
         $content .= "<p><em>That's you!</em> ";
@@ -1385,7 +1376,7 @@ function summergame_player_page($pid = 0) {
       }
 
       // Player Score //////////////////////////////////////////////////////////
-      foreach ($player_points as $game_term => $player_game_points) {
+      foreach ($player['points'] as $game_term => $player_game_points) {
         if (is_array($player_game_points)) {
           $content .= '<div class="scorecard">';
           $content .= "<h2 class=\"title\"><a name=\"$game_term\">$game_term Scorecard</a></h2>";
@@ -1485,6 +1476,30 @@ function theme_summergame_player_info($player) {
   $content .= '</ul>';
   $content .= '</div>';
 
+  // Points Summary
+  $content .= '<div id="player-points-summary">';
+  $summary_rows = array();
+  $sg_balance = 0;
+  foreach ($player['points'] as $game_term => $player_game_points) {
+    if (is_array($player_game_points)) {
+      $summary_rows[] = array(
+        'Game' => l($game_term, '', array('fragment' => $game_term, 'external' => TRUE)),
+        'Points' => $player_game_points['total'],
+      );
+      if (strpos($game_term, 'SummerGame') === 0) {
+        $sg_balance += $player_game_points['balance'];
+      }
+    }
+  }
+  $summary_rows[] = array(
+    'Game' => '<strong>Shop Balance</strong>',
+    'Points' => $sg_balance,
+  );
+
+  $content .= '<h2>Points Summary:</h2>';
+  $content .= theme('table', array_keys($summary_rows[0]), $summary_rows);
+  $content .= '</div>';
+
   // Translate privacy details
   $privacy_details .= '<ul>';
   if ($player['show_leaderboard']) {
@@ -1541,7 +1556,7 @@ function theme_summergame_player_info($player) {
   }
 
   $header = array(
-    'Player Details',
+    '',
     array(
       'data' => '[ ' . l('Edit Player Info', 'summergame/player/edit/' . $player['pid']) . ' ]',
       'style' => 'text-align: right',
@@ -1549,6 +1564,7 @@ function theme_summergame_player_info($player) {
   );
 
   $content .= '<div id="player-info-table">';
+  $content .= '<h2>Player Details:</h2>';
   $content .= theme('table', $header, $player_table);
   $content .= '</div>';
 

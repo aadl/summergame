@@ -7,15 +7,25 @@
 }
 
 #summergame-player-page #player-info-table {
-  margin-right: 220px;
+  margin-right: 380px;
 }
 
 #summergame-player-page #player-earn-links {
   float: right;
-  width: 200px;
+  width: 180px;
 }
 
 #summergame-player-page #player-earn-links h2 {
+  margin-top: 0;
+}
+
+#summergame-player-page #player-points-summary {
+  float: right;
+  width: 180px;
+  margin-right: 10px;
+}
+
+#summergame-player-page #player-points-summary h2 {
   margin-top: 0;
 }
 
