@@ -2486,37 +2486,6 @@ function summergame_pdf($type = 'adult', $code_id = 0) {
 
     $pdf->Output($event_code . '_code.pdf', 'D');
   }
-  if ($type == 'adult2') {
-    // initiate FPDI
-    $pdf =& new FPDI('P', 'mm', 'Letter');
-    $pdf->SetAutoPageBreak(FALSE);
-
-    // set the sourcefile
-    $pdf->setSourceFile($file_path . 'adult_game.pdf');
-    $tplidx = $pdf->importPage(1);
-    $pdf->addPage();
-    $pdf->useTemplate($tplidx);
-
-    // now write unique number
-    $id = 'AG' . $redis->incr('agpdfcounter');
-    $pdf->SetFont('Helvetica', 'B', 13);
-
-    $pdf->SetXY(39, 106.5);
-    $pdf->Cell(0, 10, $id, 0, 1);
-
-    $pdf->SetXY(163, 126.5);
-    $pdf->Cell(0, 10, $id, 0, 1);
-
-    // now write 2nd set unique number
-    $id = 'AG' . $redis->incr('agpdfcounter');
-    $pdf->SetXY(39, 243);
-    $pdf->Cell(0, 10, $id, 0, 1);
-
-    $pdf->SetXY(161, 264);
-    $pdf->Cell(0, 10, $id, 0, 1);
-
-    $pdf->Output('newadultgame.pdf', 'D');
-  }
   else if ($type == 'teen') {
     // initiate FPDI
     $pdf =& new FPDI('P', 'mm', 'Letter');
@@ -2532,10 +2501,10 @@ function summergame_pdf($type = 'adult', $code_id = 0) {
     $id = 'TG' . $redis->incr('tgpdfcounter');
     $pdf->SetFont('Helvetica', 'B', 13);
 
-    $pdf->SetXY(35, 233);
+    $pdf->SetXY(21, 220);
     $pdf->Cell(0, 10, $id, 0, 1);
 
-    $pdf->SetXY(164, 261);
+    $pdf->SetXY(165, 269);
     $pdf->Cell(0, 10, $id, 0, 1);
 
     $pdf->Output('newteengame.pdf', 'D');
@@ -2546,19 +2515,19 @@ function summergame_pdf($type = 'adult', $code_id = 0) {
     $pdf->SetAutoPageBreak(FALSE);
 
     // set the sourcefile
-    $pdf->setSourceFile($file_path . 'single_adult_game.pdf');
+    $pdf->setSourceFile($file_path . 'adult_game.pdf');
     $tplidx = $pdf->importPage(1);
     $pdf->addPage();
     $pdf->useTemplate($tplidx);
 
     // now write some text
     $id = 'AG' . $redis->incr('agpdfcounter');
-    $pdf->SetFont('Helvetica','B',13);
+    $pdf->SetFont('Helvetica', 'B', 12);
 
-    $pdf->SetXY(39, 110);
+    $pdf->SetXY(85, 140.5);
     $pdf->Cell(0, 10, $id, 0, 1);
 
-    $pdf->SetXY(161, 130);
+    $pdf->SetXY(105, 264.5);
     $pdf->Cell(0, 10, $id, 0, 1);
 
     $pdf->Output('AGSummer_Game.pdf', 'D');
