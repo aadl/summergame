@@ -1535,6 +1535,17 @@ function theme_summergame_player_info($player) {
     $player_prizes .= '</ul>';
   }
 
+  // List teams
+  $teams = array();
+  $res = db_query("SELECT * FROM sg_players_teams, sg_teams " .
+                  "WHERE sg_players_teams.tid = sg_teams.tid " .
+                  "AND sg_players_teams.pid = %d", $player['pid']);
+  while ($team = db_fetch_array($res)) {
+    $teams[] = l($team['name'], 'summergame/team/' . $team['tid']);
+  }
+  $teams[] = '[ ' . l('See List of Teams', 'summergame/teams') . ' ]';
+  $player['teams'] = implode(', ', $teams);
+
   $player_table = array(
     array('<strong>Real Name:</strong>', $player['name']),
     array('<strong>Nickname:</strong>', $player['nickname']),
@@ -1543,6 +1554,7 @@ function theme_summergame_player_info($player) {
     array('<strong>Age Group:</strong>', ucwords($player['agegroup'])),
     array('<strong>Privacy Options:</strong>', $privacy_details),
     array('<strong>Completed Classic Reading Game?:</strong>', $player_prizes),
+    array('<strong>Team Membership:</strong>', $player['teams']),
   );
 
   // Lookup drupal user if admin
@@ -1953,7 +1965,7 @@ function summergame_twilio_respond($incoming) {
     $responses[] = $response;
     // Signup bonus
     $points = summergame_player_points($player['pid'], 100, 'Signup',
-                                       'Signed Up for the Summer Game');
+                                       'Signed Up for the Summer Game', 'via:txt');
     $response = $response_template;
     $response['text'] = "Earned $points Summer Game points for signing up!";
     $responses[] = $response;
@@ -2630,32 +2642,28 @@ function summergame_players_merge($pid1, $pid2) {
 
   // Check for duplicate Game Codes and remove from old player
   $duplicate_codes = array();
-  $res = db_query("SELECT * FROM " .
-                  "(SELECT COUNT(sg_ledger.lid) AS ledger_count, sg_ledger.* " .
-                  "FROM sg_ledger, sg_game_codes " .
-                  "WHERE sg_ledger.metadata = sg_game_codes.text " .
-                  "AND (sg_ledger.pid = %d OR sg_ledger.pid = %d) " .
-                  "GROUP BY sg_ledger.metadata) AS x " .
-                  "WHERE ledger_count > 1",
-                  $pid1, $pid2);
-  while ($ledger_row = db_fetch_object($res)) {
-    $duplicate_codes[] = "'$ledger_row->metadata'";
+  $res = db_query("SELECT * FROM sg_ledger WHERE pid = %d AND metadata LIKE '%%gamecode:%%'", $pid1);
+  while ($row = db_fetch_array($res)) {
+    if (preg_match('/gamecode:([\w]+)/', $row['metadata'], $matches)) {
+      $duplicate_codes[] = $matches[1];
+    }
   }
   if (count($duplicate_codes)) {
-    $duplicate_codes_string = implode(', ', $duplicate_codes);
-    db_query("DELETE FROM sg_ledger WHERE pid = %d AND metadata IN ($duplicate_codes_string)", $pid2);
+    foreach ($duplicate_codes as $duplicate) {
+      db_query("DELETE FROM sg_ledger WHERE pid = %d AND metadata like '%%gamecode:%s%%'", $pid2, $duplicate);
+    }
   }
 
   // Remove duplicate Signup and Completed bonuses
-  $res = db_query("SELECT COUNT(lid) AS count FROM sg_ledger WHERE metadata = 'Signup' AND (pid = %d OR pid = %d)", $pid1, $pid2);
+  $res = db_query("SELECT COUNT(lid) AS count FROM sg_ledger WHERE type = 'Signup' AND (pid = %d OR pid = %d)", $pid1, $pid2);
   $ledger = db_fetch_object($res);
   if ($ledger->count > 1) {
-    db_query("DELETE FROM sg_ledger WHERE pid = %d AND metadata = 'Signup'", $pid2);
+    db_query("DELETE FROM sg_ledger WHERE pid = %d AND type = 'Signup'", $pid2);
   }
-  $res = db_query("SELECT COUNT(lid) AS count FROM sg_ledger WHERE metadata = 'Completed' AND (pid = %d OR pid = %d)", $pid1, $pid2);
+  $res = db_query("SELECT COUNT(lid) AS count FROM sg_ledger WHERE type = 'Completed' AND (pid = %d OR pid = %d)", $pid1, $pid2);
   $ledger = db_fetch_object($res);
   if ($ledger->count > 1) {
-    db_query("DELETE FROM sg_ledger WHERE pid = %d AND metadata = 'Completed'", $pid2);
+    db_query("DELETE FROM sg_ledger WHERE pid = %d AND type = 'Completed'", $pid2);
   }
 
   // Remove duplicate badges and bonuses
