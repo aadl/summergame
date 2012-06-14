@@ -2300,14 +2300,15 @@ function summergame_player_points($pid, $points, $type, $description = '', $meta
              "AND metadata LIKE '%%daily_limit:%d%%'";
       $row = db_fetch_object(db_query($sql, $pid, $day_start, $limit));
 
-      if (($row->total + $points) > $limit) {
+      $total = $row->total + $points;
+      if ($total > $limit) {
         // If over the limit, cap the point total at the daily limit
-        $overage = ($row->total + $points) - $limit;
+        $overage = $total - $limit;
         drupal_set_message("Sorry, your score of $points brings you over the daily limit of $limit by $overage. You may report those additional points tomorrow.", 'warning');
-        $points = $limit - $row->total;
+        $points -= $overage;
       }
       else {
-        drupal_set_message("You have earned $row->total points of your daily limit of $limit for this type of scoring");
+        drupal_set_message("You have earned $total points of your daily limit of $limit for this type of scoring");
       }
     }
 
