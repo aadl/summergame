@@ -1390,8 +1390,10 @@ function summergame_player_page($pid = 0) {
           }
           $type_rows[] = array('<strong>TOTAL POINTS EARNED</strong>',
                                '<strong>' . $player_game_points['total'] . '</strong>');
-          $type_rows[] = array('<strong>Current Points Balance</strong>',
-                               '<strong>' . $player_game_points['balance'] . '</strong>');
+          if (strpos($game_term, 'SummerGame') === 0) {
+            $type_rows[] = array('<strong>Current Points Balance</strong>',
+                                 '<strong>' . $player_game_points['balance'] . '</strong>');
+          }
 
           $content .= theme('table', array('Type', 'Points'), $type_rows);
 
@@ -1598,12 +1600,12 @@ function summergame_player_ledger_page($pid = 0) {
   if ($player) {
     $locum = sopac_get_locum();
     $player_access = summergame_player_access($player['pid']);
-    
+
     if (!$player['show_myscore'] && !$player_access) {
       drupal_set_message("Player #$pid's Score Card is private", 'error');
       drupal_goto('<front>');
     }
-      
+
     $rows_per_page = 100;
     $rows = array();
     $args = array($player['pid']);
