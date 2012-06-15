@@ -1318,7 +1318,7 @@ function summergame_player_page($pid = 0) {
       // Check if player's score card is private and we don't have access
       if (!$player['show_myscore'] && !$player_access) {
         drupal_set_message("Player #$pid's Score Card is private", 'error');
-        drupal_goto('summergame');
+        drupal_goto('<front>');
       }
 /*
       // Update checkout history for logged in user
@@ -1441,7 +1441,7 @@ function summergame_player_page($pid = 0) {
       // invalid PID or not authorized
       if ($pid) {
         drupal_set_message('Invalid Player ID: ' . $pid, 'error');
-        drupal_goto('summergame');
+        drupal_goto('<front>');
       }
       else {
         if ($user->uid) {
@@ -1598,6 +1598,12 @@ function summergame_player_ledger_page($pid = 0) {
   if ($player) {
     $locum = sopac_get_locum();
     $player_access = summergame_player_access($player['pid']);
+    
+    if (!$player['show_myscore'] && !$player_access) {
+      drupal_set_message("Player #$pid's Score Card is private", 'error');
+      drupal_goto('<front>');
+    }
+      
     $rows_per_page = 100;
     $rows = array();
     $args = array($player['pid']);
