@@ -1405,8 +1405,8 @@ function summergame_player_page($pid = 0) {
                       '</ul>';
 
           // Date Ranges
-          $earliest = reset($player_game_points['ledger']);
-          $latest = end($player_game_points['ledger']);
+          $latest = reset($player_game_points['ledger']);
+          $earliest = end($player_game_points['ledger']);
           $content .= '<p>Points date range: <br />' .
                       date('F j, Y, g:i a', $earliest['timestamp']) . ' - <br />' .
                       date('F j, Y, g:i a', $latest['timestamp']) .
