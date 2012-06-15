@@ -1357,11 +1357,11 @@ function summergame_player_page($pid = 0) {
               foreach ($all_players as $extra_player) {
                 if ($extra_player['pid'] != $player['pid']) {
                   // Show Extra Player Info
-                  $extra_player_points = summergame_get_player_points($extra_player['pid']);
+                  $extra_player['points'] = summergame_get_player_points($extra_player['pid']);
                   $extra_playername = $extra_player['nickname'] ? $extra_player['nickname'] : $extra_player['name'];
                   $extra_playername = l($extra_playername, 'summergame/player/' . $extra_player['pid']);
                   $content .= '<div id="summergame-extra-player">';
-                  $content .= "<h1>Extra Player: $extra_playername (" . $extra_player_points['career'] . " career points)</h1>";
+                  $content .= "<h1>Extra Player: $extra_playername (" . $extra_player['points']['career'] . " career points)</h1>";
                   $content .= theme_summergame_player_info($extra_player);
                   $content .= '</div>';
                 }
