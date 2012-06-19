@@ -275,6 +275,12 @@ function summergame_settings() {
     '#default_value' => variable_get('summergame_points_enabled', 0),
     '#description' => t('Allow players to earn points?'),
   );
+  $form['summergame_trivia_active'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Summergame Trivia Active'),
+    '#default_value' => variable_get('summergame_points_enabled', 0),
+    '#description' => t('Is a Trivia Game Happening?'),
+  );
   $form['summergame_current_game_term'] = array(
     '#type' => 'textfield',
     '#title' => t("Current Default Game Term"),
