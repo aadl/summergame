@@ -278,7 +278,7 @@ function summergame_settings() {
   $form['summergame_trivia_active'] = array(
     '#type' => 'checkbox',
     '#title' => t('Summergame Trivia Active'),
-    '#default_value' => variable_get('summergame_points_enabled', 0),
+    '#default_value' => variable_get('summergame_trivia_active', 0),
     '#description' => t('Is a Trivia Game Happening?'),
   );
   $form['summergame_current_game_term'] = array(
