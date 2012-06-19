@@ -1944,28 +1944,35 @@ function summergame_twilio_respond($incoming) {
                              'incoming' => 0);
   $responses = array();
 
-  if (preg_match('/^S?[ART]G[\d]{5}$/', $incoming['text'])) {
+  // Try to load existing player
+  $player = summergame_player_load(array('phone' => $incoming['phone']));
+
+  // Determine if text is a SummerGame text
+  if (strtolower($incoming['text']) == 'newplayer' ||
+      strtolower($incoming['text']) == 'new player') {
+    if (!$player['pid']) {
+      $new_player_needed = TRUE;
+    }
+  }
+  else if (preg_match('/^S?[ART]G[\d]{5}$/', $incoming['text'])) {
     $game_card_text = TRUE;
+    if (!$player['pid']) {
+      $new_player_needed = TRUE;
+    }
   }
   else {
     // check if it's a game code
     $gc = db_fetch_object(db_query("SELECT * FROM sg_game_codes WHERE text = '%s'", strtoupper($incoming['text'])));
     if ($gc->code_id) {
       $game_code_text = TRUE;
-    }
-  }
-  if ($game_card_text || $game_code_text) {
-    // check if we need a new player
-    $player = summergame_player_load(array('phone' => $incoming['phone']));
-    if (!$player) {
-      $new_player_needed = TRUE;
+      if (!$player['pid']) {
+        $new_player_needed = TRUE;
+      }
     }
   }
 
   // New Player handling
-  if (strtolower($incoming['text']) == 'newplayer' ||
-      strtolower($incoming['text']) == 'new player' ||
-      $new_player_needed) {
+  if ($new_player_needed) {
     $new_player = array('phone' => $incoming['phone']);
     $player = summergame_player_save($new_player);
     $response = $response_template;
