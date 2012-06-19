@@ -291,6 +291,14 @@ function summergame_settings() {
     '#maxlength' => 32,
     '#description' => t("Path to your user search form"),
   );
+  $form['summergame_print_page'] = array(
+    '#type' => 'textfield',
+    '#title' => t("Print Page"),
+    '#default_value' => variable_get('summergame_print_page', ''),
+    '#size' => 64,
+    '#maxlength' => 128,
+    '#description' => t("Path to the page to print summergame game cards"),
+  );
   $form['summergame_catalog_domain'] = array(
     '#type' => 'textfield',
     '#title' => t("Catalog Domain"),
@@ -328,11 +336,11 @@ function summergame_admin() {
   $content .= '<h1>Summer Game Admin Page</h1>';
 
   // Print game cards
+  $print_page_url = variable_get('summergame_print_page', '');
   $content .= '<div class="print-game-cards">';
   $content .= '<h2 class="title">Print Game Cards</h2>';
   $content .= '<ul>';
-  $content .= '<li class="button green">' . l("Print Teen Game Card", 'summergame/pdf/teen') . '</li>';
-  $content .= '<li class="button green">' . l("Print Adult Game Card", 'summergame/pdf/adult') . '</li>';
+  $content .= '<li class="button green">' . l("Batch Print Game Cards", $print_page_url) . '</li>';
   $content .= '</ul>';
   $content .= '</div>';
 
