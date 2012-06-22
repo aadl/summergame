@@ -157,7 +157,18 @@ div#block-summergame-0 div.content ul {
   margin: 0 10px;
 }
 
+div#block-summergame-0 div.content ul li a.active {
+  color: #6AA670;
+}
+
 .summergame-team-buttons {
   float: right;
   width: 160px;
+}
+
+.summergame-badge-detail img {
+  height: 200px;
+  width: 200px;
+  float: left;
+  margin: 0 10px 10px 0;
 }

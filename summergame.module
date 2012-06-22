@@ -170,6 +170,12 @@ function summergame_menu() {
     'access arguments' => array('access summergame'),
     'type' => MENU_CALLBACK,
   );
+  $items['summergame/badge'] = array(
+    'title' => 'Summer Game Badge Detail',
+    'page callback' => 'summergame_badge_detail_page',
+    'access arguments' => array('access summergame'),
+    'type' => MENU_CALLBACK,
+  );
   $items['summergame/badges'] = array(
     'title' => 'Summer Game Badges',
     'page callback' => 'summergame_badges_page',
@@ -228,40 +234,85 @@ function summergame_block($op = 'list', $delta = 0, $edit = array()) {
 }
 
 function summergame_leaderboard_filter_block_content() {
-  $path_components = explode('/', $_GET['q']);
-  $term = $path_components[2];
-  $range = $path_components[3];
-  $staff = $path_components[4];
+  $current = array();
+  if ($_GET['type']) {
+    $current['type'] = $_GET['type'];
+  }
+  if ($_GET['range']) {
+    $current['range'] = $_GET['range'];
+  }
+  if ($_GET['staff']) {
+    $current['staff'] = $_GET['staff'];
+  }
+  if ($_GET['team']) {
+    $current['team'] = $_GET['team'];
+  }
 
+  // Game Types
   $content .= '<h3>Scores by Game</h3><ul>';
-  $content .= '<li>' . ($term == '' ? 'All Games' : l('All Games', "summergame/leaderboard//$range/$staff")) . '</li>';
+  $query = $current;
+  unset($query['type']);
+  $content .= '<li>' . ($current['type'] ? l('All Games', 'summergame/leaderboard', array('query' => $query)) : 'All Games') . '</li>';
   $res = db_query('SELECT DISTINCT game_term FROM `sg_ledger` ORDER BY game_term ASC');
   while ($row = db_fetch_object($res)) {
-    $content .= '<li>' .
-                ($term == $row->game_term ? $term : l($row->game_term, "summergame/leaderboard/$row->game_term/$range/$staff")) .
-                '</li>';
+    if ($current['type'] == $row->game_term) {
+      $line_item = $row->game_term;
+    }
+    else {
+      $query['type'] = $row->game_term;
+      $line_item = l($row->game_term, 'summergame/leaderboard', array('query' => $query));
+    }
+    $content .= "<li>$line_item</li>";
   }
   $content .= '</ul>';
 
-  $time_ranges = array('All Time' => '', 'This Week' => 'week', 'Today' => 'day');
-
+  // Time Ranges
   $content .= '<h3>Scores by Time</h3><ul>';
+  $query = $current;
+  unset($query['range']);
+  $time_ranges = array('All Time' => '', 'This Week' => 'week', 'Today' => 'day');
   foreach ($time_ranges as $text => $code) {
-    $content .= '<li>' .
-                ($range == $code ? $text : l($text, "summergame/leaderboard/$term/$code/$staff")) .
-                '</li>';
+    if ($current['range'] == $code) {
+      $line_item = $text;
+    }
+    else {
+      $query['range'] = $code;
+      $line_item = l($text, 'summergame/leaderboard', array('query' => $query));
+    }
+    $content .= "<li>$line_item</li>";
   }
   $content .= '</ul>';
 
+  // Player Groups
   $content .= '<h3>Player Groups</h3><ul>';
-  if ($staff) {
-    $content .= '<li>' . l('Public', "summergame/leaderboard/$term/$range") . '</li>';
+  $query = $current;
+  if ($current['staff']) {
+    unset($query['staff']);
+    $content .= '<li>' . l('Public', 'summergame/leaderboard', array('query' => $query)) . '</li>';
     $content .= '<li>Staff</li>';
   }
   else {
+    $query['staff'] = 1;
     $content .= '<li>Public</li>';
-    $content .= '<li>' . l('Staff', "summergame/leaderboard/$term/$range/staff") . '</li>';
+    $content .= '<li>' . l('Staff', 'summergame/leaderboard', array('query' => $query)) . '</li>';
   }
+  $content .= '</ul>';
+
+  // Leaderboard Types
+  $content .= '<h3>Leaderboard Type</h3><ul>';
+  $query = $current;
+  if ($current['team']) {
+    unset($query['team']);
+    $content .= '<li>' . l('Single Player', 'summergame/leaderboard', array('query' => $query)) . '</li>';
+    $content .= '<li>Team</li>';
+  }
+  else {
+    $query['team'] = 1;
+    $content .= '<li>Single Player</li>';
+    $content .= '<li>' . l('Team', 'summergame/leaderboard', array('query' => $query)) . '</li>';
+  }
+  $content .= '</ul>';
+
   return $content;
 }
 
@@ -274,6 +325,12 @@ function summergame_settings() {
     '#title' => t('Summergame Points Enabled'),
     '#default_value' => variable_get('summergame_points_enabled', 0),
     '#description' => t('Allow players to earn points?'),
+  );
+  $form['summergame_dod_enabled'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Summergame Do Or Diag Enabled'),
+    '#default_value' => variable_get('summergame_dod_enabled', 0),
+    '#description' => t('Turn on the special Do or Diag game?'),
   );
   $form['summergame_current_game_term'] = array(
     '#type' => 'textfield',
@@ -964,7 +1021,7 @@ function summergame_player_form($form_state, $player = NULL) {
     foreach ($prize_array as $prize_code => $prize_name) {
       if (strpos($player['prizes'], $prize_code) !== FALSE ) {
         $default_prizes[$prize_code] = $prize_code;
-        if ($prize_code != 'bucket' && $prize_code != 'silly') {
+        if ($prize_code != 'puzzle' && $prize_code != 'duck') {
           $completed = TRUE;
         }
       }
@@ -1790,8 +1847,13 @@ function summergame_player_consume_page($pid = 0, $bnum = 0) {
 /**
  * PAGE: Leaderboard Page
  */
-function summergame_leaderboard_page($type = '', $range = '', $staff = '') {
-  $rows_per_page = 100;
+function summergame_leaderboard_page() {
+  $type = $_GET['type'];
+  $range = $_GET['range'];
+  $staff = $_GET['staff'];
+  $team = $_GET['team'];
+  $rows = ($_GET['rows'] ? $_GET['rows'] : 500);
+
   drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
   $args = array();
 
@@ -1835,38 +1897,68 @@ function summergame_leaderboard_page($type = '', $range = '', $staff = '') {
     $lb_title .= ' for All Time';
   }
 
-  $res = db_query('SELECT *, SUM(points) AS ptotal ' .
-                  'FROM sg_ledger, sg_players ' .
-                  "LEFT JOIN users_roles ON sg_players.uid = users_roles.uid AND users_roles.rid = $staff_rid " .
-                  'WHERE sg_players.pid = sg_ledger.pid ' .
-                  "AND sg_ledger.metadata NOT LIKE '%leaderboard:no%' " .
-                  $type_query .
-                  $range_query .
-                  $staff_query .
-                  'GROUP BY sg_players.pid ' .
-                  'ORDER BY ptotal DESC ' .
-                  'LIMIT 500', $args);
-
+  $args[] = $rows;
   $leaderboard = array();
-  $place = $_GET['page'] * $rows_per_page;
-  while ($lb_player = db_fetch_array($res)) {
-    if ($lb_player['show_leaderboard']) {
-      $player_name = $lb_player['nickname'] ? $lb_player['nickname'] : $lb_player['name'];
+  if ($team) {
+    // Show the Team leaderboard
+    $lb_title = 'Team ' . $lb_title;
+
+    $res = db_query('SELECT *, SUM(points) AS lb_total ' .
+                    'FROM sg_ledger, sg_players_teams, sg_teams ' .
+                    "WHERE sg_ledger.metadata NOT LIKE '%%leaderboard:no%%' " .
+                    'AND sg_ledger.pid = sg_players_teams.pid ' .
+                    'AND sg_players_teams.tid = sg_teams.tid ' .
+                    $type_query .
+                    $range_query .
+                    'GROUP BY sg_players_teams.tid ' .
+                    'ORDER BY lb_total DESC ' .
+                    'LIMIT %d', $args);
+
+    while ($lb_team = db_fetch_array($res)) {
+      // Get player count for the team
+      $players = db_fetch_array(db_query("SELECT COUNT(pid) AS p_count FROM sg_players_teams WHERE tid = %d", $lb_team['tid']));
+
+      $leaderboard[] = array(
+        'Place' => ++$place,
+        'Team' => l($lb_team['name'], 'summergame/team/' . $lb_team['tid']),
+        '# of Players' => $players['p_count'],
+        'Total Score' => $lb_team['lb_total'],
+        'Player Average' => floor($lb_team['lb_total'] / $players['p_count']),
+      );
     }
-    else {
-      $player_name = 'Player #' . $lb_player['pid'];
+  }
+  else {
+    $res = db_query('SELECT *, SUM(points) AS lb_total ' .
+                    'FROM sg_ledger, sg_players ' .
+                    "LEFT JOIN users_roles ON sg_players.uid = users_roles.uid AND users_roles.rid = $staff_rid " .
+                    'WHERE sg_players.pid = sg_ledger.pid ' .
+                    "AND sg_ledger.metadata NOT LIKE '%%leaderboard:no%%' " .
+                    $type_query .
+                    $range_query .
+                    $staff_query .
+                    'GROUP BY sg_players.pid ' .
+                    'ORDER BY lb_total DESC ' .
+                    'LIMIT %d', $args);
+
+    while ($lb_player = db_fetch_array($res)) {
+      if ($lb_player['show_leaderboard']) {
+        $player_name = $lb_player['nickname'] ? $lb_player['nickname'] : $lb_player['name'];
+      }
+      else {
+        $player_name = 'Player #' . $lb_player['pid'];
+      }
+      if ($lb_player['show_myscore'] || user_access('administer summergame')) {
+        $player_name = l($player_name, 'summergame/player/' . $lb_player['pid']);
+      }
+      $leaderboard[] = array(
+        'Place' => ++$place,
+        'Player' => $player_name,
+        'Total Score' => $lb_player['lb_total'],
+      );
     }
-    if ($lb_player['show_myscore'] || user_access('administer summergame')) {
-      $player_name = l($player_name, 'summergame/player/' . $lb_player['pid']);
-    }
-    $leaderboard[] = array(
-      'Place' => ++$place,
-      'Player' => $player_name,
-      'Total Score' => $lb_player['ptotal'],
-    );
   }
 
-  //$pager = theme('pager', NULL, $rows_per_page, 0);
+  //$pager = theme('pager', NULL, $rows, 0);
 
   $content .= "<h1>$lb_title</h1>";
   if (count($leaderboard)) {
@@ -1913,6 +2005,59 @@ function summergame_badges_page($game_term = '') {
   return $content;
 }
 
+function summergame_badge_detail_page($bid) {
+  $badge = db_fetch_object(db_query("SELECT * FROM sg_badges WHERE bid = %d", $bid));
+
+  if ($badge->bid) {
+    global $user;
+    drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
+    $player = summergame_player_load(array('uid' => $user->uid));
+
+    $badge_img_src = base_path() . file_directory_path() . '/sg_images/' . $badge->image;
+    if (file_exists(file_directory_path() . '/sg_images/' . $badge->image . '_400.png')) {
+      $badge_img_src .= '_400.png';
+    }
+    else {
+      $badge_img_src .= '_100.png';
+    }
+    $content .= '<div class="summergame-badge-detail">';
+    $content .= '<img src="' . $badge_img_src . '">';
+    $content .= "<h1>$badge->title</h1>";
+    if ($badge->game_term) {
+      $content .= "<p>Part of the $badge->game_term Game</p>";
+    }
+    $content .= "<h2>Description:</h2><p>$badge->description</p>";
+    if ($badge->points) {
+      $current_term = ($badge->game_term_override ? $badge->game_term_override : $badge->game_term);
+
+      if ($badge->points_override) {
+        $content .= "<p><em>Originally worth $badge->points $badge->game_term points when earned,<br />";
+        $content .= "Now worth $badge->points_override $current_term points when earned</em></p>";
+      }
+      else {
+        $content .= "<p><em>$badge->points $current_term point bonus when earned</em></p>";
+      }
+    }
+
+    $awarded = db_fetch_object(db_query("SELECT COUNT(pid) AS pcount FROM sg_players_badges WHERE bid = %d", $bid));
+    $content .= "<p>This badge has been awarded to $awarded->pcount players</p>";
+
+    if ($player['pid']) {
+      $earned = db_fetch_array(db_query("SELECT * FROM sg_players_badges WHERE pid = %d AND bid = %d", $player['pid'], $badge->bid));
+      if ($earned['timestamp']) {
+        $content .= '<p>You received this badge on ' . date('F j, Y g:i A', $earned['timestamp']) . '</p>';
+      }
+      else {
+        $content .= '<p>You have not yet earned this badge</p>';
+      }
+    }
+
+    $content .= '</div>';
+  }
+
+  return $content;
+}
+
 function theme_summergame_badge() {
   global $user;
   drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
@@ -1937,7 +2082,13 @@ function theme_summergame_badge() {
       }
     }
 
-    $content .= "<img class=\"$img_class\" title=\"$img_title\" src=\"$img_src\">";
+    $content .= l("<img class=\"$img_class\" title=\"$img_title\" src=\"$img_src\">",
+                  'summergame/badge/' . $bid,
+                  array('html' => TRUE,
+                        'query' => array('lightbox' => 1),
+                        'attributes' => array('rel' => 'lightframe'),
+                    )
+                  );
   }
   return $content;
 }
@@ -1970,7 +2121,8 @@ function summergame_twilio_respond($incoming) {
   }
   else {
     // check if it's a game code
-    $gc = db_fetch_object(db_query("SELECT * FROM sg_game_codes WHERE text = '%s'", strtoupper($incoming['text'])));
+    $text = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $incoming['text']));
+    $gc = db_fetch_object(db_query("SELECT * FROM sg_game_codes WHERE text = '%s'", $text));
     if ($gc->code_id) {
       $game_code_text = TRUE;
       if (!$player['pid']) {
@@ -2010,12 +2162,62 @@ function summergame_twilio_respond($incoming) {
       else {
         // Try to redeem text as a game code
         $status = summergame_redeem_code($player['pid'], $incoming['text']);
+
         if ($status['success'] || $status['error']) {
           $response = $response_template;
           $response['text'] .= $status['success'] . $status['error'];
           $responses[] = $response;
         }
+        if (variable_get('summergame_dod_enabled', FALSE)) {
+          if ($status['success']) {
+            // Check how many DoD game codes they have received
+            $res = db_query("SELECT COUNT(*) AS dod_count FROM sg_ledger WHERE pid = %d " .
+                            "AND game_term = 'DoOrDiag' AND " .
+                            "((metadata LIKE '%%gamecode:%%' AND metadata NOT LIKE '%%gamecode:READY%%') " .
+                            "OR (type = 'New Track' AND points > 0))",
+                            $player['pid']);
+            $row = db_fetch_object($res);
+            if ($row->dod_count == 4) {
+              $response = $response_template;
+              $response['text'] .= "You have completed the short game! Go receive a prize or continue playing!";
+              $responses[] = $response;
+            }
+            else if ($row->dod_count == 10) {
+              $response = $response_template;
+              $response['text'] .= "You have completed the long game! Go get your prize!";
+              $responses[] = $response;
+            }
+          }
+        }
+
         // If not recognized, no response to allow other handlers to respond
+      }
+    }
+  }
+  // Do Or Diag
+  else if (variable_get('summergame_dod_enabled', FALSE)) {
+    $text = strtoupper($incoming['text']);
+    if ($dod_response = summergame_dod_response($text, $player['pid'])) {
+      $response = $response_template;
+      $response['text'] .= $dod_response;
+      $responses[] = $response;
+
+      // Check how many DoD game codes they have received
+      $res = db_query("SELECT COUNT(*) AS dod_count FROM sg_ledger WHERE pid = %d " .
+                      "AND game_term = 'DoOrDiag' AND " .
+                      "((metadata LIKE '%%gamecode:%%' AND metadata NOT LIKE '%%gamecode:READY%%') " .
+                      "OR (type = 'New Track' AND points > 0))",
+                      $player['pid']);
+      $row = db_fetch_object($res);
+      if ($row->dod_count == 4) {
+        $response = $response_template;
+        $response['text'] .= "You have completed the short game! Go receive a prize or continue playing!";
+        $responses[] = $response;
+      }
+      else if ($row->dod_count == 10) {
+        $response = $response_template;
+        $response['text'] .= "You have completed the long game! Go get your prize!";
+        $responses[] = $response;
       }
     }
   }
@@ -2048,6 +2250,59 @@ function summergame_twilio_respond($incoming) {
   if (count($responses)) {
     return $responses;
   }
+}
+
+function summergame_dod_response($text, $pid) {
+  $response = '';
+
+  // Grab DoD Data from Couch
+  $libphp_path = variable_get('summergame_libphp_path', '');
+  include_once($libphp_path . 'contrib/PHP-on-Couch/lib/couch.php');
+  include_once($libphp_path . 'contrib/PHP-on-Couch/lib/couchClient.php');
+  include_once($libphp_path . 'contrib/PHP-on-Couch/lib/couchDocument.php');
+  $couch = new couchClient('COUCHDB_DSN_STRING', 'doordiag');
+
+  $track_lookup = array();
+  try {
+    $tracks = $couch->getDoc('tracks');
+    foreach ($tracks as $code => $track) {
+      if ($code[0] != '_') {
+        $track_lookup[$code] = $track;
+      }
+    }
+  }
+  catch (Exception $e) {
+    echo "Something weird happened: ".$e->getMessage()." (errcode=".$e->getCode().")\n";
+  }
+
+  if ($new_track = $track_lookup[$text]) {
+    // check if they've already received points for this track
+    $row = db_fetch_array(db_query("SELECT * FROM sg_ledger WHERE pid = %d " .
+                                   "AND metadata LIKE '%%track:%s%%' AND points > 0",
+                                   $pid, $new_track));
+    $points = ($row['lid'] ? 0 : 500);
+
+    summergame_player_points($pid, $points, 'New Track', "Started the $new_track Track",
+                             'track:' . $new_track, 'DoOrDiag');
+    $response = "You just received $points Do Or Diag points, and you are now on the $new_track trivia track.";
+  }
+  else try {
+    $questions = $couch->getDoc($text);
+
+    // Determine player track
+    $res = db_query("SELECT * FROM sg_ledger WHERE pid = %d AND game_term = 'DoOrDiag' " .
+                    "AND metadata LIKE '%track:%' ORDER BY timestamp DESC LIMIT 1", $pid);
+    $row = db_fetch_array($res);
+    preg_match('/track:([\w]+)/', $row['metadata'], $matches);
+    $track = $matches[1];
+
+    $response = $questions->$track;
+  }
+  catch (Exception $e) {
+    // no couch doc ID matches that text
+  }
+
+  return $response;
 }
 
 /**
