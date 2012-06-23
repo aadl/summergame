@@ -2210,14 +2210,30 @@ function summergame_twilio_respond($incoming) {
                       $player['pid']);
       $row = db_fetch_object($res);
       if ($row->dod_count == 4) {
-        $response = $response_template;
-        $response['text'] .= "You have completed the short game! Go receive a prize or continue playing!";
-        $responses[] = $response;
+        // Check if they have finished the short game
+        $ledger = db_fetch_object(db_query("SELECT * FROM sg_ledger WHERE pid = %d " .
+                                           "AND game_term = 'DoOrDiag' AND " .
+                                           "Type LIKE 'Completed Short Game'", $player['pid']));
+        if (!$ledger->lid) {
+          summergame_player_points($player['pid'], 0, 'Completed Short Game',
+                                   'You answered four Do Or Diag questions', '', 'DoOrDiag');
+          $response = $response_template;
+          $response['text'] .= "You have completed the short game! Go receive a prize or continue playing!";
+          $responses[] = $response;
+        }
       }
       else if ($row->dod_count == 10) {
-        $response = $response_template;
-        $response['text'] .= "You have completed the long game! Go get your prize!";
-        $responses[] = $response;
+        // Check if they have finished the long game
+        $ledger = db_fetch_object(db_query("SELECT * FROM sg_ledger WHERE pid = %d " .
+                                           "AND game_term = 'DoOrDiag' AND " .
+                                           "Type LIKE 'Completed Long Game'", $player['pid']));
+        if (!$ledger->lid) {
+          summergame_player_points($player['pid'], 0, 'Completed Long Game',
+                                   'You answered ten Do Or Diag questions', '', 'DoOrDiag');
+          $response = $response_template;
+          $response['text'] .= "You have completed the long game! Go get your prize!";
+          $responses[] = $response;
+        }
       }
     }
   }
