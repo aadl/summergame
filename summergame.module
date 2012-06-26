@@ -956,6 +956,16 @@ function summergame_player_form($form_state, $player = NULL) {
       '#type' => 'value',
       '#value' => $player['pid'],
     );
+    if (!$player['gamecard']) {
+      $game_term = variable_get('summergame_current_game_term', '');
+      $signup = db_fetch_object(db_query("SELECT * FROM sg_ledger WHERE pid = %d AND type = 'Signup' AND game_term = '$game_term'", $player['pid']));
+      if (!$signup->lid) {
+        $form['signup_eligible'] = array(
+          '#type' => 'value',
+          '#value' => TRUE,
+        );
+      }
+    }
     $form['title'] = array(
       '#value' => '<p style="float: right">' .
                   l('Back to Player Score Card page', 'summergame/player/' . $player['pid']) .
@@ -1005,7 +1015,6 @@ function summergame_player_form($form_state, $player = NULL) {
   $form['buttons']['cancel'] = array(
     '#value' => l('Cancel', $cancel_path),
   );
-
 
     if (user_access('administer summergame')) {
     $form['admin'] = array(
@@ -1246,15 +1255,19 @@ function summergame_player_form_submit($form, &$form_state) {
 
   if ($form_state['values']['pid']) {
     $player_info['pid'] = $form_state['values']['pid'];
+
+    if ($form_state['values']['signup_eligible'] && $form_state['values']['gamecard']) {
+      $signup_bonus = TRUE;
+    }
   }
   else {
-    $new_player = TRUE;
+    $signup_bonus = TRUE;
   }
 
   $player = summergame_player_save($player_info);
 
   if (variable_get('summergame_points_enabled', 0)) {
-    if ($new_player) {
+    if ($signup_bonus) {
       $points = summergame_player_points($player['pid'], 100, 'Signup',
                                          'Signed Up for the Summer Game');
       drupal_set_message("Earned $points Summer Game points for signing up!");
