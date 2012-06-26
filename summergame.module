@@ -1240,7 +1240,7 @@ function summergame_player_form_submit($form, &$form_state) {
     $player_info['prizes'] = implode(',', $prizes);
   }
 
-  if (isset($form_state['values']['uid'])) {
+  if ($form_state['values']['uid']) {
     $player_info['uid'] = $form_state['values']['uid'];
   }
 
