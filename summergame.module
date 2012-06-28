@@ -1403,6 +1403,7 @@ function summergame_player_page($pid = 0) {
       if ($user->uid && $player['uid'] == $user->uid && $user->profile_cohist) {
         $ch_list = db_fetch_array(db_query("SELECT * FROM sopac_lists WHERE uid = %d AND title = 'Checkout History' LIMIT 1", $user->uid));
         if ($ch_list['list_id']) {
+          include_once(drupal_get_path('module', 'sopac') . '/sopac_user.php');
           sopac_update_history($ch_list);
         }
       }
