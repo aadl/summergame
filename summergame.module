@@ -2341,13 +2341,18 @@ function summergame_comment($action, $op) {
   if (variable_get('summergame_points_enabled', 0)) {
     if ($op == 'publish') {
       if ($player = summergame_player_load(array('uid' => $action['uid']))) {
-        $metadata = array(
-          'nid' => $action['nid'],
-          'cid' => $action['cid'],
-        );
-        $points = summergame_player_points($player['pid'], 50, 'Added Comment',
-                                           'Commented on a website post', $metadata);
-        drupal_set_message("Earned $points Summer Game points for commenting on a website post");
+        // Check if they have already received points for this comment
+        $ledger = db_fetch_object(db_query("SELECT * FROM sg_ledger WHERE pid = %d and metadata LIKE '%%cid:%d%%'",
+                                           $player['pid'], $action['cid']));
+        if (!$ledger->lid) {
+          $metadata = array(
+            'nid' => $action['nid'],
+            'cid' => $action['cid'],
+          );
+          $points = summergame_player_points($player['pid'], 50, 'Added Comment',
+                                             'Commented on a website post', $metadata);
+          drupal_set_message("Earned $points Summer Game points for commenting on a website post");
+        }
       }
     }
   }
