@@ -2046,6 +2046,7 @@ function summergame_badge_detail_page($bid) {
       $badge_img_src .= '_100.png';
     }
     $content .= '<div class="summergame-badge-detail">';
+    $content .= '<div style="float: right; font-size: 0.75em;">[ <a href="javascript:location.reload(true)">refresh</a> ]</div>';
     $content .= l('<img src="' . base_path() . $badge_img_src . '">',
                   file_create_url($badge_img_src),
                   array('html' => TRUE));
