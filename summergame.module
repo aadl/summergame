@@ -2078,40 +2078,61 @@ function summergame_badge_detail_page($bid) {
       $formula_type = ' criteria';
       $codes = explode(',', $badge->formula);
       $total_count = count($codes);
+      $player_matches = array();
       $gc_rows = array();
 
-      foreach ($codes as $text_pattern) {
-        $gc_row = array('Game Code' => '',
-                        'Description' => '',
-                        'Earned On' => '');
-
-        // is it a game code?
-        $gc = db_fetch_object(db_query("SELECT * FROM sg_game_codes WHERE text = '%s'", $text_pattern));
-        if ($gc->code_id) {
-          $formula_type = ' game codes found';
-          $gc_row['Game Code'] = '???????';
-          if ($hint = $gc->hint) {
-            $hint = str_replace('\'', '\x27', str_replace('"', '\x22', $hint));
-            $gc_row['Description'] = "<a onclick=\"this.innerHTML = 'HINT: $hint';\">(click for hint)</a>";
-          }
+      foreach ($codes as $code_id => $text_pattern) {
+        $text_patterns = explode('|', $text_pattern);
+        if (count($text_patterns) > 1) {
+          $gc_rows[] = array('Game Code' => '<strong>One of the following:</strong>',
+                             'Description' => '',
+                             'Earned On' => '');
+          $any_mode = TRUE;
         }
         else {
-          // not a game code
-          $gc_row['Game Code'] = $text_pattern;
+          $any_mode = FALSE;
         }
 
-        $ledger = db_fetch_object(db_query("SELECT * FROM sg_ledger WHERE pid = %d AND (type LIKE '%%%s%%' OR metadata LIKE '%%%s%%') AND game_term = '%s' LIMIT 1",
-                                           $player['pid'], $text_pattern, $text_pattern, $badge->game_term));
-        if ($ledger->lid) {
-          $player_count++;
+        foreach ($text_patterns as $pattern) {
+          $gc_row = array('Game Code' => '',
+                          'Description' => '',
+                          'Earned On' => '');
+
+          // is it a game code?
+          $gc = db_fetch_object(db_query("SELECT * FROM sg_game_codes WHERE text = '%s'", $pattern));
           if ($gc->code_id) {
-            $gc_row['Game Code'] = $gc->text;
-            $gc_row['Description'] = $gc->description;
+            $formula_type = ' game codes found';
+            $gc_row['Game Code'] = '???????';
+            if ($hint = $gc->hint) {
+              $hint = str_replace('\'', '\x27', str_replace('"', '\x22', $hint));
+              $gc_row['Description'] = "<a onclick=\"this.innerHTML = 'HINT: $hint';\">(click for hint)</a>";
+            }
           }
-          $gc_row['Earned On'] = date('F j, Y, g:i a', $ledger->timestamp);
-        }
+          else {
+            // not a game code
+            $gc_row['Game Code'] = $pattern;
+          }
 
-        $gc_rows[] = $gc_row;
+          $ledger = db_fetch_object(db_query("SELECT * FROM sg_ledger WHERE pid = %d AND (type LIKE '%%%s%%' OR metadata LIKE '%%%s%%') AND game_term = '%s' LIMIT 1",
+                                             $player['pid'], $pattern, $pattern, $badge->game_term));
+          if ($ledger->lid) {
+            if (!$player_matches[$code_id]) {
+              $player_count++;
+              $player_matches[$code_id] = TRUE;
+            }
+            if ($gc->code_id) {
+              $gc_row['Game Code'] = $gc->text;
+              $gc_row['Description'] = $gc->description;
+            }
+            $gc_row['Earned On'] = date('F j, Y, g:i a', $ledger->timestamp);
+          }
+
+          if ($any_mode) {
+            $gc_row['Game Code'] = '-- ' . $gc_row['Game Code'];
+          }
+
+          $gc_rows[] = $gc_row;
+        }
       }
     }
 
