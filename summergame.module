@@ -144,6 +144,14 @@ function summergame_menu() {
     'access arguments' => array('access summergame'),
     'type' => MENU_CALLBACK,
   );
+  $items['summergame/team/delete'] = array(
+    'title' => t('Delete Team'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('summergame_delete_team_form'),
+    'access callback' => 'summergame_player_access',
+    'access arguments' => array(3),
+    'type' => MENU_CALLBACK,
+  );
   $items['summergame/team/edit'] = array(
     'title' => t('Edit Team'),
     'page callback' => 'drupal_get_form',
@@ -2068,7 +2076,7 @@ function summergame_badge_detail_page($bid) {
     if (strpos($badge->formula, '::') !== FALSE) {
       // Multiple Badge
       list($total_count, $text_pattern) = explode('::', $badge->formula);
-      $lid_count = db_fetch_object(db_query("SELECT COUNT(lid) AS lid_count FROM sg_ledger WHERE pid = %d AND (type LIKE '%%%s%%' OR metadata LIKE '%%%s%%') AND game_term = '%s'",
+      $lid_count = db_fetch_object(db_query("SELECT COUNT(lid) AS lid_count FROM sg_ledger WHERE pid = %d AND (type LIKE '%s' OR metadata LIKE 'gamecode:%s') AND game_term = '%s'",
                                               $player['pid'], $text_pattern, $text_pattern, $badge->game_term));
       $player_count = $lid_count->lid_count;
       $formula_type = $text_pattern . " scores in your ledger";
@@ -2113,7 +2121,7 @@ function summergame_badge_detail_page($bid) {
             $gc_row['Game Code'] = $pattern;
           }
 
-          $ledger = db_fetch_object(db_query("SELECT * FROM sg_ledger WHERE pid = %d AND (type LIKE '%%%s%%' OR metadata LIKE '%%%s%%') AND game_term = '%s' LIMIT 1",
+          $ledger = db_fetch_object(db_query("SELECT * FROM sg_ledger WHERE pid = %d AND (type LIKE '%s' OR metadata LIKE 'gamecode:%s') AND game_term = '%s' LIMIT 1",
                                              $player['pid'], $pattern, $pattern, $badge->game_term));
           if ($ledger->lid) {
             if (!$player_matches[$code_id]) {
@@ -2798,7 +2806,7 @@ function summergame_player_check_badges($pid) {
       if (strpos($badge->formula, '::')) {
         // Multiple of a ledger type formula
         list($count_limit, $text_pattern) = explode('::', $badge->formula);
-        $lid_count = db_fetch_object(db_query("SELECT COUNT(lid) AS lid_count FROM sg_ledger WHERE pid = %d AND (type LIKE '%%%s%%' OR metadata LIKE '%%%s%%') AND game_term = '%s'",
+        $lid_count = db_fetch_object(db_query("SELECT COUNT(lid) AS lid_count FROM sg_ledger WHERE pid = %d AND (type LIKE '%s' OR metadata LIKE 'gamecode:%s') AND game_term = '%s'",
                                               $pid, $text_pattern, $text_pattern, $badge->game_term));
         if ($lid_count->lid_count >= $count_limit) {
           summergame_player_award_badge($pid, $badge->bid);
@@ -2816,7 +2824,7 @@ function summergame_player_check_badges($pid) {
           foreach ($text_patterns as &$pattern) {
             $args[] = $pattern;
             $args[] = $pattern;
-            $pattern = "(type LIKE '%%%s%%' OR metadata LIKE '%%%s%%')";
+            $pattern = "(type LIKE '%s' OR metadata LIKE 'gamecode:%s')";
           }
           $query .= implode(' OR ', $text_patterns);
 
@@ -3183,6 +3191,24 @@ function summergame_team_load($tid) {
   return db_fetch_array($result);
 }
 
+function summergame_team_access($tid) {
+  $access = FALSE;
+
+  if (user_access('administer summergame')) {
+    $access = TRUE;
+  }
+  else {
+    global $user;
+    if ($user->uid) {
+      $team = summergame_team_load($tid);
+      if ($user->uid == $team['uid']) {
+        $access = TRUE;
+      }
+    }
+  }
+  return $access;
+}
+
 function summergame_team_members($tid) {
   $members = array();
 
@@ -3251,6 +3277,10 @@ function summergame_team_form($form_state, $tid = 0) {
   $form = array();
 
   if ($team['tid']) {
+    if (!summergame_team_access($team['tid'])) {
+      drupal_set_message("You do not have acess to this team", 'warning');
+      drupal_goto('summergame/teams');
+    }
     $form['tid'] = array(
       '#type' => 'value',
       '#value' => $team['tid'],
@@ -3266,6 +3296,7 @@ function summergame_team_form($form_state, $tid = 0) {
   );
   $form['name'] = array(
     '#type' => 'textfield',
+    '#required' => TRUE,
     '#title' => t('Name'),
     '#default_value' => $team['name'],
     '#size' => 30,
@@ -3318,6 +3349,12 @@ function summergame_team_form_submit($form, &$form_state) {
 }
 
 function summergame_teams_list($search = NULL) {
+  $content .= '<ul style="float: right">' .
+              '<li class="button">' .
+              l('Create a New Team', 'summergame/team/edit') .
+              '</li>' .
+              '</ul>';
+
   $content .= '<h1>Teams List</h1>';
 
   $res = db_query("SELECT * FROM sg_teams ORDER BY name ASC");
@@ -3337,11 +3374,7 @@ function summergame_teams_list($search = NULL) {
     $content .= '</p>';
   }
 
-  $content .= '<ul>' .
-              '<li class="button">' .
-              l('Create a New Team', 'summergame/team/edit') .
-              '</li>' .
-              '</ul>';
+
 
   return $content;
 }
