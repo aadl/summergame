@@ -2537,16 +2537,24 @@ function summergame_player_load($player_info = array()) {
   }
 
   foreach ($player_info as $key => $value) {
-    if ($key == 'pid' || $key == 'phone' || $key == 'uid') {
-      $query[] = "$key = %d";
-      $params[] = $value;
-    }
-    else {
-      $query[] = "LOWER($key) = LOWER('%s')";
-      $params[] = $value;
+    if ($value) {
+      if ($key == 'pid' || $key == 'phone' || $key == 'uid') {
+        $query[] = "$key = %d";
+        $params[] = $value;
+      }
+      else {
+        $query[] = "LOWER($key) = LOWER('%s')";
+        $params[] = $value;
+      }
     }
   }
-  $result = db_query('SELECT * FROM {sg_players} WHERE ' . implode(' AND ', $query) . ' ORDER BY pid ASC LIMIT 1', $params);
+
+  if (count($params)) {
+    $result = db_query('SELECT * FROM {sg_players} WHERE ' . implode(' AND ', $query) . ' ORDER BY pid ASC LIMIT 1', $params);
+  }
+  else {
+    return FALSE;
+  }
 
   return db_fetch_array($result);
 }
