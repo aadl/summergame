@@ -2275,7 +2275,7 @@ function summergame_twilio_respond($incoming) {
       $response['text'] .= 'Updated your player record with the phone # ' . $incoming['phone'];
       $responses[] = $response;
 
-      if ($player['pid']) {
+      if ($player['pid'] && !$player['uid']) {
         summergame_players_merge($web_player['pid'], $player['pid']);
         $response = $response_template;
         $response['text'] .= 'Merged this phone\'s player record with your website player';
