@@ -1516,7 +1516,7 @@ function summergame_player_page($pid = 0) {
           if (count($player_game_points['badges'])) {
             foreach ($player_game_points['badges'] as $badge) {
               $img_title = $badge['title'] . "\n" . $badge['description'] . "\n" . 'Received on ' . date('F j, Y g:i A', $badge['timestamp']);
-              $badge_grid .= '<img class="summergame-badge" title="' . $img_title . '" src="' . $sg_image_path . $badge['image'] . '_100.png">';
+              $badge_grid .= '<img class="summergame-badge" title="' . htmlentities($img_title) . '" src="' . $sg_image_path . $badge['image'] . '_100.png">';
             }
             $content .= $badge_grid;
           }
