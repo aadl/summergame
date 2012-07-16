@@ -3183,6 +3183,23 @@ function summergame_players_merge($pid1, $pid2) {
 }
 
 /**
+ * UTILITY: Move a player to a different player #
+ *
+ * Sometimes needed to make sure the correct player is the primary player when multiple players
+ * are attached to a single website account.
+ */
+function summergame_move_player_id($old_pid, $new_pid) {
+  // Update ledger
+  db_query("UPDATE sg_ledger SET pid = %d WHERE pid = %d", $new_pid, $old_pid);
+  // Update player table
+  db_query("UPDATE sg_players SET pid = %d WHERE pid = %d", $new_pid, $old_pid);
+  // Update players badges
+  db_query("UPDATE sg_players_badges SET pid = %d WHERE pid = %d", $new_pid, $old_pid);
+  // Update players teams
+  db_query("UPDATE sg_players_teams SET pid = %d WHERE pid = %d", $new_pid, $old_pid);
+}
+
+/**
  * UTILITY: Send an email message with an attachment
  */
 function summergame_email_attachment($to, $subject, $message, $from, $fileatt, $replyto = '') {
