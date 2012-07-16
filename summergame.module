@@ -2239,6 +2239,7 @@ function theme_summergame_badge() {
       }
     }
 
+    $img_title = htmlentities($img_title);
     $content .= l("<img class=\"$img_class\" title=\"$img_title\" src=\"$img_src\">",
                   'summergame/badge/' . $bid,
                   array('html' => TRUE,
