@@ -99,6 +99,10 @@ img.summergame-badge {
   margin-bottom: 0;
 }
 
+#summergame-admin-page #summergame-admin-gamecode-search-form {
+  text-align: center;
+}
+
 #summergame-admin-page table {
   width: 100%;
 }
