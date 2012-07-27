@@ -2982,11 +2982,22 @@ function summergame_player_check_badges($pid) {
           else if (empty($badge->game_term)) {
             $badge->game_term = variable_get('summergame_current_game_term', '');
           }
-          db_query("INSERT INTO sg_ledger (pid, points, type, metadata, description, game_term, timestamp) " .
-                   "VALUES (%d, %d, '%s', '%s', '%s', '%s', %d)",
-                   $pid, $badge->points, 'Badge Bonus', $metadata, "Earned the $badge->title Badge",
-                   $badge->game_term, time());
-          $messages[] = "Received $badge->points bonus $badge->game_term points for earning the $badge->title Badge";
+
+          // Handle multiple bonuses
+          $points_values = explode(',', $badge->points);
+          $game_terms = explode(',', $badge->game_term);
+          $points = 0;
+
+          foreach ($game_terms as $i => $game_term) {
+            if ($points_values[$i]) {
+              $points = $points_values[$i];
+            }
+            db_query("INSERT INTO sg_ledger (pid, points, type, metadata, description, game_term, timestamp) " .
+                     "VALUES (%d, %d, '%s', '%s', '%s', '%s', %d)",
+                     $pid, $points, 'Badge Bonus', $metadata, "Earned the $badge->title Badge",
+                     $game_term, time());
+            $messages[] = "Received $points bonus $game_term points for earning the $badge->title Badge";
+          }
         }
         // check if an email should be sent to awardee
         if ($badge->email_message) {
