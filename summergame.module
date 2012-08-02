@@ -341,6 +341,12 @@ function summergame_settings() {
     '#default_value' => variable_get('summergame_points_enabled', 0),
     '#description' => t('Allow players to earn points?'),
   );
+  $form['summergame_lego_enabled'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Summergame Lego Contest Voting Enabled'),
+    '#default_value' => variable_get('summergame_lego_enabled', 0),
+    '#description' => t('Turn on voting for the Lego Contest?'),
+  );
   $form['summergame_dod_enabled'] = array(
     '#type' => 'checkbox',
     '#title' => t('Summergame Do Or Diag Enabled'),
@@ -2423,6 +2429,19 @@ function summergame_twilio_respond($incoming) {
 
         // If not recognized, no response to allow other handlers to respond
       }
+    }
+  }
+  // Lego Contest
+  else if (variable_get('summergame_lego_enabled', FALSE)) {
+    $text = strtoupper($incoming['text']);
+    if (preg_match('/^L[PKEMHA][\d]{3}$/', $text)) {
+      require_once(variable_get('summergame_libphp_path', '') . 'contrib/redisent/redisent.php');
+      $redis = new Redisent('multivac');
+      // Set category vote for this phone
+      $redis->set('lego_vote:' . $text[1] . ':' . $incoming['phone'], $text);
+      $response = $response_template;
+      $response['text'] .= 'Your vote has been recorded for Group ' . $text[1];
+      $responses[] = $response;
     }
   }
   // Do Or Diag
