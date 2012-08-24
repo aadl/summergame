@@ -3205,7 +3205,8 @@ function summergame_admin_players_merge($pid1, $pid2, $confirm = '') {
       $merge_table[] = array("<strong>$field</strong>", $p2_data, $arrows, $p1[$field]);
     }
 
-    $content = "<H1>Merge These Player Records?</H1>";
+    $content .= "<h1>Merge These Player Records?</h1>";
+    $content .= '<p style="color: red">Warning: Player record #' . $p2['pid'] . ' will be deleted as a result of this merge</p>';
 
     $content .= theme('table', array('', 'Player 2', '>>>', 'Player 1'), $merge_table);
 
