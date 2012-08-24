@@ -89,6 +89,13 @@ function summergame_menu() {
     'access arguments' => array('administer summergame'),
     'type' => MENU_CALLBACK,
   );
+  $items['summergame/admin/intervention'] = array(
+    'title' => t('Geekly Intervention'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('summergame_intervention_form'),
+    'access arguments' => array('administer summergame'),
+    'type' => MENU_CALLBACK,
+  );
   $items['summergame/player'] = array(
     'title' => 'Summer Game Player Page',
     'page callback' => 'summergame_player_page',
@@ -3298,6 +3305,95 @@ function summergame_players_merge($pid1, $pid2) {
   db_query("UPDATE sg_ledger SET pid = %d WHERE pid = %d", $pid1, $pid2);
   db_query("UPDATE sg_players_badges SET pid = %d WHERE pid = %d", $pid1, $pid2);
   db_query("DELETE FROM sg_players WHERE pid = %d", $pid2);
+}
+
+function summergame_intervention_form(&$form_state) {
+  $form = array(
+    'title' => array('#value' => '<h1>Geekly Points Intervention</h1>'),
+  );
+
+  $form['to_pid'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Player ID'),
+    '#size' => 10,
+    '#maxlength' => 10,
+    '#description' => t('Player ID of the player to receive points'),
+  );
+  $form['points'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Points'),
+    '#size' => 10,
+    '#maxlength' => 10,
+    '#description' => t('Number of points to award to the player'),
+  );
+  $form['game_term'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Game Term'),
+    '#default_value' => variable_get('summergame_current_game_term', ''),
+    '#size' => 32,
+    '#maxlength' => 32,
+    '#description' => t('Game Term where the points will be awarded'),
+  );
+  $form['description'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Description'),
+    '#size' => 64,
+    '#maxlength' => 64,
+    '#description' => t('Add a description for this points award (optional)'),
+  );
+  $form['from_pid'] = array(
+    '#type' => 'textfield',
+    '#title' => t('From Player ID'),
+    '#size' => 10,
+    '#maxlength' => 10,
+    '#description' => t('Player ID of the player giving points in a transfer (optional)'),
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('POINTS MAKE'),
+  );
+
+  return $form;
+}
+
+function summergame_intervention_form_submit($form, &$form_state) {
+  $to_pid = $form_state['values']['to_pid'];
+  $points = $form_state['values']['points'];
+  $game_term = $form_state['values']['game_term'];
+  $description = $form_state['values']['description'];
+  $from_pid = $form_state['values']['from_pid'];
+
+  if ($player = summergame_player_load(array('pid' => $to_pid))) {
+    $player_link = l('Player #' . $to_pid, 'summergame/player/' . $to_pid);
+    if ($from_pid) {
+      if ($from_player = summergame_player_load(array('pid' => $from_pid))) {
+        // Tranfer points from from_player to player
+        $from_player_link = l('Player #' . $from_pid, 'summergame/player/' . $from_pid);
+        summergame_player_points($from_pid, -$points, 'Geekly Intervention',
+                                 "Transfer to Player #$to_pid" . ($description ? ', ' . $description : ''),
+                                 'delete:no', $game_term);
+        summergame_player_points($to_pid, $points, 'Geekly Intervention',
+                                 "Transfer from Player #$from_pid" . ($description ? ', ' . $description : ''),
+                                 '', $game_term);
+        drupal_set_message("Transferred $points $game_term points from $from_player_link to $player_link");
+      }
+      else {
+        drupal_set_message("No player with ID #$from_pid could be found", 'error');
+      }
+    }
+    else {
+      // Award points to the player
+      summergame_player_points($to_pid, $points, 'Geekly Intervention',
+                               "Points awarded" . ($description ? ', ' . $description : ''),
+                               '', $game_term);
+      drupal_set_message("Awarded $points $game_term points to $player_link");
+    }
+  }
+  else {
+    drupal_set_message("No player with ID #$to_pid could be found", 'error');
+  }
+
+  drupal_goto('summergame/admin');
 }
 
 /**
