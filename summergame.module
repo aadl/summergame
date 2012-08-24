@@ -2175,7 +2175,19 @@ function summergame_badge_detail_page($bid) {
     $content .= "<p>This badge has been awarded to $awarded->pcount players</p>";
 
     $player_count = 0;
-    if (strpos($badge->formula, '::') !== FALSE) {
+    if (preg_match('/^{([\d,]+)}$/', $badge->formula, $matches)) {
+      // Badge collection badge
+      $formula_type = ' badges earned';
+      $bids = explode(',', $matches[1]);
+      $total_count = count($bids);
+      foreach ($bids as $bid) {
+        $badge_list .= theme_summergame_badge($bid);
+      }
+      $badge_count = db_fetch_object(db_query("SELECT COUNT(bid) AS bid_count FROM sg_players_badges WHERE pid = %d AND bid IN (%s)",
+                                              $player['pid'], $matches[1]));
+      $player_count = $badge_count->bid_count;
+    }
+    else if (strpos($badge->formula, '::') !== FALSE) {
       // Multiple Badge
       list($total_count, $text_pattern) = explode('::', $badge->formula);
       $lid_count = db_fetch_object(db_query("SELECT COUNT(lid) AS lid_count FROM sg_ledger WHERE pid = %d AND (type LIKE '%s' OR metadata LIKE 'gamecode:%s') AND game_term = '%s'",
@@ -2269,6 +2281,14 @@ function summergame_badge_detail_page($bid) {
       $content .= theme('table', array_keys($gc_rows[0]), $gc_rows);
     }
 
+    if ($badge_list) {
+      $content .= '<div class="badge-collection-list">';
+      $content .= '<h2>Required Badges:</h2>';
+      $content .= '<div id="summergame-badges-page">';
+      $content .= $badge_list;
+      $content .= '</div>';
+      $content .= '</div>';
+    }
     $content .= '</div>';
   }
 
@@ -2942,11 +2962,24 @@ function summergame_player_check_badges($pid) {
   while ($player_badge = db_fetch_object($res)) {
     $player_bids[] = $player_badge->bid;
   }
-  $res = db_query("SELECT * FROM sg_badges WHERE active = 1 AND formula != ''");
+  $res = db_query("SELECT * FROM sg_badges WHERE active = 1 AND formula != '' ORDER BY bid ASC");
   while ($badge = db_fetch_object($res)) {
     if (!in_array($badge->bid, $player_bids)) {
       $awarded = FALSE;
-      if (strpos($badge->formula, '::')) {
+      if (preg_match('/^{([\d,]+)}$/', $badge->formula, $matches)) {
+        // Badge collection badge
+        $eligible = TRUE;
+        foreach (explode(',', $matches[1]) as $formula_bid) {
+          if (!in_array($formula_bid, $player_bids)) {
+            $eligible = FALSE;
+            break;
+          }
+        }
+        if ($eligible) {
+          $awarded = summergame_player_award_badge($pid, $badge->bid);
+        }
+      }
+      else if (strpos($badge->formula, '::')) {
         // Multiple of a ledger type formula
         list($count_limit, $text_pattern) = explode('::', $badge->formula);
         $lid_count = db_fetch_object(db_query("SELECT COUNT(lid) AS lid_count FROM sg_ledger WHERE pid = %d AND (type LIKE '%s' OR metadata LIKE 'gamecode:%s') AND game_term = '%s'",
@@ -2987,6 +3020,7 @@ function summergame_player_check_badges($pid) {
 
       if ($awarded) {
         $messages[] = "Earned the $badge->title Badge!";
+        $player_bids[] = $badge->bid;
         // check if a bonus should be applied
         if ($badge->points) {
           // check for points override

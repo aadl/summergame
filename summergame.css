@@ -272,3 +272,16 @@ div#block-summergame-0 div.content ul li a.active {
   position: relative;
   overflow: hidden;
 }
+
+.summergame-badge-detail .badge-collection-list {
+  text-align: center;
+}
+
+.summergame-badge-detail .badge-collection-list #summergame-badges-page {
+  display: inline-block;
+}
+
+.summergame-badge-detail .badge-collection-list #summergame-badges-page img {
+  width: 100px;
+  height: 100px;
+}
