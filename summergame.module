@@ -2949,7 +2949,7 @@ function summergame_player_points($pid, $points, $type, $description = '', $meta
            $pid, $points, $type, $metadata, $description, $game_term, time());
 
   // Check if the new points affect any badges
-  if ($messages = summergame_player_check_badges($pid)) {
+  if ($messages = summergame_player_check_badges($pid, $game_term)) {
     foreach ($messages as $message) {
       drupal_set_message($message);
     }
@@ -2961,7 +2961,7 @@ function summergame_player_points($pid, $points, $type, $description = '', $meta
 /**
  * UTILITY: Check player for new badges
  */
-function summergame_player_check_badges($pid) {
+function summergame_player_check_badges($pid, $game_term) {
   $messages = array();
 
   $player_bids = array();
@@ -2969,7 +2969,9 @@ function summergame_player_check_badges($pid) {
   while ($player_badge = db_fetch_object($res)) {
     $player_bids[] = $player_badge->bid;
   }
-  $res = db_query("SELECT * FROM sg_badges WHERE active = 1 AND formula != '' ORDER BY bid ASC");
+
+  $res = db_query("SELECT * FROM sg_badges WHERE game_term = '%s' " .
+                  "AND active = 1 AND formula != '' ORDER BY bid ASC", $game_term);
   while ($badge = db_fetch_object($res)) {
     if (!in_array($badge->bid, $player_bids)) {
       $awarded = FALSE;
