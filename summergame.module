@@ -673,10 +673,10 @@ function summergame_code_edit_form($form_state, $game_code) {
   $form['valid_end'] = array(
     '#type' => 'textfield',
     '#title' => t('Code End Time Limit'),
-    '#default_value' => $game_code['valid_end'] ? date('Y-m-d H:i:s', $game_code['valid_end']) : '2012-08-31 9:00 PM',
+    '#default_value' => $game_code['valid_end'] ? date('Y-m-d H:i:s', $game_code['valid_end']) : '2012-09-01 12:00 AM',
     '#size' => 32,
     '#maxlength' => 32,
-    '#description' => t('Date/Time for when the code stops being active (e.g. "2012-08-31 9:00 PM")'),
+    '#description' => t('Date/Time for when the code stops being active (e.g. "2012-09-01 12:00 AM")'),
   );
   $form['game_term'] = array(
     '#type' => 'textfield',
