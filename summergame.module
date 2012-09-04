@@ -1585,8 +1585,7 @@ function summergame_player_page($pid = 0) {
           $badge_grid = '';
           if (count($player_game_points['badges'])) {
             foreach ($player_game_points['badges'] as $badge) {
-              $img_title = $badge['title'] . "\n" . $badge['description'] . "\n" . 'Received on ' . date('F j, Y g:i A', $badge['timestamp']);
-              $badge_grid .= '<img class="summergame-badge" title="' . htmlentities($img_title) . '" src="' . $sg_image_path . $badge['image'] . '_100.png">';
+              $badge_grid .= theme_summergame_badge($badge['bid']);
             }
             $content .= $badge_grid;
           }
@@ -2147,9 +2146,9 @@ function summergame_badge_detail_page($bid) {
     global $user;
     drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
 
-    if ($player = summergame_player_load(array('uid' => $user->uid))) {
+    if ($user->player['pid']) {
       $player_badge_status .= '<p class="player-badge-status">';
-      $earned = db_fetch_array(db_query("SELECT * FROM sg_players_badges WHERE pid = %d AND bid = %d", $player['pid'], $badge->bid));
+      $earned = db_fetch_array(db_query("SELECT * FROM sg_players_badges WHERE pid = %d AND bid = %d", $user->player['pid'], $badge->bid));
       if ($earned['timestamp']) {
         $player_badge_status .= 'You received this badge on ' . date('F j, Y g:i A', $earned['timestamp']);
       }
@@ -2158,6 +2157,40 @@ function summergame_badge_detail_page($bid) {
       }
       $player_badge_status .= '</p>';
     }
+
+    // Handle hidden badges
+    $hide_badge = FALSE;
+    if ($badge->reveal) {
+      if (count($user->player['bids'])) {
+        $hidden_badge_titles = array();
+
+        $required_bids = explode(',', $badge->reveal);
+        foreach ($required_bids as $required_bid) {
+          $required_badge = db_fetch_object(db_query("SELECT * FROM sg_badges WHERE bid = %d", $required_bid));
+          $hidden_badge_titles[] = $required_badge->title;
+          if (!$user->player['bids'][$required_bid]) {
+            $hide_badge = TRUE;
+            break;
+          }
+        }
+        $hidden_details .= 'You must earn the following badge' .
+                           (count($required_bids) == 1 ? '' : 's') .
+                           ' to reveal this badge: ';
+        $hidden_details .= implode(', ', $hidden_badge_titles);
+      }
+      else {
+        // no player or player has no badges
+        $hide_badge = TRUE;
+      }
+
+      if ($hide_badge) {
+        $badge->image = 'hidden';
+        $badge->title = 'Hidden Badge';
+        $badge->description = $hidden_details;
+      }
+    }
+
+
 
     $badge_img_src = file_directory_path() . '/sg_images/' . $badge->image;
     if (file_exists($badge_img_src . '_400.png')) {
@@ -2185,122 +2218,127 @@ function summergame_badge_detail_page($bid) {
     $awarded = db_fetch_object(db_query("SELECT COUNT(pid) AS pcount FROM sg_players_badges WHERE bid = %d", $bid));
     $content .= "<p>This badge has been awarded to $awarded->pcount players</p>";
 
-    $player_count = 0;
-    if (preg_match('/^{([\d,]+)}$/', $badge->formula, $matches)) {
-      // Badge collection badge
-      $formula_type = ' badges earned';
-      $bids = explode(',', $matches[1]);
-      $total_count = count($bids);
-      foreach ($bids as $bid) {
-        $badge_list .= theme_summergame_badge($bid);
+    if (!$hide_badge) {
+      $player_count = 0;
+      if (preg_match('/^{([\d,]+)}$/', $badge->formula, $matches)) {
+        // Badge collection badge
+        $formula_type = ' badges earned';
+        $bids = explode(',', $matches[1]);
+        $total_count = count($bids);
+        foreach ($bids as $bid) {
+          $badge_list .= theme_summergame_badge($bid);
+        }
+        $badge_count = db_fetch_object(db_query("SELECT COUNT(bid) AS bid_count FROM sg_players_badges WHERE pid = %d AND bid IN (%s)",
+                                                $user->player['pid'], $matches[1]));
+        $player_count = $badge_count->bid_count;
       }
-      $badge_count = db_fetch_object(db_query("SELECT COUNT(bid) AS bid_count FROM sg_players_badges WHERE pid = %d AND bid IN (%s)",
-                                              $player['pid'], $matches[1]));
-      $player_count = $badge_count->bid_count;
-    }
-    else if (strpos($badge->formula, '::') !== FALSE) {
-      // Multiple Badge
-      list($total_count, $text_pattern) = explode('::', $badge->formula);
-      $lid_count = db_fetch_object(db_query("SELECT COUNT(lid) AS lid_count FROM sg_ledger WHERE pid = %d AND (type LIKE '%s' OR metadata LIKE 'gamecode:%s') AND game_term = '%s'",
-                                              $player['pid'], $text_pattern, $text_pattern, $badge->game_term));
-      $player_count = $lid_count->lid_count;
-      $formula_type = $text_pattern . " scores in your ledger";
-    }
-    else {
-      // Collection Badge
-      $formula_type = ' criteria';
-      $codes = explode(',', $badge->formula);
-      $total_count = count($codes);
-      $player_matches = array();
-      $gc_rows = array();
-
-      foreach ($codes as $code_id => $text_pattern) {
-        $text_patterns = explode('|', $text_pattern);
-        if (count($text_patterns) > 1) {
-          $gc_rows[] = array('Game Code' => '<strong>One of the following:</strong>',
-                             'Description' => '',
-                             'Earned On' => '');
-          $any_mode = TRUE;
-        }
-        else {
-          $any_mode = FALSE;
-        }
-
-        foreach ($text_patterns as $pattern) {
-          $gc_row = array('Game Code' => '',
-                          'Description' => '',
-                          'Earned On' => '');
-
-          // is it a game code?
-          $gc = db_fetch_object(db_query("SELECT * FROM sg_game_codes WHERE text = '%s'", $pattern));
-          if ($gc->code_id) {
-            $formula_type = ' game codes found';
-            $gc_row['Game Code'] = '???????';
-            if ($hint = $gc->hint) {
-              $hint = str_replace('\'', '\x27', str_replace('"', '\x22', $hint));
-              $gc_row['Description'] = "<a onclick=\"this.innerHTML = 'HINT: $hint';\">(click for hint)</a>";
-            }
-          }
-          else {
-            // not a game code
-            $gc_row['Game Code'] = $pattern;
-          }
-
-          $ledger = db_fetch_object(db_query("SELECT * FROM sg_ledger WHERE pid = %d AND (type LIKE '%s' OR metadata LIKE 'gamecode:%s') AND game_term = '%s' LIMIT 1",
-                                             $player['pid'], $pattern, $pattern, $badge->game_term));
-          if ($ledger->lid) {
-            if (!$player_matches[$code_id]) {
-              $player_count++;
-              $player_matches[$code_id] = TRUE;
-            }
-            if ($gc->code_id) {
-              $gc_row['Game Code'] = $gc->text;
-              $gc_row['Description'] = $gc->description;
-            }
-            $gc_row['Earned On'] = date('F j, Y, g:i a', $ledger->timestamp);
-          }
-
-          if ($any_mode) {
-            $gc_row['Game Code'] = '-- ' . $gc_row['Game Code'];
-          }
-
-          $gc_rows[] = $gc_row;
-        }
-      }
-    }
-
-
-    if ($player['pid']) {
-      // Show progress bar
-      if ($player_count) {
-        $percentage = min(round(($player_count / $total_count) * 100), 100);
+      else if (strpos($badge->formula, '::') !== FALSE) {
+        // Multiple Badge
+        list($total_count, $text_pattern) = explode('::', $badge->formula);
+        $lid_count = db_fetch_object(db_query("SELECT COUNT(lid) AS lid_count FROM sg_ledger WHERE pid = %d AND (type LIKE '%s' OR metadata LIKE 'gamecode:%s') AND game_term = '%s'",
+                                                $user->player['pid'], $text_pattern, $text_pattern, $badge->game_term));
+        $player_count = $lid_count->lid_count;
+        $formula_type = $text_pattern . " scores in your ledger";
       }
       else {
-        $percentage = 0;
-      }
-      $content .= "<h2>Your Player Progress: $percentage% ($player_count / $total_count $formula_type)</h2>";
-      $content .= '<div class="meter">';
-      if ($percentage == 0) {
-        $percentage = 1;
-      }
-      $content .= "<span style=\"width: $percentage%\"></span>";
-      $content .= '</div>'; // div.meter
-      $content .= $player_badge_status;
-    }
+        // Collection Badge
+        $formula_type = ' criteria';
+        $codes = explode(',', $badge->formula);
+        $total_count = count($codes);
+        $player_matches = array();
+        $gc_rows = array();
 
-    if (count($gc_rows)) {
-      $content .= theme('table', array_keys($gc_rows[0]), $gc_rows);
-    }
+        foreach ($codes as $code_id => $text_pattern) {
+          $text_patterns = explode('|', $text_pattern);
+          if (count($text_patterns) > 1) {
+            $gc_rows[] = array('Game Code' => '<strong>One of the following:</strong>',
+                               'Description' => '',
+                               'Earned On' => '');
+            $any_mode = TRUE;
+          }
+          else {
+            $any_mode = FALSE;
+          }
 
-    if ($badge_list) {
-      $content .= '<div class="badge-collection-list">';
-      $content .= '<h2>Required Badges:</h2>';
-      $content .= '<div id="summergame-badges-page">';
-      $content .= $badge_list;
-      $content .= '</div>';
-      $content .= '</div>';
+          foreach ($text_patterns as $pattern) {
+            $gc_row = array('Game Code' => '',
+                            'Description' => '',
+                            'Earned On' => '');
+
+            // is it a game code?
+            $gc = db_fetch_object(db_query("SELECT * FROM sg_game_codes WHERE text = '%s'", $pattern));
+            if ($gc->code_id) {
+              $formula_type = ' game codes found';
+              $gc_row['Game Code'] = '???????';
+              if ($hint = $gc->hint) {
+                $hint = str_replace('\'', '\x27', str_replace('"', '\x22', $hint));
+                $gc_row['Description'] = "<a onclick=\"this.innerHTML = 'HINT: $hint';\">(click for hint)</a>";
+              }
+            }
+            else {
+              // not a game code
+              $gc_row['Game Code'] = $pattern;
+            }
+
+            $ledger = db_fetch_object(db_query("SELECT * FROM sg_ledger WHERE pid = %d AND (type LIKE '%s' OR metadata LIKE 'gamecode:%s') AND game_term = '%s' LIMIT 1",
+                                               $user->player['pid'], $pattern, $pattern, $badge->game_term));
+            if ($ledger->lid) {
+              if (!$player_matches[$code_id]) {
+                $player_count++;
+                $player_matches[$code_id] = TRUE;
+              }
+              if ($gc->code_id) {
+                $gc_row['Game Code'] = $gc->text;
+                $gc_row['Description'] = $gc->description;
+              }
+              $gc_row['Earned On'] = date('F j, Y, g:i a', $ledger->timestamp);
+            }
+
+            if ($any_mode) {
+              $gc_row['Game Code'] = '-- ' . $gc_row['Game Code'];
+            }
+
+            $gc_rows[] = $gc_row;
+          }
+        }
+      }
+
+
+      if ($user->player['pid']) {
+        // Show progress bar
+        if ($player_count) {
+          $percentage = min(round(($player_count / $total_count) * 100), 100);
+        }
+        else {
+          $percentage = 0;
+        }
+        $content .= "<h2>Your Player Progress: $percentage% ($player_count / $total_count $formula_type)</h2>";
+        $content .= '<div class="meter">';
+        if ($percentage == 0) {
+          $percentage = 1;
+        }
+        $content .= "<span style=\"width: $percentage%\"></span>";
+        $content .= '</div>'; // div.meter
+        $content .= $player_badge_status;
+      }
+
+      if (count($gc_rows)) {
+        $content .= theme('table', array_keys($gc_rows[0]), $gc_rows);
+      }
+
+      if ($badge_list) {
+        $content .= '<div class="badge-collection-list">';
+        $content .= '<h2>Required Badges:</h2>';
+        $content .= '<div id="summergame-badges-page">';
+        $content .= $badge_list;
+        $content .= '</div>';
+        $content .= '</div>';
+      }
     }
     $content .= '</div>';
+  }
+  else {
+    $content .= '<p>Sorry, no badge found with that ID.</p>';
   }
 
   return $content;
@@ -2315,8 +2353,32 @@ function theme_summergame_badge() {
   foreach (func_get_args() as $bid) {
     $badge = db_fetch_array(db_query("SELECT * FROM sg_badges WHERE bid = %d", $bid));
     $img_class = "summergame-badge";
-    $img_title = $badge['title'] . "\n" . $badge['description'];
-    $img_src = $sg_image_path . $badge['image'] . '_100.png';
+
+    $hide_badge = FALSE;
+    if ($badge['reveal']) {
+      if (count($user->player['bids'])) {
+        $required_bids = explode(',', $badge['reveal']);
+        foreach ($required_bids as $required_bid) {
+          if (!$user->player['bids'][$required_bid]) {
+            $hide_badge = TRUE;
+            break;
+          }
+        }
+      }
+      else {
+        // no player or player has no badges
+        $hide_badge = TRUE;
+      }
+    }
+
+    if ($hide_badge) {
+      $img_title = '???????';
+      $img_src = $sg_image_path . 'hidden_100.png';
+    }
+    else {
+      $img_title = $badge['title'] . "\n" . $badge['description'];
+      $img_src = $sg_image_path . $badge['image'] . '_100.png';
+    }
 
     if ($user->player['pid']) {
       if ($user->player['bids'][$bid]) {
