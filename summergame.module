@@ -1060,15 +1060,10 @@ function summergame_player_form($form_state, $player = NULL) {
     $submit_text = 'Save Player Changes';
   }
   else {
-    if (variable_get('summergame_points_enabled', 0)) {
-      $form['title'] = array(
-        '#value' => '<h1>Summer Game Player Signup</h1>',
-      );
-      $submit_text = 'Sign Up!';
-    }
-    else {
-      return (array('message' => array('#value' => '<h1>Signup Disabled</h1><p>The Summer Game is currently closed to new players</p>')));
-    }
+    $form['title'] = array(
+      '#value' => '<h1>Summer Game Player Signup</h1>',
+    );
+    $submit_text = 'Sign Up!';
   }
 
   $form['buttons'] = array(
@@ -1471,9 +1466,9 @@ function summergame_player_page($pid = 0) {
     if ($pid) {
       $player = summergame_player_load(array('pid' => $pid));
     }
-    else if ($user->uid) {
+    else if ($user->player['pid']) {
       // Default to the logged in player if none specified
-      $player = summergame_player_load(array('uid' => $user->uid));
+      $player = $user->player;
     }
 
     if ($player) {
@@ -2784,11 +2779,13 @@ function summergame_player_load($player_info = array()) {
       $player['bids'][$badge->bid] = $badge->timestamp;
     }
   }
+
+  if ($player['pid']) {
+    return $player;
+  }
   else {
     return FALSE;
   }
-
-  return $player;
 }
 
 /**
