@@ -195,6 +195,17 @@ div#block-summergame-0 div.content ul li a.active {
   text-align: center;
 }
 
+.summergame-badge-detail .share-links {
+  display: table;
+  margin: auto;
+}
+.summergame-badge-detail .share-links > div {
+  display: table-cell;
+  vertical-align: middle;
+  padding-right: 10px;
+  padding-left: 10px;
+}
+
 .summergame-badge-detail table {
   font-size: 0.75em;
   margin: auto;

@@ -1105,14 +1105,10 @@ function summergame_player_form($form_state, $player = NULL) {
     // Set up default values
     $prize_array = summergame_get_prize_array();
     $default_prizes = array();
-    $completed = FALSE;
 
     foreach ($prize_array as $prize_code => $prize_name) {
       if (strpos($player['prizes'], $prize_code) !== FALSE ) {
         $default_prizes[$prize_code] = $prize_code;
-        if ($prize_code != 'puzzle' && $prize_code != 'duck') {
-          $completed = TRUE;
-        }
       }
       else {
         $default_prizes[$prize_code] = 0;
@@ -1123,10 +1119,6 @@ function summergame_player_form($form_state, $player = NULL) {
       '#title' => t('CHECK PRIZE GIVEN WHEN GAME IS COMPLETED'),
       '#options' => $prize_array,
       '#default_value' => $default_prizes,
-    );
-    $form['admin']['completed'] = array(
-      '#type' => 'value',
-      '#value' => $completed,
     );
     $form['admin']['merge_id'] = array(
       '#type' => 'textfield',
@@ -1315,15 +1307,11 @@ function summergame_player_form_submit($form, &$form_state) {
     $player_info[$name] = ($value ? 1 : 0);
   }
 
-  $completed = FALSE;
   if ($form_state['values']['prizes']) {
     $prizes = array();
     foreach ($form_state['values']['prizes'] as $prize) {
       if ($prize) {
         $prizes[] = $prize;
-        if ($prize != 'puzzle' && $prize != 'duck') {
-          $completed = TRUE;
-        }
       }
     }
     $player_info['prizes'] = implode(',', $prizes);
@@ -1351,13 +1339,6 @@ function summergame_player_form_submit($form, &$form_state) {
       $points = summergame_player_points($player['pid'], 100, 'Signup',
                                          'Signed Up for the Summer Game');
       drupal_set_message("Earned $points Summer Game points for signing up!");
-    }
-
-    // Game Completion Bonus
-    if ($completed && !($form_state['values']['completed'])) {
-      $points = summergame_player_points($player['pid'], 1000, 'Completed',
-                                         'Completed the Classic Summer Game');
-      drupal_set_message("Earned $points Summer Game points for completing the Classic Summer Game");
     }
   }
 
@@ -2146,6 +2127,35 @@ function summergame_badge_detail_page($bid) {
       $earned = db_fetch_array(db_query("SELECT * FROM sg_players_badges WHERE pid = %d AND bid = %d", $user->player['pid'], $badge->bid));
       if ($earned['timestamp']) {
         $player_badge_status .= 'You received this badge on ' . date('F j, Y g:i A', $earned['timestamp']);
+
+        $share_links .= '<div class="share-links">';
+
+        $share_links .= '<div>Share your accomplishment:</div>';
+
+        $share_links .= '<div class="twitter-share">';
+        $share_links .= '<script type="text/javascript" src="http://platform.twitter.com/widgets.js"></script>';
+        $share_links .= '<a href="http://twitter.com/share/?url=/" class="twitter-share-button" data-text="I earned the ' .
+                                $badge->title . ' Badge in the @aadl Summer Game! ' . url($_GET['q'], array('absolute' => TRUE)) .
+                                ' Play along at http://play.aadl.org/." data-count="none">Tweet</a>';
+        $share_links .= '</div>';
+
+        $share_links .= '<div class="facebook-share">';
+        $share_links .= <<<FBL
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+<fb:like send="false" layout="standard" width="225" show_faces="true" colorscheme="light" action="like"></fb:like>
+FBL;
+        $share_links .= '</div>';
+
+        $share_links .= '</div>';
+
+        $player_badge_status .= $share_links;
       }
       else {
         $player_badge_status .= 'You have not yet earned this badge';
