@@ -433,14 +433,18 @@ function summergame_admin() {
   $content .= '</div>';
 
   // Players
-  $content .= '<div class="admin-page-player-search">';
-  $content .= '<h2 class="title">Players</h2>';
-  $content .= drupal_get_form('summergame_player_search_form');
-  $content .= '</div>';
+  if (user_access('administer site configuration')) {
+    $content .= '<div class="admin-page-player-search">';
+    $content .= '<h2 class="title">Players</h2>';
+    $content .= drupal_get_form('summergame_player_search_form');
+    $content .= '</div>';
+  }
 
   // Game Codes
   $content .= '<ul class="create-new-code"><li class="button green">' . l("Create New Game Code", 'summergame/admin/add') . '</li></ul>';
   $content .= '<h2 class="title game-codes">Game Codes</h2>';
+  $content .= drupal_get_form('summergame_admin_gamecode_search_form');
+
   $limit = 25;
   $rows = array();
   $creators = array();
@@ -452,6 +456,10 @@ function summergame_admin() {
       $creators[$creator_uid] = user_load($creator_uid);
     }
     $creator = $creators[$creator_uid];
+
+    if (!user_access('administer site configuration')) {
+      $game_code['text'] = preg_replace('/\B\w/', '*', $game_code['text']);
+    }
 
     $valid_start = $game_code['valid_start'] ? date('n/d/Y H:i:s', $game_code['valid_start']) : 'Now';
     $valid_end = date('n/d/Y H:i:s', $game_code['valid_end']);
@@ -532,8 +540,9 @@ function summergame_admin_gamecodes($search_term = '') {
     $valid_start = $game_code['valid_start'] ? date('n/d/Y H:i:s', $game_code['valid_start']) : 'Now';
     $valid_end = date('n/d/Y H:i:s', $game_code['valid_end']);
     $rows[] = array(
-      'Text' => $game_code['text'],
+      'Text' => user_access('administer site configuration') ? $game_code['text'] : preg_replace('/\B\w/', '*', $game_code['text']),
       'Description' => $game_code['description'],
+      'Hint' => $game_code['hint'],
       'Points' => $game_code['points'] . ($game_code['diminishing'] ? ' (diminishing)' : ''),
       'Created' => date('n/d/Y', $game_code['created']),
       'Created By' => $creator->name,
