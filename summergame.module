@@ -420,6 +420,7 @@ function summergame_settings() {
  */
 function summergame_admin() {
   drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
+  $site_admin = user_access('administer site configuration');
   $content .= '<div id="summergame-admin-page">';
   $content .= '<h1>Summer Game Admin Page</h1>';
 
@@ -433,7 +434,7 @@ function summergame_admin() {
   $content .= '</div>';
 
   // Players
-  if (user_access('administer site configuration')) {
+  if ($site_admin) {
     $content .= '<div class="admin-page-player-search">';
     $content .= '<h2 class="title">Players</h2>';
     $content .= drupal_get_form('summergame_player_search_form');
@@ -457,7 +458,7 @@ function summergame_admin() {
     }
     $creator = $creators[$creator_uid];
 
-    if (!user_access('administer site configuration')) {
+    if (!$site_admin) {
       $game_code['text'] = preg_replace('/\B\w/', '*', $game_code['text']);
     }
 
@@ -487,10 +488,14 @@ function summergame_admin() {
   $rows = array();
   $res = db_query("SELECT * FROM sg_badges ORDER BY title ASC");
   while ($badge = db_fetch_array($res)) {
+    if (!$site_admin) {
+      $badge['formula'] = preg_replace('/\B\w/', '*', $badge['formula']);
+    }
     $rows[] = array(
       'Badge ID' => $badge['bid'],
       'Image' => '<img src="' . $sg_image_path . $badge['image'] . '_100.png">',
       'Title' => '<strong>' . $badge['title'] . '</strong>',
+      'Difficulty' => $badge['difficulty'],
       'Description' => $badge['description'],
       'Formula' => strlen($badge['formula']) > 25 ? substr($badge['formula'], 0, 25) . '...' : $badge['formula'],
     );
@@ -2219,9 +2224,11 @@ FBL;
                   file_create_url($badge_img_src),
                   array('html' => TRUE));
     $content .= "<h1>$badge->title</h1>";
+    $content .= "<p class=\"caption\">Difficulty: $badge->difficulty";
     if ($badge->game_term) {
-      $content .= "<p class=\"caption\">Part of the $badge->game_term Game</p>";
+      $content .= "<br>Part of the $badge->game_term Game";
     }
+    $content .= "</p>";
     $content .= "<p><strong>$badge->description</strong></p>";
     if ($badge->points) {
       $term = ($badge->game_term_override ? $badge->game_term_override : $badge->game_term);
@@ -2390,7 +2397,8 @@ function theme_summergame_badge() {
       $img_src = $sg_image_path . 'hidden_100.png';
     }
     else {
-      $img_title = $badge['title'] . "\n" . $badge['description'];
+      $img_title = $badge['title'] . " (Difficulty: " . $badge['difficulty'] . ")\n" .
+                   $badge['description'];
       $img_src = $sg_image_path . $badge['image'] . '_100.png';
     }
 
