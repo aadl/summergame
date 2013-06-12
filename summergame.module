@@ -1123,24 +1123,6 @@ function summergame_player_form($form_state, $player = NULL) {
       '#suffix' => '</fieldset>',
     );
 
-    // Set up default values
-    $prize_array = summergame_get_prize_array();
-    $default_prizes = array();
-
-    foreach ($prize_array as $prize_code => $prize_name) {
-      if (strpos($player['prizes'], $prize_code) !== FALSE ) {
-        $default_prizes[$prize_code] = $prize_code;
-      }
-      else {
-        $default_prizes[$prize_code] = 0;
-      }
-    }
-    $form['admin']['prizes'] = array(
-      '#type' => 'checkboxes',
-      '#title' => t('CHECK PRIZE GIVEN WHEN GAME IS COMPLETED'),
-      '#options' => $prize_array,
-      '#default_value' => $default_prizes,
-    );
     $form['admin']['merge_id'] = array(
       '#type' => 'textfield',
       '#title' => t('Merge this player into Player ID'),
@@ -1217,7 +1199,7 @@ function summergame_player_form($form_state, $player = NULL) {
       'teen' => 'Teen',
       'adult' => 'Adult'
     ),
-    '#description' => 'Select your age group for prizes',
+    '#description' => 'Select your age group',
     '#attributes' => array('onChange' => 'checkForSchool(this)'),
   );
   if ($player['agegroup'] == 'youth' || $player['agegroup'] == 'teen') {
@@ -1326,16 +1308,6 @@ function summergame_player_form_submit($form, &$form_state) {
 
   foreach ($form_state['values']['privacy'] as $name => $value) {
     $player_info[$name] = ($value ? 1 : 0);
-  }
-
-  if ($form_state['values']['prizes']) {
-    $prizes = array();
-    foreach ($form_state['values']['prizes'] as $prize) {
-      if ($prize) {
-        $prizes[] = $prize;
-      }
-    }
-    $player_info['prizes'] = implode(',', $prizes);
   }
 
   if ($form_state['values']['uid']) {
@@ -1676,27 +1648,8 @@ function theme_summergame_player_info($player) {
   }
   $privacy_details .= '</ul>';
 
-  // Determine Classic Reading Game prizes
-  $player_prizes = array();
-  $prize_array = summergame_get_prize_array();
-
-  foreach (explode(',', $player['prizes']) as $player_prize) {
-    if (array_key_exists($player_prize, $prize_array)) {
-      $player_prizes[] = 'Received ' . preg_replace('/ \([^)]+\)/', '', $prize_array[$player_prize]);
-    }
-  }
-  if (count($player_prizes)) {
-    $player_prizes = 'Yes, ' . implode(', ', $player_prizes);
-  }
-  else {
-    $player_prizes = 'Not yet! Complete a game card and visit the library to receive one of the following:<ul>';
-    foreach ($prize_array as $prize) {
-      if (stripos($prize, $player['agegroup']) !== FALSE) {
-        $player_prizes .= '<li>' . preg_replace('/ \([^)]+\)/', '', $prize) . '</li>';
-      }
-    }
-    $player_prizes .= '</ul>';
-  }
+  // Determine Classic Reading Game status
+  $completed_classic = (FALSE ? 'Yes, completed on $date' : 'Not yet! Complete a game card and visit the library to receive one of the following:'); // TODO: Lookup for completion code in ledger
 
   // List teams
   $teams = array();
@@ -1734,7 +1687,7 @@ function theme_summergame_player_info($player) {
     array('<strong>Game Card:</strong>', $player['gamecard']),
     array('<strong>Age Group:</strong>', ucwords($player['agegroup'])),
     array('<strong>Privacy Options:</strong>', $privacy_details),
-    array('<strong>Completed Classic Reading Game?:</strong>', $player_prizes),
+    array('<strong>Completed Classic Reading Game?:</strong>', $completed_classic),
     array('<strong>Team Membership:</strong>', $player['teams']),
   );
 
@@ -2780,19 +2733,6 @@ function summergame_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
  */
 
 /**
- * UTILITY: Return the prize description array
- */
-function summergame_get_prize_array() {
-  return array(
-    'puzzle' => 'One Piece Puzzle (Youth Mid-Way)',
-    'duck' => 'Rubber Duck (Youth Mid-Way)',
-    'ybook' => 'Book (Youth Completion)',
-    'tbook' => 'Book (Teen Completion)',
-    'fine' => 'Fine Forgiveness Coupon (Teen or Adult Completion)',
-    'bread' => 'Great Harvest Bread Coupon (Teen or Adult Completion)',
-  );
-}
-/**
  * UTILITY: Determine access to a player record
  */
 function summergame_player_access($pid) {
@@ -3383,30 +3323,13 @@ function summergame_admin_players_merge($pid1, $pid2, $confirm = '') {
 function summergame_players_merge($pid1, $pid2) {
   $p1 = summergame_player_load(array('pid' => $pid1));
   $p2 = summergame_player_load(array('pid' => $pid2));
-  if (!empty($p1['prizes'])) {
-    $p1_prizes = explode(',', $p1['prizes']);
-  }
-  else {
-    $p1_prizes = array();
-  }
 
   // Update Player Data Fields
   foreach ($p2 as $field => $data) {
-    if ($field == 'prizes') {
-      // Special handling for prizes field
-      foreach(explode(',', $data) as $prize) {
-        if (!in_array($prize, $p1_prizes)) {
-          $p1_prizes[] = $prize;
-        }
-      }
-    }
-    else {
-      if (empty($p1[$field])) {
-        $p1[$field] = $data;
-      }
+    if (empty($p1[$field])) {
+      $p1[$field] = $data;
     }
   }
-  $p1['prizes'] = implode(',', $p1_prizes);
   summergame_player_save($p1);
 
   // Check for duplicate Game Codes and remove from old player
