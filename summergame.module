@@ -133,6 +133,13 @@ function summergame_menu() {
     'access arguments' => array(3),
     'type' => MENU_CALLBACK,
   );
+  $items['summergame/player/grc'] = array(
+    'title' => t('Summer Game Player Generate Referral Code'),
+    'page callback' => 'summergame_player_grc',
+    'access callback' => 'summergame_player_access',
+    'access arguments' => array(3),
+    'type' => MENU_CALLBACK,
+  );
   $items['summergame/player/ledger'] = array(
     'title' => 'Summer Game Player Ledger Page',
     'page callback' => 'summergame_player_ledger_page',
@@ -1712,10 +1719,18 @@ function theme_summergame_player_info($player) {
     $player['phone'] = l('GENERATE CODE', 'summergame/player/gcpc/' . $player['pid']) . ' to attach your cell phone to your player.';
   }
 
+  // Show referral code information
+  if ($player['referral_code']) {
+    $player['referral_code'] = 'Have a Lcard carrying friend sign up for the game with code: ' . $player['referral_code'];
+  }
+  else {
+    $player['referral_code'] = l('GENERATE CODE', 'summergame/player/grc/' . $player['pid']) . ' to earn bonus points by referring Lcard holding friends to sign up for the game.';
+  }
   $player_table = array(
     array('<strong>Real Name:</strong>', $player['name']),
     array('<strong>Nickname:</strong>', $player['nickname']),
     array('<strong>Cell Phone:</strong>', $player['phone']),
+    array('<strong>Referral Code:</strong>', $player['referral_code']),
     array('<strong>Game Card:</strong>', $player['gamecard']),
     array('<strong>Age Group:</strong>', ucwords($player['agegroup'])),
     array('<strong>Privacy Options:</strong>', $privacy_details),
@@ -1895,6 +1910,37 @@ function summergame_player_gcpc($pid = 0) {
       summergame_player_save($player);
       $char = chr(($player['pid'] % 26) + 65);
       drupal_set_message('TEXT ' . $char. $code . ' to 4AADL (42235) to connect your phone');
+    }
+    drupal_goto('summergame/player/' . $player['pid']);
+  }
+  drupal_goto('summergame/player');
+}
+
+/**
+ * PAGE: Generate Referral Code
+ */
+function summergame_player_grc($pid = 0) {
+  if ($player = summergame_player_load(array('pid' => $pid))) {
+    if (!$player['referral_code']) {
+      // Generate a new referral code
+      $nums = '34679';
+      $chars = 'ACDEFGHJKMNPQRTUVWXY';
+      $num_max_idx = strlen($nums) - 1;
+      $char_max_idx = strlen($chars) - 1;
+      $code = '';
+      while ($code == '') {
+        for ($i = 0; $i < 4; $i++) {
+          $code .= $nums[mt_rand(0, $num_max_idx)];
+          $code .= $chars[mt_rand(0, $char_max_idx)];
+        }
+        $collision = db_fetch_object(db_query("SELECT pid FROM sg_players WHERE referral_code = '%s'", $code));
+        if ($collision->pid) {
+          $code = '';
+        }
+      }
+      $player['referral_code'] = $code;
+      summergame_player_save($player);
+      drupal_set_message('Your play.aadl.org Referral Code is  ' . $code . '. Earn bonus points when an Lcard-holding friend enters that code on the registration page.');
     }
     drupal_goto('summergame/player/' . $player['pid']);
   }
@@ -2893,12 +2939,14 @@ function summergame_player_save($player) {
     // Update existing player record
     unset($player['pid']);
     foreach ($player as $key => $value) {
-      if (strtoupper($value) == 'NULL') {
-        $query[] = $key . ' = NULL';
-      }
-      else {
-        $query[] = $key . ' = ' . (is_numeric($value) ? '%d' : "'%s'");
-        $params[] = $value;
+      if (db_column_exists('sg_players', $key)) {
+        if (strtoupper($value) == 'NULL') {
+          $query[] = $key . ' = NULL';
+        }
+        else {
+          $query[] = $key . ' = ' . (is_numeric($value) ? '%d' : "'%s'");
+          $params[] = $value;
+        }
       }
     }
     $params[] = $pid;
@@ -2907,8 +2955,10 @@ function summergame_player_save($player) {
   else {
     // New player record
     foreach ($player as $key => $value) {
-      $query[] = $key . ' = ' . (is_numeric($value) ? '%d' : "'%s'");
-      $params[] = $value;
+      if (db_column_exists('sg_players', $key)) {
+        $query[] = $key . ' = ' . (is_numeric($value) ? '%d' : "'%s'");
+        $params[] = $value;
+      }
     }
     db_query('INSERT INTO sg_players SET ' . implode($query, ', '), $params);
     $pid = db_last_insert_id('sg_players', 'pid');
