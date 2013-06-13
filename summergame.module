@@ -2631,14 +2631,26 @@ function summergame_twilio_respond($incoming) {
     db_query("INSERT INTO sg_trivia_guesses (guess) VALUES ('%s')", $guess);
     if (stripos($guess, $answer) !== FALSE) {
       // Correct Answer
-      db_query("INSERT INTO sg_trivia_correct (phone) VALUES ('%d')", $incoming['phone']);
-      $place = db_last_insert_id('sg_trivia', 'id');
+      if (db_query("INSERT INTO sg_trivia_correct (phone) VALUES ('%d')", $incoming['phone'])) {
+        $place = db_last_insert_id('sg_trivia', 'id');
+        $points = 51 - $place;
 
-      $response = $response_template;
-      $response['text'] = "Your answer of \"$guess\" is Correct Answer #$place!";
+        summergame_player_points($player['pid'], $points, 'Correct Trivia Answer',
+                                 "Correct Answer #$place: $guess", '', 'TownieTrivia');
+
+        $response = $response_template;
+        $response['text'] = "Your answer of \"$guess\" is Correct Answer #$place! You earn $points points.";
+      }
+      else {
+        // Duplicate correct answer
+        $response = $response_template;
+        $response['text'] = "Duplicate answer \"$guess\" received.";
+      }
+/*
       if ($place == 1) {
         $response['text'] .= ' Please see a staff member to claim your prize';
       }
+*/
       $responses[] = $response;
     }
     else {
