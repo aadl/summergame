@@ -1117,7 +1117,7 @@ function summergame_player_form($form_state, $player = NULL) {
     '#value' => l('Cancel', $cancel_path),
   );
 
-    if (user_access('administer summergame')) {
+  if ($player['pid'] && user_access('administer summergame')) {
     $form['admin'] = array(
       '#prefix' => '<fieldset style="float:right"><legend>STAFF ONLY</legend>',
       '#suffix' => '</fieldset>',
@@ -1141,6 +1141,7 @@ function summergame_player_form($form_state, $player = NULL) {
     '#size' => 30,
     '#maxlength' => 64,
     '#description' => t('Enter your real name'),
+    '#required' => TRUE,
   );
   $form['nickname'] = array(
     '#type' => 'textfield',
@@ -1168,6 +1169,16 @@ function summergame_player_form($form_state, $player = NULL) {
     '#maxlength' => 16,
     '#description' => t('Did you pick up a score card? Enter its number here to help us track your progress'),
   );
+  if (!$player['pid']) {
+    $form['referred_by'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Referred By'),
+      '#size' => 16,
+      '#maxlength' => 16,
+      '#description' => t('Were you referred by a friend? Enter their referral code here to earn a point bonus for both of you! (You must have a unique Library Card associated with your account in order to qualify for the bonus)'),
+    );
+  }
+
   // Set up privacy default values
   $privacy_defaults = array();
   if ($player['show_leaderboard']) {
@@ -2456,13 +2467,19 @@ function summergame_twilio_respond($incoming) {
     }
   }
   else if (strtolower($incoming['text']) == 'newplayer' ||
-      strtolower($incoming['text']) == 'new player') {
+           strtolower($incoming['text']) == 'new player') {
     if (!$player['pid']) {
       $new_player_needed = TRUE;
     }
   }
   else if (preg_match('/^S?[ART]G[\d]{5}$/', $incoming['text'])) {
     $game_card_text = TRUE;
+    if (!$player['pid']) {
+      $new_player_needed = TRUE;
+    }
+  }
+  else if (stripos($incoming['text'], 'nick ') === 0 || stripos($incoming['text'], 'nickname ') === 0) {
+    $nickname_update = TRUE;
     if (!$player['pid']) {
       $new_player_needed = TRUE;
     }
@@ -2537,10 +2554,17 @@ function summergame_twilio_respond($incoming) {
             }
           }
         }
-
         // If not recognized, no response to allow other handlers to respond
       }
     }
+  }
+  // New Nickname
+  else if ($nickname_update) {
+    $player['nickname'] = substr($incoming['text'], strpos($incoming['text'], ' ') + 1);
+    $player = summergame_player_save($player);
+    $response = $response_template;
+    $response['text'] .= 'Your Player nickname has been set to ' . $player['nickname'];
+    $responses[] = $response;
   }
   // Lego Contest
   else if (variable_get('summergame_lego_enabled', FALSE)) {
