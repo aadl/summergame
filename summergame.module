@@ -2624,7 +2624,7 @@ function summergame_twilio_respond($incoming) {
   }
 
   // Check if Trivia is active
-  if (variable_get('summergame_trivia_active', FALSE) && !count($responses)) {
+  if (variable_get('summergame_trivia_active', FALSE) && !count($responses) && $player['pid']) {
     $guess = $incoming['text'];
     $answer = variable_get('summergame_trivia_answer', '');
 
@@ -3271,15 +3271,15 @@ function summergame_pdf($type = 'adult', $code_id = 0) {
 
     // now write some text
     $id = 'TG' . $redis->incr('tgpdfcounter');
-    $pdf->SetFont('Helvetica', 'B', 13);
+    $pdf->SetFont('Helvetica', 'B', 11);
 
-    $pdf->SetXY(21, 220);
+    $pdf->SetXY(73, 219);
     $pdf->Cell(0, 10, $id, 0, 1);
 
-    $pdf->SetXY(165, 269);
+    $pdf->SetXY(166, 246);
     $pdf->Cell(0, 10, $id, 0, 1);
 
-    $pdf->Output('newteengame.pdf', 'D');
+    $pdf->Output('SG_Teen_2013.pdf', 'D');
   }
   else { // default to the adult single player form
     // initiate FPDI
@@ -3294,15 +3294,15 @@ function summergame_pdf($type = 'adult', $code_id = 0) {
 
     // now write some text
     $id = 'AG' . $redis->incr('agpdfcounter');
-    $pdf->SetFont('Helvetica', 'B', 12);
+    $pdf->SetFont('Helvetica', 'B', 10);
 
-    $pdf->SetXY(85, 140.5);
+    $pdf->SetXY(100, 185);
     $pdf->Cell(0, 10, $id, 0, 1);
 
-    $pdf->SetXY(105, 264.5);
+    $pdf->SetXY(72, 232.2);
     $pdf->Cell(0, 10, $id, 0, 1);
 
-    $pdf->Output('AGSummer_Game.pdf', 'D');
+    $pdf->Output('SG_Adult_2013.pdf', 'D');
   }
 }
 
