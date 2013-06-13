@@ -378,6 +378,14 @@ function summergame_settings() {
     '#maxlength' => 32,
     '#description' => t("Default Game Term to apply to earned points (e.g. SummerGame2011)"),
   );
+  $form['summergame_completion_gamecode'] = array(
+    '#type' => 'textfield',
+    '#title' => t("Completion Game Code"),
+    '#default_value' => variable_get('summergame_completion_gamecode', ''),
+    '#size' => 32,
+    '#maxlength' => 32,
+    '#description' => t("Game Code awarded for completion of the Classic Reading Game (e.g. PUPPYLOVE13)"),
+  );
   $form['summergame_user_search_path'] = array(
     '#type' => 'textfield',
     '#title' => t("User Search Path"),
@@ -1660,7 +1668,14 @@ function theme_summergame_player_info($player) {
   $privacy_details .= '</ul>';
 
   // Determine Classic Reading Game status
-  $completed_classic = (FALSE ? 'Yes, completed on $date' : 'Not yet! Complete a game card and visit the library to receive one of the following:'); // TODO: Lookup for completion code in ledger
+  $completion_gamecode = variable_get('summergame_completion_gamecode', '');
+  $row = db_fetch_object(db_query("SELECT * FROM sg_ledger WHERE pid = %d AND metadata LIKE '%gamecode:$completion_gamecode%'", $player['pid']));
+  if ($row->lid) {
+    $completed_classic = 'Yes, completed on ' . date('F j, Y', $row->timestamp);
+  }
+  else {
+   $completed_classic = 'Not yet! Complete a game card and visit the library to receive a special prize.';
+  }
 
   // List teams
   $teams = array();
