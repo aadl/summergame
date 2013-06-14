@@ -705,10 +705,10 @@ function summergame_code_edit_form($form_state, $game_code) {
   $form['valid_end'] = array(
     '#type' => 'textfield',
     '#title' => t('Code End Time Limit'),
-    '#default_value' => $game_code['valid_end'] ? date('Y-m-d H:i:s', $game_code['valid_end']) : '2012-09-01 12:00 AM',
+    '#default_value' => $game_code['valid_end'] ? date('Y-m-d H:i:s', $game_code['valid_end']) : '2013-08-31 12:00 AM',
     '#size' => 32,
     '#maxlength' => 32,
-    '#description' => t('Date/Time for when the code stops being active (e.g. "2012-09-01 12:00 AM")'),
+    '#description' => t('Date/Time for when the code stops being active (e.g. "2013-08-31 12:00 AM")'),
   );
   $form['game_term'] = array(
     '#type' => 'textfield',
@@ -1351,6 +1351,35 @@ function summergame_player_form_submit($form, &$form_state) {
       $points = summergame_player_points($player['pid'], 100, 'Signup',
                                          'Signed Up for the Summer Game');
       drupal_set_message("Earned $points Summer Game points for signing up!");
+    }
+    // Check for referral bonus
+    if ($form_state['values']['referred_by'] && module_exists('sopac') && $player['uid']) {
+      // Check for referral player
+      $referring_player = summergame_player_load(array('referral_code' => $form_state['values']['referred_by']));
+      if ($referring_player['pid']) {
+        $account = user_load($player['uid']);
+        if (sopac_bcode_isverified($account)) {
+          // Make sure no one has already gotten points for this lcard
+          $existing_bonus = db_fetch_object(db_query("SELECT * FROM sg_ledger WHERE metadata LIKE '%referral_bonus_lcard:%s", $account->profile_pref_cardnum));
+          if ($existing_bonus->lid) {
+            drupal_set_message('Sorry, you entered a Referral Code, but your Library Card has already awarded points for a referral.');
+          }
+          else {
+            summergame_player_points($player['pid'], 500, 'Referral',
+                                     'Referred by Player #' . $referring_player['pid']);
+            summergame_player_points($referring_player['pid'], 500, 'Referral',
+                                     'Referral Bonus for Player #' . $player['pid'], 'referral_bonus_lcard:' . $account->profile_pref_cardnum);
+          }
+        }
+        else {
+          summergame_player_points($player['pid'], 0, 'Referral',
+                                   'Referred by Player #' . $referring_player['pid']);
+          drupal_set_message('You entered a valid referral code, but you do not have a verified Library Card attached to your account. Earn 500 points by adding a Library Card to your website account.');
+        }
+      }
+      else {
+        drupal_set_message('Sorry, you entered a referral code, but no player with that code exists');
+      }
     }
   }
 
