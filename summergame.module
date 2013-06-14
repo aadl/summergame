@@ -1738,7 +1738,7 @@ function theme_summergame_player_info($player) {
     array('<strong>Real Name:</strong>', $player['name']),
     array('<strong>Nickname:</strong>', $player['nickname']),
     array('<strong>Cell Phone:</strong>', $player['phone']),
-    //array('<strong>Referral Code:</strong>', $player['referral_code']),
+    array('<strong>Referral Code:</strong>', $player['referral_code']),
     array('<strong>Game Card:</strong>', $player['gamecard']),
     array('<strong>Age Group:</strong>', ucwords($player['agegroup'])),
     array('<strong>Privacy Options:</strong>', $privacy_details),
