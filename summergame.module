@@ -3193,7 +3193,13 @@ function summergame_player_check_badges($pid, $game_term) {
       }
 
       if ($awarded) {
-        $messages[] = "Earned the $badge->title Badge!";
+        $badge_detail_link = l('Badge Detail Page', 'summergame/badge/' . $badge->bid,
+                               array('html' => TRUE,
+                                     'query' => array('lightbox' => 1),
+                                     'attributes' => array('rel' => 'lightframe'),
+                                    )
+                              );
+        $messages[] = "Earned the $badge->title Badge! Share your accomplishment on Twitter or Facebook on the $badge_detail_link";
         $player_bids[] = $badge->bid;
         // check if a bonus should be applied
         if ($badge->points) {
