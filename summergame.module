@@ -1735,6 +1735,14 @@ function theme_summergame_player_info($player) {
   else {
     $player['referral_code'] = l('GENERATE CODE', 'summergame/player/grc/' . $player['pid']) . ' to earn bonus points by referring Library Card holding friends to sign up for the game.';
   }
+
+  // Show Game Card information
+  if (empty($player['gamecard'])) {
+    $player['gamecard'] = l('Add your Game Card ID', 'summergame/player/edit/' . $player['pid']) .
+                          ' after getting a game card. (' .
+                          l('Adult', 'summergame/pdf/adult') . ' | ' .
+                          l('Teen', 'summergame/pdf/teen') . ')';
+  }
   $player_table = array(
     array('<strong>Real Name:</strong>', $player['name']),
     array('<strong>Nickname:</strong>', $player['nickname']),
