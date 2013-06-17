@@ -1459,7 +1459,7 @@ function summergame_delete_score_form_submit($form, &$form_state) {
  * PAGE: Summer Game Player Account page
  */
 function summergame_player_page($pid = 0) {
-  global $user, $_domain;
+  global $user;
 
   // Redirect to the right domain
   if ($sg_did = variable_get('summergame_default_domain_id', FALSE)) {
@@ -2193,6 +2193,12 @@ function summergame_badges_page($game_term = '') {
 }
 
 function summergame_badge_detail_page($bid) {
+  // Redirect to the right domain
+  if ($sg_did = variable_get('summergame_default_domain_id', FALSE)) {
+    $summergame_domain = domain_load($sg_did);
+    domain_goto($summergame_domain);
+  }
+
   $badge = db_fetch_object(db_query("SELECT * FROM sg_badges WHERE bid = %d", $bid));
 
   if ($badge->bid) {
