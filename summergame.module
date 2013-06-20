@@ -436,6 +436,7 @@ function summergame_settings() {
 function summergame_admin() {
   drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
   $site_admin = user_access('administer site configuration');
+  $admin_users = user_access('administer users');
   $content .= '<div id="summergame-admin-page">';
   $content .= '<h1>Summer Game Admin Page</h1>';
 
@@ -485,7 +486,7 @@ function summergame_admin() {
       'Hint' => $game_code['hint'],
       'Points' => $game_code['points'] . ($game_code['diminishing'] ? ' (diminishing)' : ''),
       'Created' => date('n/d/Y', $game_code['created']),
-      'Created By' => $creator->name,
+      'Created By' => ($admin_users ? l($creator->name, 'user/' . $creator->uid) : $creator->name),
       'Valid Dates' => $valid_start . '-<br />' . $valid_end,
       'Game Term' => $game_code['game_term'],
       'Redemptions' => $game_code['num_redemptions'] . ' of ' . $game_code['max_redemptions'],
@@ -526,6 +527,7 @@ function summergame_admin() {
  * PAGE: Show all game codes
  */
 function summergame_admin_gamecodes($search_term = '') {
+  $admin_users = user_access('administer users');
   drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
   $content .= '<div id="summergame-admin-page">';
 
@@ -565,7 +567,7 @@ function summergame_admin_gamecodes($search_term = '') {
       'Hint' => $game_code['hint'],
       'Points' => $game_code['points'] . ($game_code['diminishing'] ? ' (diminishing)' : ''),
       'Created' => date('n/d/Y', $game_code['created']),
-      'Created By' => $creator->name,
+      'Created By' => ($admin_users ? l($creator->name, 'user/' . $creator->uid) : $creator->name),
       'Valid Dates' => $valid_start . '-<br />' . $valid_end,
       'Game Term' => $game_code['game_term'],
       'Redemptions' => $game_code['num_redemptions'] . ' of ' . $game_code['max_redemptions'],
