@@ -1308,7 +1308,7 @@ function summergame_player_form_submit($form, &$form_state) {
 
   $player_info = array(
     'name' => $form_state['values']['name'],
-    'nickname' => $form_state['values']['nickname'],
+    'nickname' => trim($form_state['values']['nickname']),
     'gamecard' => str_replace(' ', '', strtoupper($form_state['values']['gamecard'])),
     'agegroup' => $form_state['values']['agegroup'],
     'school' => $form_state['values']['school'],
