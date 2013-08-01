@@ -1883,7 +1883,7 @@ function summergame_player_ledger_page($pid = 0) {
 
     if (count($score_table)) {
       $content .= '<h2 class="title">' .
-                $player['name'] . ' Points: ' .
+                'Player Points: ' .
                 '</h2>';
       $pager = theme('pager', NULL, $rows_per_page, 0);
       $content .= $pager .  theme('table', array_keys($score_table[0]), $score_table) . $pager;
