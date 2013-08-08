@@ -2787,12 +2787,16 @@ function summergame_dod_response($text, $pid) {
  */
 function summergame_comment($action, $op) {
   if (variable_get('summergame_points_enabled', 0)) {
-    if ($op == 'publish') {
+    if ($op == 'publish' || $op == 'delete') {
+      // Cast $action to array if it is an object
+      if (is_object($action)) {
+        $action = get_object_vars($action);
+      }
       if ($player = summergame_player_load(array('uid' => $action['uid']))) {
         // Check if they have already received points for this comment
         $ledger = db_fetch_object(db_query("SELECT * FROM sg_ledger WHERE pid = %d and metadata LIKE '%%cid:%d%%'",
                                            $player['pid'], $action['cid']));
-        if (!$ledger->lid) {
+        if ($op == 'publish' && !$ledger->lid) {
           $metadata = array(
             'nid' => $action['nid'],
             'cid' => $action['cid'],
@@ -2800,6 +2804,10 @@ function summergame_comment($action, $op) {
           $points = summergame_player_points($player['pid'], 50, 'Added Comment',
                                              'Commented on a website post', $metadata);
           drupal_set_message("Earned $points Summer Game points for commenting on a website post");
+        }
+        else if ($op == 'delete' && $ledger->lid) {
+          db_query("DELETE FROM sg_ledger WHERE lid = %d", $ledger->lid);
+          drupal_set_message("Removed Summer Game points for deleted comment");
         }
       }
     }
