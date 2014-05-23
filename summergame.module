@@ -378,6 +378,14 @@ function summergame_settings() {
     '#maxlength' => 32,
     '#description' => t("Default Game Term to apply to earned points (e.g. SummerGame2011)"),
   );
+  $form['summergame_gamecode_default_end'] = array(
+    '#type' => 'textfield',
+    '#title' => t("Default Game Code End"),
+    '#default_value' => variable_get('summergame_gamecode_default_end', ''),
+    '#size' => 32,
+    '#maxlength' => 32,
+    '#description' => t('Default Date/Time for when a code stops being active (e.g. "2013-08-31 12:00 AM")'),
+  );
   $form['summergame_completion_gamecode'] = array(
     '#type' => 'textfield',
     '#title' => t("Completion Game Code"),
@@ -707,7 +715,7 @@ function summergame_code_edit_form($form_state, $game_code) {
   $form['valid_end'] = array(
     '#type' => 'textfield',
     '#title' => t('Code End Time Limit'),
-    '#default_value' => $game_code['valid_end'] ? date('Y-m-d H:i:s', $game_code['valid_end']) : '2013-08-31 12:00 AM',
+    '#default_value' => $game_code['valid_end'] ? date('Y-m-d H:i:s', $game_code['valid_end']) : variable_get('summergame_gamecode_default_end', ''),
     '#size' => 32,
     '#maxlength' => 32,
     '#description' => t('Date/Time for when the code stops being active (e.g. "2013-08-31 12:00 AM")'),
