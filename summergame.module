@@ -3494,24 +3494,31 @@ function summergame_pdf($type = 'adult', $code_id = 0) {
     // initiate FPDI
     $pdf =& new FPDI('L', 'mm', 'Letter');
     $pdf->SetAutoPageBreak(FALSE);
-
     $pdf->AddPage();
+
     // set the sourcefile
     $pdf->setSourceFile($file_path . 'code_template.pdf');
     $tplidx = $pdf->importPage(1);
     $pdf->useTemplate($tplidx);
+    $page_width = $pdf->w - $pdf->lMargin - $pdf->rMargin;
 
     // now write some text
-    $pdf->AddFont('StantonICG', '', 'StantonICG.php');
-    $pdf->SetFont('StantonICG', '', 110);
-    $pdf->SetXY(20, 45);
+    $pdf->AddFont('Carton_Six', '', 'Carton_Six.php');
+    $font_size = 110;
+    $pdf->SetFont('Carton_Six', '', $font_size);
+    while ($pdf->GetStringWidth($event_code) > $page_width) {
+      $font_size -= 10;
+      $pdf->SetFont('Carton_Six', '', $font_size);
+    }
+    $pdf->SetXY($pdf->lMargin, 45);
     $pdf->Cell(0, 10, $event_code, 0, 1, 'C');
 
-    $pdf->SetXY(80, 130);
-    $pdf->Cell(0, 10, $event_points, 0, 1);
+    $pdf->SetFont('Carton_Six', '', 110);
+    $pdf->SetXY($pdf->lMargin, 130);
+    $pdf->Cell(0, 10, $event_points, 0, 1, 'C');
 
     $pdf->SetFont('Helvetica', 'B', 12);
-    $pdf->SetXY(10, 200);
+    $pdf->SetXY($pdf->lMargin, 200);
     $pdf->Cell(0, 10, $event_title, 0, 1);
 
     // add the QR Code
