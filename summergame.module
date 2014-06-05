@@ -515,6 +515,9 @@ function summergame_admin() {
   $content .= "<p class=\"more\">Showing latest $limit game codes, $more_link</p>";
 
   // Badges
+  if ($site_admin) {
+    $content .= '<ul class="create-new-code"><li class="button green">' . l("Create New Badge", 'summergame/admin/badge') . '</li></ul>';
+  }
   $content .= '<h2 class="title">Badges</h2>';
   $sg_image_path = base_path() . file_directory_path() . '/sg_images/';
   $rows = array();
