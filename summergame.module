@@ -2646,8 +2646,7 @@ function theme_summergame_badge() {
       $img_src = $sg_image_path . 'hidden_100.png';
     }
     else {
-      $img_title = $badge['title'] . " (Difficulty: " . $badge['difficulty'] . ")\n" .
-                   $badge['description'];
+      $img_title = $badge['title'] . " (Difficulty: " . $badge['difficulty'] . ")";
       $img_src = $sg_image_path . $badge['image'] . '_100.png';
     }
 
