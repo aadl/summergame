@@ -1357,13 +1357,14 @@ function summergame_player_form($form_state, $player = NULL) {
     '#maxlength' => 16,
     '#description' => t('Did you pick up a score card? Enter its number here to help us track your progress'),
   );
-  if (!$player['pid']) {
+  // Enter a referral code if eligible
+  if (summergame_referral_available($player)) {
     $form['referred_by'] = array(
       '#type' => 'textfield',
       '#title' => t('Referred By'),
       '#size' => 16,
       '#maxlength' => 16,
-      '#description' => t('Were you referred by a friend? Enter their referral code here to earn a point bonus for both of you! (You must have a unique Library Card associated with your account in order to qualify for the bonus)'),
+      '#description' => t('Were you referred by a friend? Enter their referral code here to earn a point bonus for both of you!'),
     );
   }
 
@@ -1475,6 +1476,27 @@ function summergame_player_form($form_state, $player = NULL) {
   return $form;
 }
 
+function summergame_referral_available($player) {
+  $available = TRUE;
+
+  if ($player['pid']) {
+    // Check if they signed up in the current season
+    $signup = db_fetch_object(db_query("SELECT * FROM sg_ledger WHERE pid = %d AND type = 'Signup'", $player['pid']));
+    if ($signup->game_term == variable_get('summergame_current_game_term', '')) {
+      // Check if they've already received a referral bonus
+      $referred = db_fetch_object(db_query("SELECT * FROM sg_ledger WHERE pid = %d AND metadata LIKE '%referred_by:%'", $player['pid']));
+      if ($referred->lid) {
+        $available = FALSE;
+      }
+    }
+    else {
+      $available = FALSE;
+    }
+  }
+
+  return $available;
+}
+
 function summergame_player_form_submit($form, &$form_state) {
   // Check for merge ID
   if ($form_state['values']['pid'] && $form_state['values']['merge_id']) {
@@ -1533,29 +1555,21 @@ function summergame_player_form_submit($form, &$form_state) {
       drupal_set_message("Earned $points Summer Game points for signing up!");
     }
     // Check for referral bonus
-    if ($form_state['values']['referred_by'] && module_exists('sopac') && $player['uid']) {
+    if ($form_state['values']['referred_by']) {
       // Check for referral player
       $referring_player = summergame_player_load(array('referral_code' => $form_state['values']['referred_by']));
       if ($referring_player['pid']) {
-        $account = user_load($player['uid']);
-        if (sopac_bcode_isverified($account)) {
-          // Make sure no one has already gotten points for this lcard
-          $existing_bonus = db_fetch_object(db_query("SELECT * FROM sg_ledger WHERE metadata LIKE '%referral_bonus_lcard:%s%'", $account->profile_pref_cardnum));
-          if ($existing_bonus->points) {
-            drupal_set_message('Sorry, you entered a Referral Code, but your Library Card has already awarded points for a referral.');
-          }
-          else {
-            summergame_player_points($player['pid'], 500, 'Referral',
-                                     'Referred by Player #' . $referring_player['pid']);
-            summergame_player_points($referring_player['pid'], 500, 'Referral',
-                                     'Referral Bonus for Player #' . $player['pid'], 'referral_bonus_lcard:' . $account->profile_pref_cardnum);
-            drupal_set_message('You were referred by Player #' . $referring_player['pid'] . ' and you each earned a 500 point bonus!');
-          }
+        // Make sure no one has already gotten points for this player
+        $existing_bonus = db_fetch_object(db_query("SELECT * FROM sg_ledger WHERE metadata LIKE '%referred:%s%'", $player['pid']));
+        if ($existing_bonus->points) {
+          drupal_set_message('Sorry, you entered a Referral Code, but your player has already been awarded points for a referral.');
         }
         else {
-          summergame_player_points($player['pid'], 0, 'Referral',
+          summergame_player_points($player['pid'], 500, 'Referral',
                                    'Referred by Player #' . $referring_player['pid'], 'referred_by:' . $referring_player['pid']);
-          drupal_set_message('You entered a valid referral code, but you do not have a verified Library Card attached to your account. Earn 500 points by adding a Library Card to your website account.');
+          summergame_player_points($referring_player['pid'], 500, 'Referral',
+                                   'Referral Bonus for Player #' . $player['pid'], 'referred:' . $player['pid']);
+          drupal_set_message('You were referred by Player #' . $referring_player['pid'] . ' and you each earned a 500 point bonus!');
         }
       }
       else {
@@ -1910,10 +1924,10 @@ function theme_summergame_player_info($player) {
 
   // Show referral code information
   if ($player['referral_code']) {
-    $player['referral_code'] = 'Earn 500 points by having a Library Card carrying friend sign up as a new player for the game with code: <strong>' . $player['referral_code'] . '</strong>';
+    $player['referral_code'] = 'Earn 500 points by having a friend sign up as a new player for the game with code: <strong>' . $player['referral_code'] . '</strong>';
   }
   else {
-    $player['referral_code'] = l('GENERATE CODE', 'summergame/player/grc/' . $player['pid']) . ' to earn bonus points by referring Library Card holding friends to sign up for the game.';
+    $player['referral_code'] = l('GENERATE CODE', 'summergame/player/grc/' . $player['pid']) . ' to earn bonus points by referring friends to sign up for the game.';
   }
 
   // Show Game Card information
