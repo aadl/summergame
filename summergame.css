@@ -122,6 +122,10 @@ img.summergame-badge {
   max-width: 900px;
 }
 
+#summergame-redeem-form .container-inline {
+  margin-bottom: 1em;
+}
+
 .summergame-player-edit-buttons {
   padding: 5px;
   background-color: #EEEEEE;
