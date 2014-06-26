@@ -1116,15 +1116,16 @@ function summergame_redeem_form($form_state, $player) {
   $all_players = summergame_player_load_all($player['uid']);
   if (count($all_players) > 1) {
     $pid_options = array();
-    foreach ($all_players as $extra_player) {
-      if ($player['pid'] != $extra_player['pid']) {
-        $pid_options[$extra_player['pid']] = ($extra_player['nickname'] ? $extra_player['nickname'] : $extra_player['name']);
-      }
+    $pid_defaults = array();
+    foreach ($all_players as $user_player) {
+      $pid_options[$user_player['pid']] = ($user_player['nickname'] ? $user_player['nickname'] : $user_player['name']);
+      $pid_defaults[] = $user_player['pid'];
     }
-    $form['extra_pids'] = array(
+    $form['pids'] = array(
       '#type' => 'checkboxes',
       '#options' => $pid_options,
-      '#title' => 'Also Redeem for extra players',
+      '#default_value' => $pid_defaults,
+      '#title' => 'Redeem for players',
       '#prefix' => '<div class="container-inline">',
       '#suffix' => '</div>',
     );
@@ -1141,14 +1142,18 @@ function summergame_redeem_form($form_state, $player) {
 }
 
 function summergame_redeem_form_submit($form, &$form_state) {
-  $pids = array($form_state['values']['pid']);
-  if (is_array($form_state['values']['extra_pids'])) {
-    foreach ($form_state['values']['extra_pids'] as $pid => $selected) {
+  $pids = array();
+  if (is_array($form_state['values']['pids'])) {
+    foreach ($form_state['values']['pids'] as $pid => $selected) {
       if ($pid == $selected) {
         $pids[] = $pid;
       }
     }
   }
+  else {
+    $pids[] = $form_state['values']['pid'];
+  }
+
   foreach ($pids as $pid) {
     $status = summergame_redeem_code($pid, $form_state['values']['code_text']);
     if ($status['error']) {
