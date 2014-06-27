@@ -2371,7 +2371,7 @@ function summergame_leaderboard_page() {
       $leaderboard[] = array(
         'Place' => ++$place,
         'Player' => $player_name,
-        'Total Score' => $lb_player['lb_total'],
+        'Total Score' => array('data' => $lb_player['lb_total'], 'class' => 'digits'),
       );
     }
   }

@@ -1,3 +1,7 @@
+td.digits {
+  text-align: right;
+}
+
 #summergame-player-page .no-padding-left {
   padding-left: 0;
 }
