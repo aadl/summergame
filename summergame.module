@@ -2339,9 +2339,9 @@ function summergame_leaderboard_page() {
       $leaderboard[] = array(
         'Place' => ++$place,
         'Team' => l($lb_team['name'], 'summergame/team/' . $lb_team['tid']),
-        '# of Players' => $players['p_count'],
-        'Total Score' => $lb_team['lb_total'],
-        'Player Average' => floor($lb_team['lb_total'] / $players['p_count']),
+        '# of Players' => array('data' => $players['p_count'], 'class' => 'digits'),
+        'Total Score' => array('data' => $lb_team['lb_total'], 'class' => 'digits'),
+        'Player Average' => array('data' => floor($lb_team['lb_total'] / $players['p_count']), 'class' => 'digits'),
       );
     }
   }
