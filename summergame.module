@@ -2760,6 +2760,11 @@ function summergame_twilio_respond($incoming) {
     if (!$player['pid']) {
       $new_player_needed = TRUE;
     }
+    else {
+      $response = $response_template;
+      $response['text'] .= 'Player #' . $player['pid'] . ' already attached to this phone. Enter game codes to play!';
+      $responses[] = $response;
+    }
   }
   else if (preg_match('/^S?[ART]G[\d]{5}$/', $incoming['text'])) {
     $game_card_text = TRUE;
