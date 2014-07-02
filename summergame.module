@@ -1115,10 +1115,14 @@ function summergame_redeem_form($form_state, $player) {
   $all_players = summergame_player_load_all($player['uid']);
   if (count($all_players) > 1) {
     $pid_options = array();
-    $pid_defaults = array();
+    if ($_SESSION['summergame_pid_defaults']) {
+      $pid_defaults = json_decode($_SESSION['summergame_pid_defaults']);
+    }
+    else {
+      $pid_defaults = array($player['pid']);
+    }
     foreach ($all_players as $user_player) {
       $pid_options[$user_player['pid']] = ($user_player['nickname'] ? $user_player['nickname'] : $user_player['name']);
-      $pid_defaults[] = $user_player['pid'];
     }
     $form['pids'] = array(
       '#type' => 'checkboxes',
@@ -1148,6 +1152,7 @@ function summergame_redeem_form_submit($form, &$form_state) {
         $pids[] = $pid;
       }
     }
+    $_SESSION['summergame_pid_defaults'] = json_encode($pids);
   }
   else {
     $pids[] = $form_state['values']['pid'];
