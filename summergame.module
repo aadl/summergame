@@ -116,8 +116,7 @@ function summergame_menu() {
   $items['summergame/player/gamecode'] = array(
     'title' => 'Redeem a Summer Game Code',
     'page callback' => 'summergame_player_redeem_page',
-    'access callback' => 'summergame_player_access',
-    'access arguments' => array(3),
+    'access arguments' => array('access summergame'),
     'type' => MENU_CALLBACK,
   );
   $items['summergame/player/consume'] = array(
