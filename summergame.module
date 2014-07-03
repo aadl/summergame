@@ -520,7 +520,7 @@ function summergame_admin() {
   $content .= '<h2 class="title">Badges</h2>';
   $sg_image_path = base_path() . file_directory_path() . '/sg_images/';
   $rows = array();
-  $res = db_query("SELECT * FROM sg_badges ORDER BY title ASC");
+  $res = db_query("SELECT * FROM sg_badges ORDER BY bid DESC");
   while ($badge = db_fetch_array($res)) {
     if (!$site_admin) {
       $badge['formula'] = preg_replace('/\B\w/', '*', $badge['formula']);
@@ -967,21 +967,22 @@ function summergame_admin_players($search_term = '') {
     $search_term = strtoupper($search_term);
     $params = array();
     $new_player = array();
-    $sql = "SELECT * FROM sg_players WHERE 1";
+    $sql = "SELECT sg_players.*, users.name AS username FROM sg_players LEFT JOIN users ON sg_players.uid = users.uid WHERE 1";
 
     if (is_numeric($search_term)) {
       // Search phone numbers
-      $sql .= " AND phone LIKE '%%%d%%'";
+      $sql .= " AND sg_players.phone LIKE '%%%d%%'";
       $params[] = $search_term;
       $new_player['phone'] = $search_term;
     }
     else if (preg_match('/^S?[ART]G[\d]{5}$/', $search_term)) { //SRG12345, TG12345, AG12345
-      $sql .= " AND gamecard LIKE '%%%s%%'";
+      $sql .= " AND sg_players.gamecard LIKE '%%%s%%'";
       $params[] = $search_term;
       $new_player['gamecard'] = $search_term;
     }
     else if ($search_term) {
-      $sql .= " AND (name LIKE '%%%s%%' OR nickname LIKE '%%%s%%')";
+      $sql .= " AND (sg_players.name LIKE '%%%s%%' OR sg_players.nickname LIKE '%%%s%%' OR users.name LIKE '%%%s%%')";
+      $params[] = $search_term;
       $params[] = $search_term;
       $params[] = $search_term;
       $new_player['name'] = $search_term;
@@ -994,9 +995,10 @@ function summergame_admin_players($search_term = '') {
     // Rerun query with OR on terms if no results
     if ($count == 0 && strpos($search_term, ' ') !== FALSE) {
       $params = array();
-      $sql = "SELECT * FROM sg_players WHERE (0 ";
+      $sql = "SELECT sg_players.*, users.name AS username FROM sg_players LEFT JOIN users ON sg_players.uid = users.uid WHERE (0 ";
       foreach (explode(' ', $search_term) as $term) {
-        $sql .= "OR name LIKE '%%%s%%' OR nickname LIKE '%%%s%%'";
+        $sql .= "OR sg_players.name LIKE '%%%s%%' OR sg_players.nickname LIKE '%%%s%%' OR users.name LIKE '%%%s%%'";
+        $params[] = $term;
         $params[] = $term;
         $params[] = $term;
       }
@@ -1024,7 +1026,6 @@ function summergame_admin_players($search_term = '') {
       // Found 1-100 matches, display them in a table
       while ($player = db_fetch_array($res)) {
         // Prep for display
-        $account = $player['uid'] ? user_load($player['uid']) : NULL;
         $player['points'] = summergame_get_player_points($player['pid']);
 
         $show = array();
@@ -1041,7 +1042,7 @@ function summergame_admin_players($search_term = '') {
           'Edit' => '[' . l('edit', 'summergame/player/edit/' . $player['pid']). ']',
           'Real Name' => l($player['name'], 'summergame/player/' . $player['pid']),
           'Player Name' => $player['nickname'],
-          'Web User' => $account->name,
+          'Web User' => ($player['uid'] ? l($player['username'], 'user/' . $player['uid']) : ''),
           'Phone' => $player['phone'] ? $player['phone'] : '',
           'Age Group' => $player['agegroup'],
           'Gamecard' => $player['gamecard'],
