@@ -738,6 +738,12 @@ function summergame_code_edit_form($form_state, $game_code) {
     '#maxlength' => 32,
     '#description' => t('Points will be awarded under this Game Term'),
   );
+  $form['everlasting'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Everlasting?'),
+    '#default_value' => $game_code['everlasting'],
+    '#description' => 'Should this code be active in following seasons of the Game? (e.g. a code for a collection badge)',
+  );
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save'),
@@ -776,22 +782,24 @@ function summergame_code_edit_form_submit($form, &$form_state) {
     // Update existing code
     db_query("UPDATE sg_game_codes SET text = '%s', description = '%s', hint = '%s', " .
              "points = %d, diminishing = %d, max_redemptions = %d, " .
-             "valid_start = %d, valid_end = %d, game_term = '%s' WHERE code_id = %d",
+             "valid_start = %d, valid_end = %d, game_term = '%s', everlasting = %d WHERE code_id = %d",
              strtoupper($form_state['values']['text']), $form_state['values']['description'],
              $form_state['values']['hint'], $form_state['values']['points'],
              $form_state['values']['diminishing'], $form_state['values']['max_redemptions'],
              strtotime($form_state['values']['valid_start']), strtotime($form_state['values']['valid_end']),
-             $form_state['values']['game_term'], $form_state['values']['code_id']);
+             $form_state['values']['game_term'], $form_state['values']['everlasting'], $form_state['values']['code_id']);
     drupal_set_message('Game Code ' . $form_state['values']['text'] . ' Updated');
   }
   else {
     db_query("INSERT INTO sg_game_codes " .
-             "(creator_uid, created, text, description, hint, points, diminishing, max_redemptions, valid_start, valid_end, game_term) " .
-             "VALUES (%d, %d, '%s', '%s', '%s', %d, %d, %d, %d, %d, '%s')",
+             "(creator_uid, created, text, description, hint, points, diminishing, max_redemptions, " .
+             "valid_start, valid_end, game_term, everlasting) " .
+             "VALUES (%d, %d, '%s', '%s', '%s', %d, %d, %d, %d, %d, '%s', %d)",
              $user->uid, time(), strtoupper($form_state['values']['text']), $form_state['values']['description'],
              $form_state['values']['hint'], $form_state['values']['points'], $form_state['values']['diminishing'],
              $form_state['values']['max_redemptions'], strtotime($form_state['values']['valid_start']),
-             strtotime($form_state['values']['valid_end']),  $form_state['values']['game_term']);
+             strtotime($form_state['values']['valid_end']),  $form_state['values']['game_term'],
+             $form_state['values']['everlasting']);
     drupal_set_message('Game Code ' . $form_state['values']['text'] . ' Created');
   }
 
