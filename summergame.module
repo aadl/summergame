@@ -883,7 +883,7 @@ function summergame_admin_badge_form($form_state, $bid = 0) {
     '#title' => t('Badge Formula'),
     '#default_value' => $badge['formula'],
     '#description' => t("Must be one of the following formats:<ul>
-  <li><strong>Badge Collection Badge:</strong> comma separated list of Badge IDs, which must all be earned in order to earn this Badge. e.g. '100,101,102,103'</li>
+  <li><strong>Badge Collection Badge:</strong> comma separated list of Badge IDs, surrounded by {} brackets, which must all be earned in order to earn this Badge. e.g. '{100,101,102,103}'</li>
   <li><strong>Ledger Multiple Badge:</strong> awarded when a term appears in the player's ledger a certain number of times. Number and Term are separated by a '::' in the formula. e.g. '10::Checkout History'</li>
   <li><strong>Collection Badge:</strong> list of ledger types or gamecodes needed for awarding a badge. Separate required AND terms with a comma, separate OR terms with a pipe. e.g. 'CODE1|CODE2,CODE3' = badge is awarded is player has CODE1 OR CODE2, AND also has CODE3</li>
 </ul>"),
