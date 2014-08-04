@@ -791,9 +791,10 @@ function summergame_code_edit_form_validate($form, &$form_state) {
 function summergame_code_edit_form_submit($form, &$form_state) {
   global $user;
 
-  // Set end time if blank
+  // Set end time if blank to default end date, otherwise one month out
   if (empty($form_state['values']['valid_end'])) {
-    $form_state['values']['valid_end'] = '2011-09-06 08:00:00';
+    $one_month = date('Y-m-d H:i:s', strtotime('+1 month'));
+    $form_state['values']['valid_end'] = variable_get('summergame_gamecode_default_end', $one_month);
   }
   if ($form_state['values']['code_id']) {
     // Update existing code
