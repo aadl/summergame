@@ -1740,7 +1740,7 @@ function summergame_player_page($pid = 0) {
   }
 
   if ($user->uid && $pid === 'extra') {
-    if ($player = summergame_player_load(array('uid' => $user->uid))) {
+    if ($user->$player['pid']) {
       drupal_set_message("Use the form below to add an extra player to your website account. " .
                          "You will be able to enter game codes and report reading / listening / " .
                          "watching activities for points. However this player won't receive " .
@@ -3168,14 +3168,14 @@ function summergame_player_load($player_info = array()) {
     $result = db_query('SELECT * FROM {sg_players} WHERE ' . implode(' AND ', $query) .
                        ' ORDER BY pid ASC LIMIT 1', $params);
     $player = db_fetch_array($result);
+  }
+
+  if ($player['pid']) {
     // Load badge ids
     $result2 = db_query("SELECT * FROM {sg_players_badges} WHERE pid = %d", $player['pid']);
     while ($badge = db_fetch_object($result2)) {
       $player['bids'][$badge->bid] = $badge->timestamp;
     }
-  }
-
-  if ($player['pid']) {
     return $player;
   }
   else {
