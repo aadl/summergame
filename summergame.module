@@ -32,7 +32,13 @@ function summergame_init() {
   }
 
   global $user;
-  $user->player = summergame_player_load(array('uid' => $user->uid));
+  // Get all players for this user
+  $user_players = summergame_player_load_all($user->uid);
+  // Determine currently active player
+  $active_player = array_shift($user_players);
+
+  $user->player = summergame_player_load($active_player['pid']);
+  $user->other_players = $user_players;
 }
 
 /**
