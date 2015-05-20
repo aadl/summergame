@@ -35,7 +35,17 @@ function summergame_init() {
   // Get all players for this user
   $user_players = summergame_player_load_all($user->uid);
   // Determine currently active player
-  $active_player = array_shift($user_players);
+  if ($user->sg_active_pid) {
+    foreach ($user_players as $i => $user_player) {
+      if ($user_player['pid'] == $user->sg_active_pid) {
+        $active_player = $user_player;
+        unset($user_players[$i]);
+      }
+    }
+  }
+  else {
+    $active_player = array_shift($user_players);
+  }
 
   $user->player = summergame_player_load($active_player['pid']);
   $user->other_players = $user_players;
@@ -137,6 +147,14 @@ function summergame_menu() {
     'page callback' => 'summergame_player_edit_page',
     'access callback' => 'summergame_player_access',
     'access arguments' => array(3),
+    'type' => MENU_CALLBACK,
+  );
+  $items['summergame/player/%/setactive'] = array(
+    'title' => t('Set Active Player'),
+    'page callback' => 'summergame_player_set_active',
+    'page arguments' => array(2),
+    'access callback' => 'summergame_player_access',
+    'access arguments' => array(2),
     'type' => MENU_CALLBACK,
   );
   $items['summergame/player/gcpc'] = array(
@@ -1737,13 +1755,13 @@ function summergame_delete_score_form_submit($form, &$form_state) {
  * PAGE: Summer Game Player Account page
  */
 function summergame_player_page($pid = 0) {
-  global $user;
-
   // Redirect to the right domain
   if ($sg_did = variable_get('summergame_default_domain_id', FALSE)) {
     $summergame_domain = domain_load($sg_did);
     domain_goto($summergame_domain);
   }
+
+  global $user;
 
   if ($user->uid && $pid === 'extra') {
     if ($user->$player['pid']) {
@@ -1768,7 +1786,7 @@ function summergame_player_page($pid = 0) {
       $player = summergame_player_load(array('pid' => $pid));
     }
     else if ($user->player['pid']) {
-      // Default to the logged in player if none specified
+      // Default to the active player if none specified
       $player = $user->player;
     }
 
@@ -1804,7 +1822,6 @@ function summergame_player_page($pid = 0) {
 
       // Player Details
       if ($player_access) {
-        $content .= theme_summergame_player_info($player);
         // Extra Players if player has web account
         if ($player['uid']) {
           $all_players = summergame_player_load_all($player['uid']);
@@ -1822,7 +1839,8 @@ function summergame_player_page($pid = 0) {
                   $extra_playername = l($extra_playername, 'summergame/player/' . $extra_player['pid']);
                   $content .= '<div id="summergame-extra-player">';
                   $content .= "<h1>Extra Player: $extra_playername (" . $extra_player['points']['career'] . " career points)</h1>";
-                  $content .= theme_summergame_player_info($extra_player);
+                  $content .= '<p>[ ' . l('MAKE ACTIVE', 'summergame/player/' . $extra_player['pid'] . '/setactive') . ' ]</p>';
+                  //$content .= theme_summergame_player_info($extra_player);
                   $content .= '</div>';
                 }
               }
@@ -1833,6 +1851,7 @@ function summergame_player_page($pid = 0) {
             }
           }
         }
+        $content .= theme_summergame_player_info($player);
       }
 
       // Player Score //////////////////////////////////////////////////////////
@@ -3204,6 +3223,32 @@ function summergame_player_load_all($uid) {
   }
 
   return $players;
+}
+
+/**
+ * PAGE CALLBACK: Set active player for a user
+ */
+function summergame_player_set_active($pid) {
+  if ($player = summergame_player_load($pid)) {
+    if ($player['uid']) {
+      if ($account = user_load($player['uid'])) {
+        user_save($account, array('sg_active_pid' => $pid));
+        drupal_set_message('Player #' . $pid . ' (' . $player['nickname'] . ') is now the active player for the website account <em>' .
+                           $account->name . '</em>. Online activities that earn points (comments, ratings, reviews, etc.) will now be awarded ' .
+                           'to this player.');
+      }
+      else {
+        drupal_set_message('Cannot load the website account associated with Player #' . $pid, 'warning');
+      }
+    }
+    else {
+      drupal_set_message('No website user associated with Player #' . $pid, 'warning');
+    }
+  }
+  else {
+    drupal_set_message('No player found with Player #' . $pid);
+  }
+  drupal_goto('summergame/player/' . $pid);
 }
 
 /**
