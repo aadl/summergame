@@ -2,6 +2,49 @@ td.digits {
   text-align: right;
 }
 
+#summergame-player-page .active-player {
+  text-shadow: 1px 1px #99FF99;
+  font-weight: bold;
+}
+
+#summergame-player-page #player-tabs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  line-height: 24px;
+  border-bottom: 1px solid #999;
+}
+#summergame-player-page #player-tabs li {
+  margin: 0 10px -1px 0;
+  padding: 0 10px;
+  display: inline-block;
+  border-radius: 10px 10px 0 0;
+}
+#summergame-player-page #player-tabs a {
+  text-decoration: none;
+}
+#summergame-player-page #player-tabs #main-player {
+  font-size: 2em;
+  font-weight: bold;
+  border: 1px solid #999;
+  background: #FFF;
+  color: #000;
+  border-bottom: none;
+  padding: 10px;
+}
+#summergame-player-page #player-tabs .other-player {
+  border: 1px solid #999;
+  background: #ECECEC;
+  padding-bottom: .4em;
+}
+
+#summergame-player-page #player-card {
+  padding: 10px 10px 0 10px;
+  margin-bottom: 10px;
+  border: 1px solid #999;
+  border-top: 0;
+}
+
 #summergame-player-page .no-padding-left {
   padding-left: 0;
 }
@@ -20,7 +63,7 @@ td.digits {
 }
 
 #summergame-player-page #player-earn-links h2 {
-  margin-top: 0;
+  /* margin-top: 0; */
 }
 
 #summergame-player-page #player-points-summary {
@@ -30,7 +73,7 @@ td.digits {
 }
 
 #summergame-player-page #player-points-summary h2 {
-  margin-top: 0;
+  /* margin-top: 0; */
 }
 
 #summergame-player-page .scorecard {

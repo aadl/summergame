@@ -276,6 +276,15 @@ function summergame_menu() {
   return $items;
 }
 
+function summergame_theme() {
+  return array(
+    'summergame_player_page' => array(
+      'template' => 'summergame-player-page',
+      'arguments' => array('player' => NULL, 'player_access' => NULL, 'other_players' => NULL),
+    ),
+  );
+}
+
 function summergame_block($op = 'list', $delta = 0, $edit = array()) {
   if ($op == 'list') {
     $blocks[0] = array(
@@ -1459,6 +1468,7 @@ function summergame_player_form($form_state, $player = NULL) {
     '#maxlength' => 16,
     '#description' => t('Did you pick up a score card? Enter its number here to help us track your progress'),
   );
+/*
   // Enter a referral code if eligible
   if (summergame_referral_available($player)) {
     $form['referred_by'] = array(
@@ -1469,7 +1479,7 @@ function summergame_player_form($form_state, $player = NULL) {
       '#description' => t('Were you referred by a friend? Enter their referral code here to earn a point bonus for both of you!'),
     );
   }
-
+*/
   // Set up privacy default values
   $privacy_defaults = array();
   if ($player['show_leaderboard']) {
@@ -1656,6 +1666,7 @@ function summergame_player_form_submit($form, &$form_state) {
                                          'Signed Up for the Summer Game');
       drupal_set_message("Earned $points Summer Game points for signing up!");
     }
+/*
     // Check for referral bonus
     if ($form_state['values']['referred_by']) {
       // Check for referral player
@@ -1678,6 +1689,7 @@ function summergame_player_form_submit($form, &$form_state) {
         drupal_set_message('Sorry, you entered a referral code, but no player with that code exists');
       }
     }
+*/
   }
 
   drupal_goto('summergame/player/' . $player['pid']);
@@ -1764,12 +1776,13 @@ function summergame_player_page($pid = 0) {
   global $user;
 
   if ($user->uid && $pid === 'extra') {
-    if ($user->$player['pid']) {
-      drupal_set_message("Use the form below to add an extra player to your website account. " .
+    if ($user->player['pid']) {
+      drupal_set_message("Use the form below to add an extra player to your website account for another person in your household. " .
                          "You will be able to enter game codes and report reading / listening / " .
-                         "watching activities for points. However this player won't receive " .
-                         "points for website contributions such as commenting, tagging or writing reviews. " .
-                         "If you wish this player to receive points for website contributions, please log " .
+                         "watching activities for points. You will be able to switch the active player on your " .
+                         "website account to specify which player receives points for online activities such as " .
+                         "commenting, tagging, or writing reviews. If you wish this " .
+                         "player to have a separate website identity for these online activites, please log " .
                          "out and create a new website account before signing up for the Summer Game.");
       $new_player = array('uid' => $user->uid);
       $content = drupal_get_form('summergame_player_form', $new_player);
@@ -1807,117 +1820,21 @@ function summergame_player_page($pid = 0) {
         }
       }
 
-      // Player Title
-      $player['points'] = summergame_get_player_points($player['pid']);
-      drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
-      $playername = $player['pid'] . ': ' . ($player['nickname'] ? $player['nickname'] : $player['name']);
-      $content .= '<div id="summergame-player-page">';
-      $content .= "<h1>Summer Game Player #$playername (" . $player['points']['career'] . " career points)</h1>";
+      $other_players = array();
+      if ($player_access && $player['uid']) {
+        $all_players = summergame_player_load_all($player['uid']);
 
-      if ($player['uid'] == $user->uid) {
-        $content .= "<p><em>That's you!</em> ";
-        $extra_link = l('Sign up an extra player', 'summergame/player/extra');
-        $content .= "Want to record another player's reading/listening/watching activity and game codes? $extra_link.</p>";
-      }
-
-      // Player Details
-      if ($player_access) {
-        // Extra Players if player has web account
-        if ($player['uid']) {
-          $all_players = summergame_player_load_all($player['uid']);
-          // pop first player off the list to determine primary player
-          $primary_player = array_shift($all_players);
-
-          if (count($all_players)) {
-            if ($player['pid'] == $primary_player['pid']) {
-              // We're on the primary player page
-              foreach ($all_players as $extra_player) {
-                if ($extra_player['pid'] != $player['pid']) {
-                  // Show Extra Player Info
-                  $extra_player['points'] = summergame_get_player_points($extra_player['pid']);
-                  $extra_playername = $extra_player['nickname'] ? $extra_player['nickname'] : $extra_player['name'];
-                  $extra_playername = l($extra_playername, 'summergame/player/' . $extra_player['pid']);
-                  $content .= '<div id="summergame-extra-player">';
-                  $content .= "<h1>Extra Player: $extra_playername (" . $extra_player['points']['career'] . " career points)</h1>";
-                  $content .= '<p>[ ' . l('MAKE ACTIVE', 'summergame/player/' . $extra_player['pid'] . '/setactive') . ' ]</p>';
-                  //$content .= theme_summergame_player_info($extra_player);
-                  $content .= '</div>';
-                }
-              }
-            }
-            else {
-              // We're on an extra player page
-              $content .= '<p>[ ' . l('Return to main player page', 'summergame/player/' . $primary_player['pid']) . ' ]</p>';
+        if (count($all_players) > 1) {
+          foreach ($all_players as $extra_player) {
+            if ($extra_player['pid'] != $player['pid']) {
+              $other_players[] = $extra_player;
             }
           }
         }
-        $content .= theme_summergame_player_info($player);
       }
 
-      // Player Score //////////////////////////////////////////////////////////
-      foreach ($player['points'] as $game_term => $player_game_points) {
-        if (is_array($player_game_points)) {
-          $content .= '<div class="scorecard">';
-          $content .= "<h2 class=\"title\"><a name=\"$game_term\">$game_term Scorecard</a></h2>";
+      $content .= theme('summergame_player_page', $player, $player_access, $other_players);
 
-          // Points
-          $content .= '<div class="player-points">';
-          $content .= '<h3>Points</h3>';
-          $type_rows = array();
-          foreach ($player_game_points['types'] as $type => $type_points) {
-            $type_rows[] = array($type, array('data' => $type_points, 'class'=> 'digits'));
-          }
-          $type_rows[] = array('<strong>TOTAL POINTS EARNED</strong>',
-                               array('data' => '<strong>' . $player_game_points['total'] . '</strong>',
-                                     'class' => 'digits'));
-          if (strpos($game_term, 'SummerGame') === 0) {
-            $type_rows[] = array('<strong>Current Points Balance</strong>',
-                                 array('data' => '<strong>' . $player_game_points['balance'] . '</strong>',
-                                       'class' => 'digits'));
-          }
-
-          $content .= theme('table', array('Type', 'Points'), $type_rows);
-
-          $content .= '<ul class="scorecard-buttons">' .
-                      '<li class="button">' .
-                      l('See Full Scorecard', 'summergame/player/ledger/' . $player['pid'],
-                        array('query' => array('term' => $game_term))) .
-                      '</li>' .
-                      '</ul>';
-
-          // Date Ranges
-          $latest = reset($player_game_points['ledger']);
-          $earliest = end($player_game_points['ledger']);
-          $content .= '<p>Points date range: <br />' .
-                      date('F j, Y, g:i a', $earliest['timestamp']) . ' - <br />' .
-                      date('F j, Y, g:i a', $latest['timestamp']) .
-                      '</p>';
-
-          $content .= '</div>';
-
-          // Badges
-          $content .= '<div class="player-badges">';
-          $content .= '<h3>Badges</h3>';
-          $sg_image_path = base_path() . file_directory_path() . '/sg_images/';
-          $badge_grid = '';
-          if (count($player_game_points['badges'])) {
-            foreach ($player_game_points['badges'] as $badge) {
-              $badge_grid .= theme_summergame_badge($badge['bid']);
-            }
-            $content .= $badge_grid;
-          }
-          else {
-            $content .= "<p>This player hasn't earned any $game_term badges yet.</p>";
-          }
-
-          $content .= '<p>[ ' . l("See All $game_term Badges", 'summergame/badges/' . $game_term) . ' ]</p>';
-          $content .= '</div>';
-
-          $content .= '<div style="clear:both"></div>';
-          $content .= '</div>'; // .scorecard
-        }
-      }
-      $content .= '</div>'; // #summergame-player-page
     }
     else {
       // invalid PID or not authorized
@@ -1948,9 +1865,11 @@ function summergame_player_page($pid = 0) {
  * UTILITY: Theme player info table
  */
 function theme_summergame_player_info($player) {
+  $content .= '<div id="player-card">';
+
   // Link to Points Forms
   $content .= '<div id="player-earn-links">';
-  $content .= '<h2>Earn Game Points:</h2>';
+  $content .= '<h2>Earn Game Points</h2>';
   $content .= '<ul class="no-padding-left">';
   $content .= '<li class="button">' . l('I have a Game Code!', 'summergame/player/gamecode/' . $player['pid']) . '</li>';
   if (variable_get('summergame_points_enabled', 0)) {
@@ -1979,7 +1898,7 @@ function theme_summergame_player_info($player) {
     'Points' => array('data' => $sg_balance, 'class' => 'digits'),
   );
 
-  $content .= '<h2>Points Summary:</h2>';
+  $content .= '<h2>Points Summary</h2>';
   $content .= theme('table', array_keys($summary_rows[0]), $summary_rows);
   $content .= '</div>';
 
@@ -2026,7 +1945,7 @@ function theme_summergame_player_info($player) {
   else if (!$player['phone']) {
     $player['phone'] = l('GENERATE CODE', 'summergame/player/gcpc/' . $player['pid']) . ' to attach your cell phone to your player.';
   }
-
+/*
   // Show referral code information
   if ($player['referral_code']) {
     $player['referral_code'] = 'Earn 500 points by having a friend sign up as a new player for the game with code: <strong>' . $player['referral_code'] . '</strong>';
@@ -2034,18 +1953,17 @@ function theme_summergame_player_info($player) {
   else {
     $player['referral_code'] = l('GENERATE CODE', 'summergame/player/grc/' . $player['pid']) . ' to earn bonus points by referring friends to sign up for the game.';
   }
-
+*/
   // Show Game Card information
   if (empty($player['gamecard'])) {
-    $player['gamecard'] = l('Add your Game Card ID', 'summergame/player/edit/' . $player['pid']) .
-                          ' after getting a game card. [' .
-                          l('Print Adult/Teen Card', 'summergame/pdf/adult') . ']';
+    $player['gamecard'] = 'Complete the classic Reading Game by getting a game card.';
+//  $player['gamecard'] .= ' [' . l('Print Adult/Teen Card', 'summergame/pdf/adult') . ']';
   }
   $player_table = array(
     array('<strong>Real Name:</strong>', $player['name']),
     array('<strong>Nickname:</strong>', $player['nickname']),
     array('<strong>Cell Phone:</strong>', $player['phone']),
-    array('<strong>Referral Code:</strong>', $player['referral_code']),
+//  array('<strong>Referral Code:</strong>', $player['referral_code']),
     array('<strong>Game Card:</strong>', $player['gamecard']),
     array('<strong>Age Group:</strong>', ucwords($player['agegroup'])),
     array('<strong>Privacy Options:</strong>', $privacy_details),
@@ -2064,7 +1982,7 @@ function theme_summergame_player_info($player) {
   }
 
   $header = array(
-    '',
+    'Player Details',
     array(
       'data' => '[ ' . l('Edit Player Info', 'summergame/player/edit/' . $player['pid']) . ' ]',
       'style' => 'text-align: right',
@@ -2072,9 +1990,128 @@ function theme_summergame_player_info($player) {
   );
 
   $content .= '<div id="player-info-table">';
-  $content .= '<h2>Player Details:</h2>';
+  //$content .= '<h2>Player Details:</h2>';
   $content .= theme('table', $header, $player_table);
   $content .= '</div>';
+
+  $content .= '</div>'; // #player-card
+
+  return $content;
+}
+
+function theme_summergame_player_page($player, $player_access) {
+  global $user;
+  $player['points'] = summergame_get_player_points($player['pid']);
+  drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
+  $playername = $player['pid'] . ': ' . ($player['nickname'] ? $player['nickname'] : $player['name']);
+
+  $content .= '<div id="summergame-player-page">';
+  $content .= "<h1>Summer Game Player #$playername (" . $player['points']['career'] . " career points)</h1>";
+
+  if ($player['uid'] == $user->uid) {
+    $content .= "<p><em>That's you!</em> ";
+    $extra_link = l('Sign up an extra player', 'summergame/player/extra');
+    $content .= "Want to record another player's reading/listening/watching activity and game codes? $extra_link.</p>";
+  }
+
+  // Player Details
+  if ($player_access) {
+    // Extra Players if player has web account
+    if ($player['uid']) {
+      $all_players = summergame_player_load_all($player['uid']);
+      // pop first player off the list to determine primary player
+      $primary_player = array_shift($all_players);
+
+      if (count($all_players)) {
+        if ($player['pid'] == $primary_player['pid']) {
+          // We're on the primary player page
+          foreach ($all_players as $extra_player) {
+            if ($extra_player['pid'] != $player['pid']) {
+              // Show Extra Player Info
+              $extra_player['points'] = summergame_get_player_points($extra_player['pid']);
+              $extra_playername = $extra_player['nickname'] ? $extra_player['nickname'] : $extra_player['name'];
+              $extra_playername = l($extra_playername, 'summergame/player/' . $extra_player['pid']);
+              $content .= '<div id="summergame-extra-player">';
+              $content .= "<h1>Extra Player: $extra_playername (" . $extra_player['points']['career'] . " career points)</h1>";
+              $content .= '<p>[ ' . l('MAKE ACTIVE', 'summergame/player/' . $extra_player['pid'] . '/setactive') . ' ]</p>';
+              //$content .= theme_summergame_player_info($extra_player);
+              $content .= '</div>';
+            }
+          }
+        }
+        else {
+          // We're on an extra player page
+          $content .= '<p>[ ' . l('Return to main player page', 'summergame/player/' . $primary_player['pid']) . ' ]</p>';
+        }
+      }
+    }
+    $content .= theme_summergame_player_info($player);
+  }
+
+  // Player Score //////////////////////////////////////////////////////////
+  foreach ($player['points'] as $game_term => $player_game_points) {
+    if (is_array($player_game_points)) {
+      $content .= '<div class="scorecard">';
+      $content .= "<h2 class=\"title\"><a name=\"$game_term\">$game_term Scorecard</a></h2>";
+
+      // Points
+      $content .= '<div class="player-points">';
+      $content .= '<h3>Points</h3>';
+      $type_rows = array();
+      foreach ($player_game_points['types'] as $type => $type_points) {
+        $type_rows[] = array($type, array('data' => $type_points, 'class'=> 'digits'));
+      }
+      $type_rows[] = array('<strong>TOTAL POINTS EARNED</strong>',
+                           array('data' => '<strong>' . $player_game_points['total'] . '</strong>',
+                                 'class' => 'digits'));
+      if (strpos($game_term, 'SummerGame') === 0) {
+        $type_rows[] = array('<strong>Current Points Balance</strong>',
+                             array('data' => '<strong>' . $player_game_points['balance'] . '</strong>',
+                                   'class' => 'digits'));
+      }
+
+      $content .= theme('table', array('Type', 'Points'), $type_rows);
+
+      $content .= '<ul class="scorecard-buttons">' .
+                  '<li class="button">' .
+                  l('See Full Scorecard', 'summergame/player/ledger/' . $player['pid'],
+                    array('query' => array('term' => $game_term))) .
+                  '</li>' .
+                  '</ul>';
+
+      // Date Ranges
+      $latest = reset($player_game_points['ledger']);
+      $earliest = end($player_game_points['ledger']);
+      $content .= '<p>Points date range: <br />' .
+                  date('F j, Y, g:i a', $earliest['timestamp']) . ' - <br />' .
+                  date('F j, Y, g:i a', $latest['timestamp']) .
+                  '</p>';
+
+      $content .= '</div>';
+
+      // Badges
+      $content .= '<div class="player-badges">';
+      $content .= '<h3>Badges</h3>';
+      $sg_image_path = base_path() . file_directory_path() . '/sg_images/';
+      $badge_grid = '';
+      if (count($player_game_points['badges'])) {
+        foreach ($player_game_points['badges'] as $badge) {
+          $badge_grid .= theme_summergame_badge($badge['bid']);
+        }
+        $content .= $badge_grid;
+      }
+      else {
+        $content .= "<p>This player hasn't earned any $game_term badges yet.</p>";
+      }
+
+      $content .= '<p>[ ' . l("See All $game_term Badges", 'summergame/badges/' . $game_term) . ' ]</p>';
+      $content .= '</div>';
+
+      $content .= '<div style="clear:both"></div>';
+      $content .= '</div>'; // .scorecard
+    }
+  }
+  $content .= '</div>'; // #summergame-player-page
 
   return $content;
 }
@@ -2089,7 +2126,7 @@ function summergame_player_ledger_page($pid = 0) {
   }
   else if ($user->uid) {
     // Default to the logged in player if none specified
-    $player = summergame_player_load(array('uid' => $user->uid));
+    $player = $user->player;
   }
 
   if ($player) {
@@ -2283,7 +2320,7 @@ function summergame_player_redeem_page($pid = 0) {
   else {
     // try to default to the logged in player
     global $user;
-    $player = summergame_player_load(array('uid' => $user->uid));
+    $player = $user->player;
     if (empty($player)) {
       drupal_set_message("No player found for your logged in account", 'error');
       drupal_goto('summergame/player');
@@ -2315,7 +2352,7 @@ function summergame_player_consume_page($pid = 0, $bnum = 0) {
     else {
       // try to default to the logged in player
       global $user;
-      $player = summergame_player_load(array('uid' => $user->uid));
+      $player = $user->player;
       if (empty($player)) {
         drupal_set_message("No player found for your logged in account", 'error');
         drupal_goto('summergame/player');
@@ -3095,18 +3132,29 @@ function summergame_comment($action, $op) {
       if (is_object($action)) {
         $action = get_object_vars($action);
       }
-      if ($player = summergame_player_load(array('uid' => $action['uid']))) {
+      $players = summergame_player_load_all($action['uid']);
+      if (count($players)) {
         // Check if they have already received points for this comment
-        $ledger = db_fetch_object(db_query("SELECT * FROM sg_ledger WHERE pid = %d and metadata LIKE '%%cid:%d%%'",
-                                           $player['pid'], $action['cid']));
+        $pids = array();
+        foreach ($players as $player) {
+          $pids[] = $player['pid'];
+        }
+        $ledger = db_fetch_object(db_query("SELECT * FROM sg_ledger WHERE pid IN (%s) and metadata LIKE '%%cid:%d%%'",
+                                           implode(',', $pids), $action['cid']));
         if ($op == 'publish' && !$ledger->lid) {
           $metadata = array(
             'nid' => $action['nid'],
             'cid' => $action['cid'],
           );
-          $points = summergame_player_points($player['pid'], 50, 'Added Comment',
-                                             'Commented on a website post', $metadata);
-          drupal_set_message("Earned $points Summer Game points for commenting on a website post");
+          $account = user_load($action['uid']);
+          $player = summergame_player_load($account->sg_active_pid ? $account->sg_active_pid : min($pids));
+          if ($points = summergame_player_points($player['pid'], 50, 'Added Comment',
+                                                 'Commented on a website post', $metadata)) {
+            $player_name = $player['nickname'] ? $player['nickname'] : $player['name'];
+            $others_message = summergame_other_players_message();
+            $scorecard_link = l($points . ' Summer Game points', 'summergame/player/' . $player['pid']);
+            drupal_set_message("Player $player_name earned $scorecard_link for commenting on a website post.$others_message");
+          }
         }
         else if ($op == 'delete' && $ledger->lid) {
           db_query("DELETE FROM sg_ledger WHERE lid = %d", $ledger->lid);
@@ -3477,6 +3525,23 @@ function summergame_player_points($pid, $points, $type, $description = '', $meta
   }
 
   return $points;
+}
+
+function summergame_other_players_message() {
+  // Check for other players if awarding points to logged in user
+  global $user;
+  $message = '';
+  if ($user->other_players) {
+    $other_links = array();
+    foreach ($user->other_players as $other_player) {
+      $other_links[] = l(($other_player['nickname'] ? $other_player['nickname'] : $other_player['name']),
+                         'summergame/player/' . $other_player['pid'] . '/setactive');
+    }
+    $message .= ' (Make another player active?: ' .
+                implode(' OR ', $other_links) . ')';
+  }
+
+  return $message;
 }
 
 /**
