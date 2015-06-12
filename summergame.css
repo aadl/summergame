@@ -43,6 +43,7 @@ td.digits {
   margin-bottom: 10px;
   border: 1px solid #999;
   border-top: 0;
+  overflow: auto;
 }
 
 #summergame-player-page .no-padding-left {
