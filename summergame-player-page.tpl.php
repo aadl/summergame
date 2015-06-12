@@ -67,7 +67,7 @@ $player['points'] = summergame_get_player_points($player['pid']);
   <ul id="player-tabs">
     <li id="main-player">Player: <?php echo $playername; ?></li>
 
-<?php if ($other_players) { ?>
+<?php if ($player_access && $other_players) { ?>
     <li><strong>Your Other Players: </strong></li>
     <?php echo implode('', $others_links); ?>
 <?php } if ($player['uid'] == $user->uid) { ?>
@@ -77,7 +77,7 @@ $player['points'] = summergame_get_player_points($player['pid']);
 <?php } ?>
   </ul>
 
-<?php echo theme_summergame_player_info($player); ?>
+<?php if ($player_access) { echo theme_summergame_player_info($player); } ?>
 
 <!-- Player Score -->
 <?php foreach ($player['points'] as $game_term => $player_game_points) {
