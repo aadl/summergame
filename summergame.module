@@ -1853,6 +1853,7 @@ function summergame_player_page($pid = 0) {
           if ($catalog_domain = variable_get('summergame_catalog_domain', '')) {
             $catalog_domain = 'https://' . $catalog_domain . '/';
           }
+          drupal_set_message('You must log into a website account in order to access your Player page');
           drupal_goto($catalog_domain . 'login', array('destination' => 'summergame/player'));
         }
       }
