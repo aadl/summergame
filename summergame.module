@@ -32,23 +32,25 @@ function summergame_init() {
   }
 
   global $user;
-  // Get all players for this user
-  $user_players = summergame_player_load_all($user->uid);
-  // Determine currently active player
-  if ($user->sg_active_pid) {
-    foreach ($user_players as $i => $user_player) {
-      if ($user_player['pid'] == $user->sg_active_pid) {
-        $active_player = $user_player;
-        unset($user_players[$i]);
+  if ($user->uid) {
+    // Get all players for this user
+    $user_players = summergame_player_load_all($user->uid);
+    // Determine currently active player
+    if ($user->sg_active_pid) {
+      foreach ($user_players as $i => $user_player) {
+        if ($user_player['pid'] == $user->sg_active_pid) {
+          $active_player = $user_player;
+          unset($user_players[$i]);
+        }
       }
     }
-  }
-  else {
-    $active_player = array_shift($user_players);
-  }
+    else {
+      $active_player = array_shift($user_players);
+    }
 
-  $user->player = summergame_player_load($active_player['pid']);
-  $user->other_players = $user_players;
+    $user->player = summergame_player_load($active_player['pid']);
+    $user->other_players = $user_players;
+  }
 }
 
 /**
