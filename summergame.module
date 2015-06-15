@@ -326,7 +326,7 @@ function summergame_leaderboard_filter_block_content() {
   $content .= '<h3>Scores by Game</h3><ul>';
   $query = $current;
   unset($query['type']);
-  $content .= '<li>' . ($current['type'] ? l('All Games', 'summergame/leaderboard', array('query' => $query)) : 'All Games') . '</li>';
+//  $content .= '<li>' . ($current['type'] ? l('All Games', 'summergame/leaderboard', array('query' => $query)) : 'All Games') . '</li>';
   $res = db_query('SELECT DISTINCT game_term FROM `sg_ledger` ORDER BY game_term ASC');
   while ($row = db_fetch_object($res)) {
     if ($current['type'] == $row->game_term) {
