@@ -1956,19 +1956,18 @@ function theme_summergame_player_info($player) {
   else {
     $player['referral_code'] = l('GENERATE CODE', 'summergame/player/grc/' . $player['pid']) . ' to earn bonus points by referring friends to sign up for the game.';
   }
-
-  // Show Game Card information
-  if (empty($player['gamecard'])) {
-    $player['gamecard'] = 'Complete the classic Reading Game by getting a game card.';
-    $player['gamecard'] .= ' [' . l('Print Adult/Teen Card', 'summergame/pdf/adult') . ']';
-  }
 */
+  // Show Game Card information
+  $player['gamecard'] = 'Complete the classic Reading Game by getting a game card.';
+  $player['gamecard'] .= ' [' . l('Print Adult/Teen Card', 'summergame/pdf/adult',
+                                  array('attributes' => array('target' => '_blank'))) . ']';
+
   $player_table = array(
     array('<strong>Real Name:</strong>', $player['name']),
     array('<strong>Nickname:</strong>', $player['nickname']),
     array('<strong>Cell Phone:</strong>', $player['phone']),
 //  array('<strong>Referral Code:</strong>', $player['referral_code']),
-//  array('<strong>Game Card:</strong>', $player['gamecard']),
+    array('<strong>Game Card:</strong>', $player['gamecard']),
     array('<strong>Age Group:</strong>', ucwords($player['agegroup'])),
     array('<strong>Privacy Options:</strong>', $privacy_details),
     array('<strong>Completed Classic Reading Game?:</strong>', $completed_classic),
@@ -3770,24 +3769,8 @@ function summergame_pdf($type = 'adult', $code_id = 0) {
     $pdf->Output($event_code . '_code.pdf', 'D');
   }
   else { // default to the adult single player form
-    // initiate FPDI
-    $pdf =& new FPDI('P', 'mm', 'Letter');
-    $pdf->SetAutoPageBreak(FALSE);
-
-    // set the sourcefile
-    $pdf->setSourceFile($file_path . 'adult_game.pdf');
-    $tplidx = $pdf->importPage(1);
-    $pdf->addPage();
-    $pdf->useTemplate($tplidx);
-
-    // now write some text
-    $id = 'AG' . $redis->incr('agpdfcounter');
-    $pdf->SetFont('Helvetica', 'B', 10);
-
-    $pdf->SetXY(134, 119);
-    $pdf->Cell(0, 10, $id, 0, 1);
-
-    $pdf->Output('SG_Adult_Teen_2014.pdf', 'D');
+    $redis->incr('agpdfcounter');
+    drupal_goto($file_path . 'SG_Adult_Teen_2015.pdf');
   }
 }
 
