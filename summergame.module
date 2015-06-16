@@ -2430,6 +2430,9 @@ function summergame_leaderboard_page() {
   }
 
   // Determine type
+  $terms = summergame_get_game_terms();
+  $game_term = variable_get('summergame_current_game_term', '');
+  $type = (in_array($type, $terms) ? $type : $game_term);
   if ($type) {
     $type_query = 'AND sg_ledger.game_term LIKE "%s" ';
     $args[] = $type;
