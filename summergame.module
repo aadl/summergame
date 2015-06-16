@@ -1958,8 +1958,10 @@ function theme_summergame_player_info($player) {
   }
 */
   // Show Game Card information
-  $player['gamecard'] = 'Complete the classic Reading Game by getting a game card.';
-  $player['gamecard'] .= ' [' . l('Print Adult/Teen Card', 'summergame/pdf/adult',
+  $player['gamecard'] = 'Print to complete the Classic Reading Game: ';
+  $player['gamecard'] .= ' [' . l('Adult/Teen', 'summergame/pdf/adult',
+                                  array('attributes' => array('target' => '_blank'))) . ' | ' .
+                                l('Youth Card', 'summergame/pdf/youth',
                                   array('attributes' => array('target' => '_blank'))) . ']';
 
   $player_table = array(
@@ -3767,6 +3769,10 @@ function summergame_pdf($type = 'adult', $code_id = 0) {
     $pdf->Image($qrcode, NULL, NULL, 20, 20, 'PNG');
 
     $pdf->Output($event_code . '_code.pdf', 'D');
+  }
+  else if ($type == 'youth') {
+    $redis->incr('ygpdfcounter');
+    drupal_goto($file_path . 'SG_Youth_2015.pdf');
   }
   else { // default to the adult single player form
     $redis->incr('agpdfcounter');
