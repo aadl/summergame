@@ -327,14 +327,14 @@ function summergame_leaderboard_filter_block_content() {
   $query = $current;
   unset($query['type']);
 //  $content .= '<li>' . ($current['type'] ? l('All Games', 'summergame/leaderboard', array('query' => $query)) : 'All Games') . '</li>';
-  $res = db_query('SELECT DISTINCT game_term FROM `sg_ledger` ORDER BY game_term ASC');
-  while ($row = db_fetch_object($res)) {
-    if ($current['type'] == $row->game_term) {
-      $line_item = $row->game_term;
+  $terms = summergame_get_game_terms();
+  foreach ($terms as $term) {
+    if ($current['type'] == $term) {
+      $line_item = $term;
     }
     else {
-      $query['type'] = $row->game_term;
-      $line_item = l($row->game_term, 'summergame/leaderboard', array('query' => $query));
+      $query['type'] = $term;
+      $line_item = l($term, 'summergame/leaderboard', array('query' => $query));
     }
     $content .= "<li>$line_item</li>";
   }
@@ -2384,8 +2384,10 @@ function summergame_get_game_terms() {
   require_once(variable_get('summergame_libphp_path', '') . 'contrib/redisent/redisent.php');
   $redis = new Redisent('multivac');
   $terms = array();
+  global $base_url;
+  $game_term_key = $base_url . ':sg_game_terms';
 
-  if ($term_string = $redis->get('sg_game_terms')) {
+  if ($term_string = $redis->get($game_term_key)) {
     $terms = explode(',', $term_string);
   }
   else {
@@ -2394,8 +2396,8 @@ function summergame_get_game_terms() {
     while ($row = db_fetch_object($res)) {
       $terms[] = $row->game_term;
     }
-    $redis->set('sg_game_terms', implode(',', $terms));
-    $redis->expire('sg_game_terms', 300); // 5 minutes
+    $redis->set($game_term_key, implode(',', $terms));
+    $redis->expire($game_term_key, 300); // 5 minutes
   }
 
   return $terms;
