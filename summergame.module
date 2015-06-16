@@ -2378,6 +2378,30 @@ function summergame_player_consume_page($pid = 0, $bnum = 0) {
 }
 
 /**
+ * UTILITY: Get array of all Game Terms
+ */
+function summergame_get_game_terms() {
+  require_once(variable_get('summergame_libphp_path', '') . 'contrib/redisent/redisent.php');
+  $redis = new Redisent('multivac');
+  $terms = array();
+
+  if ($term_string = $redis->get('sg_game_terms')) {
+    $terms = explode(',', $term_string);
+  }
+  else {
+    $terms = array();
+    $res = db_query('SELECT DISTINCT game_term FROM `sg_ledger` ORDER BY game_term ASC');
+    while ($row = db_fetch_object($res)) {
+      $terms[] = $row->game_term;
+    }
+    $redis->set('sg_game_terms', implode(',', $terms));
+    $redis->expire('sg_game_terms', 300); // 5 minutes
+  }
+
+  return $terms;
+}
+
+/**
  * PAGE: Leaderboard Page
  */
 function summergame_leaderboard_page() {
