@@ -3752,8 +3752,9 @@ function summergame_pdf($type = 'adult', $code_id = 0) {
     $gamecode = db_fetch_object(db_query("SELECT * FROM sg_game_codes WHERE code_id = %d", $code_id));
 
     $event_code = strtoupper($gamecode->text); // Code for the event, Need to be in all CAPS
-    $event_points = $gamecode->points . ' Points'; // Points for the event
-    $event_title = $gamecode->description; // Title of event
+    $event_points = $gamecode->points . ' POINTS'; // Points for the event
+    $description = $gamecode->description; // Description of Code
+    $description = array_reverse(explode("\n", wordwrap($description, 100)));
 
     $code_link = url('summergame/player/gamecode',
                      array('absolute' => TRUE,
@@ -3772,30 +3773,36 @@ function summergame_pdf($type = 'adult', $code_id = 0) {
     $pdf->setSourceFile($file_path . 'code_template.pdf');
     $tplidx = $pdf->importPage(1);
     $pdf->useTemplate($tplidx);
+    $pdf->SetMargins(18, 17);
     $page_width = $pdf->w - $pdf->lMargin - $pdf->rMargin;
 
     // now write some text
-    $pdf->AddFont('Carton_Six', '', 'Carton_Six.php');
-    $font_size = 110;
-    $pdf->SetFont('Carton_Six', '', $font_size);
+    $pdf->AddFont('Neris-Black', '', 'Neris-Black.php');
+    $font_size = 100;
+    $pdf->SetFont('Neris-Black', '', $font_size);
     while ($pdf->GetStringWidth($event_code) > $page_width) {
-      $font_size -= 10;
-      $pdf->SetFont('Carton_Six', '', $font_size);
+      $font_size -= 5;
+      $pdf->SetFont('Neris-Black', '', $font_size);
     }
     $pdf->SetXY($pdf->lMargin, 45);
     $pdf->Cell(0, 10, $event_code, 0, 1, 'C');
 
-    $pdf->SetFont('Carton_Six', '', 110);
-    $pdf->SetXY($pdf->lMargin, 130);
+    $pdf->SetFont('Neris-Black', '', 95);
+    $pdf->SetXY($pdf->lMargin, 103);
     $pdf->Cell(0, 10, $event_points, 0, 1, 'C');
 
-    $pdf->SetFont('Helvetica', 'B', 12);
-    $pdf->SetXY($pdf->lMargin, 200);
-    $pdf->Cell(0, 10, $event_title, 0, 1);
+    // Description
+    $desc_Y = 192;
+    $pdf->SetFont('Neris-Black', '', 13);
+    foreach ($description as $desc_line) {
+      $pdf->SetXY($pdf->lMargin, $desc_Y);
+      $pdf->Cell($page_width - 35, 7, $desc_line, 0);
+      $desc_Y -= 7;
+    }
 
     // add the QR Code
-    $pdf->SetXY(-30, -30);
-    $pdf->Image($qrcode, NULL, NULL, 20, 20, 'PNG');
+    $pdf->SetXY(-50, -50);
+    $pdf->Image($qrcode, NULL, NULL, 30, 30, 'PNG');
 
     $pdf->Output($event_code . '_code.pdf', 'D');
   }
