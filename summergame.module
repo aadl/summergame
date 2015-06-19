@@ -3502,6 +3502,28 @@ function summergame_redeem_code($pid, $code_text) {
 }
 
 /**
+ * UTILITY: Get count of ledger rows for a player
+ */
+function summergame_get_ledger_count($pid, $filter = '') {
+  // Dynamically compose a SQL query:
+  $query = array('pid = %d');
+  $params = array($pid);
+
+  if (is_array($filter)) {
+    foreach ($filter as $key => $value) {
+      $query[] = "$key LIKE '%%%s%%'";
+      $params[] = $value;
+    }
+  }
+
+  $result = db_query('SELECT COUNT(*) AS ledger_count FROM sg_ledger WHERE ' .
+                     implode(' AND ', $query), $params);
+  $count = db_fetch_object($result);
+
+  return $count->ledger_count;
+}
+
+/**
  * UTILITY: Apply points to a player
  */
 function summergame_player_points($pid, $points, $type, $description = '', $metadata = '', $game_term = '') {
