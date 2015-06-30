@@ -103,7 +103,7 @@ function summergame_menu() {
     'description' => 'Edit a Badge for the Summer Game',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('summergame_admin_badge_form'),
-    'access arguments' => array('administer site configuration'),
+    'access arguments' => array('administer summergame'),
     'type' => MENU_CALLBACK,
   );
   $items['summergame/admin/players'] = array(
@@ -494,7 +494,7 @@ function summergame_settings() {
  */
 function summergame_admin() {
   drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
-  $site_admin = user_access('administer site configuration');
+  $site_admin = TRUE; // Use page control for user access
   $admin_users = user_access('administer users');
   $content .= '<div id="summergame-admin-page">';
   $content .= '<h1>Summer Game Admin Page</h1>';
