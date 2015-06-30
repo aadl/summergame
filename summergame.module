@@ -3783,7 +3783,7 @@ function summergame_pdf($type = 'adult', $code_id = 0) {
                            'query' => array('text' => $event_code),
                            )
                     );
-    $qrcode = 'http://api.qrserver.com/v1/create-qr-code/?data=' .
+    $qrcode = 'http://qrickit.com/api/qr?d=' . //'http://api.qrserver.com/v1/create-qr-code/?data=' .
               urlencode($code_link);
 
     // initiate FPDI
