@@ -1887,22 +1887,26 @@ function theme_summergame_player_info($player) {
   $sg_balance = 0;
   foreach ($player['points'] as $game_term => $player_game_points) {
     if (is_array($player_game_points)) {
-      $summary_rows[] = array(
-        'Game' => l($game_term, '', array('fragment' => $game_term, 'external' => TRUE)),
-        'Points' => array('data' => $player_game_points['total'], 'class' => 'digits'),
-      );
+      $row = array();
+      $row['data']['Game'] = l($game_term, '', array('fragment' => $game_term, 'external' => TRUE));
+      $row['data']['Points'] = array('data' => $player_game_points['total'], 'class' => 'digits');
       if (strpos($game_term, 'SummerGame') === 0) {
         $sg_balance += $player_game_points['balance'];
+        $row['class'] = 'sg-points';
       }
+      $summary_rows[] = $row;
     }
   }
   $summary_rows[] = array(
-    'Game' => '<strong>Shop Balance</strong>',
-    'Points' => array('data' => $sg_balance, 'class' => 'digits'),
+    'data' => array(
+      'Game' => 'Summer Game Shop Balance',
+      'Points' => array('data' => '<strong>' . $sg_balance . '</strong>', 'class' => 'digits'),
+    ),
+    'class' => 'sg-points',
   );
 
   $content .= '<h2>Points Summary</h2>';
-  $content .= theme('table', array_keys($summary_rows[0]), $summary_rows);
+  $content .= theme('table', array_keys($summary_rows[0]['data']), $summary_rows);
   $content .= '</div>';
 
   // Translate privacy details

@@ -73,6 +73,11 @@ td.digits {
   margin-right: 10px;
 }
 
+#summergame-player-page #player-points-summary .sg-points {
+  font-weight: bolder;
+  border: 1px dashed #007113;
+}
+
 #summergame-player-page #player-points-summary h2 {
   /* margin-top: 0; */
 }
