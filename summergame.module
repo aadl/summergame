@@ -2022,7 +2022,7 @@ function theme_summergame_player_info($player) {
     );
     $following_pids[] = $matches[1];
   }
-  $res = db_query("SELECT * FROM sg_ledger WHERE metadata LIKE '%%fc_player:%d%%'", $player['pid']);
+  $res = db_query("SELECT * FROM sg_ledger WHERE metadata LIKE 'fc_player:%d'", $player['pid']);
   while ($row = db_fetch_object($res)) {
     $follower_player = summergame_player_load($row->pid);
     if ($follower_player['show_leaderboard']) {
