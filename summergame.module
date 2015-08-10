@@ -3568,7 +3568,7 @@ function summergame_redeem_code($pid, $code_text) {
     $points = summergame_player_points($pid, $fc_points, 'Friend Code', 'You followed Player #' . $fc_player['pid'] . '!', 'fc_player:' . $fc_player['pid']);
     $message = "You redeemed Player #" . $fc_player['pid'] . "'s Friend Code for $points points!";
     // Check if reciprocal; award bonus if friends
-    $ledger = db_fetch_object(db_query("SELECT lid FROM sg_ledger WHERE pid = %d AND metadata LIKE '%%fc_player:%d%%' LIMIT 1",
+    $ledger = db_fetch_object(db_query("SELECT lid FROM sg_ledger WHERE pid = %d AND metadata LIKE 'fc_player:%d' LIMIT 1",
                                        $fc_player['pid'], $pid));
     if ($ledger->lid) {
       $bonus_points = 50;
