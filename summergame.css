@@ -81,6 +81,21 @@ td.digits {
   /* margin-top: 0; */
 }
 
+#friend-code #friend-title {
+  border-bottom: 1px solid #999;
+  padding-bottom: 0.5em;
+}
+#friend-code #friend-title h2 {
+  display: inline;
+  padding-right: 10px;
+}
+
+#friend-code table {
+  width: 31%;
+  float: left;
+  margin-right: 2%;
+}
+
 #summergame-player-page .scorecard {
   padding: 10px;
   background-color: #EEE;

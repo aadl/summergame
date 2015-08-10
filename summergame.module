@@ -1955,26 +1955,6 @@ function theme_summergame_player_info($player) {
     $player['phone'] = l('GENERATE CODE', 'summergame/player/gcpc/' . $player['pid']) . ' to attach your cell phone to your player.';
   }
 
-  // Show friend code information
-  if ($player['friend_code']) {
-    $player['friend_code'] = 'Earn 20 points for each player who enters your friend code: <strong>FC-' . $player['friend_code'] . '</strong>';
-    $fc_action = 'REGENERATE';
-  }
-  else {
-    $player['friend_code'] = 'Earn 20 points for players entering your friend code.';
-    $fc_action = 'GENERATE';
-  }
-  $player['friend_code'] .= '<br>';
-  // Display follower count
-  $res = db_query("SELECT COUNT(*) AS fcount FROM sg_ledger WHERE pid = %d AND metadata LIKE '%%fc_follower:%%'", $player['pid']);
-  $followers = db_fetch_object($res);
-  if ($followers->fcount) {
-    $player['friend_code'] .= $followers->fcount . ' followers have entered your Friend Code';
-  }
-  else {
-    $player['friend_code'] .= l($fc_action . ' CODE', 'summergame/player/gfc/' . $player['pid']);
-  }
-
   // Show Game Card information
   $player['gamecard'] = 'Print to complete the Classic Reading Game: ';
   $player['gamecard'] .= ' [' . l('Adult/Teen', 'summergame/pdf/adult',
@@ -2003,16 +1983,6 @@ function theme_summergame_player_info($player) {
     }
   }
 
-  // Only show friend code info if staff
-if ($player['uid']) {
-  if ($account = user_load($player['uid'])) {
-    $staff_rid = variable_get('summergame_staff_role_id', '');
-    if ($account->roles[$staff_rid]) {
-      $player_table[] = array('<strong>Friend Code:</strong>', $player['friend_code']);
-    }
-  }
-}
-
   $header = array(
     'Player Details',
     array(
@@ -2025,6 +1995,93 @@ if ($player['uid']) {
   //$content .= '<h2>Player Details:</h2>';
   $content .= theme('table', $header, $player_table);
   $content .= '</div>';
+
+  // Following, Followers, Friends
+  $following = array();
+  $following_pids = array();
+  $followers = array();
+  $friends = array();
+
+  $res = db_query("SELECT * FROM sg_ledger WHERE pid = %d AND metadata LIKE '%%fc_player:%%'", $player['pid']);
+  while ($row = db_fetch_object($res)) {
+    // grab player ID
+    preg_match('/fc_player:([\d]+)/', $row->metadata, $matches);
+    $following_player = summergame_player_load($matches[1]);
+    if ($following_player['show_leaderboard']) {
+      $player_name = $following_player['nickname'] ? $following_player['nickname'] : $following_player['name'];
+    }
+    else {
+      $player_name = 'Player #' . $following_player['pid'];
+    }
+    if ($following_player['show_myscore'] || user_access('administer summergame')) {
+      $player_name = l($player_name, 'summergame/player/' . $following_player['pid']);
+    }
+    $following[] = array(
+      'count' => ++$following_counter,
+      'player' => $player_name,
+    );
+    $following_pids[] = $matches[1];
+  }
+  $res = db_query("SELECT * FROM sg_ledger WHERE metadata LIKE '%%fc_player:%d%%'", $player['pid']);
+  while ($row = db_fetch_object($res)) {
+    $follower_player = summergame_player_load($row->pid);
+    if ($follower_player['show_leaderboard']) {
+      $player_name = $follower_player['nickname'] ? $follower_player['nickname'] : $follower_player['name'];
+    }
+    else {
+      $player_name = 'Player #' . $follower_player['pid'];
+    }
+    if ($follower_player['show_myscore'] || user_access('administer summergame')) {
+      $player_name = l($player_name, 'summergame/player/' . $follower_player['pid']);
+    }
+    $followers[] = array(
+      'count' => ++$follower_counter,
+      'player' => $player_name,
+    );
+    if (in_array($row->pid, $following_pids)) {
+      $friends[] = array(
+        'count' => ++$friend_counter,
+        'player' => $player_name,
+      );
+    }
+  }
+
+  $content .= '<div id="friend-code">';
+  $content .= '<div id="friend-title"><h2>FRIEND CODE: ' . $player['friend_code'] . '</h2>';
+  if (count($followers) == 0) {
+    if ($player['friend_code']) {
+      $action = 'I WANT A DIFFERENT';
+      $hint = 'Get a new random Friend Code. You can\'t change it once you give it out.';
+    }
+    else {
+      $action = 'GENERATE';
+      $hint = "Create a random Friend Code for yourself. You can try again if you don't like it.";
+    }
+    $options = array('html' => TRUE, 'attributes' => array('class' => 'hint--bottom',
+                                                           'data-hint' => $hint,
+                                                           ));
+    $content .= '[ ' . l($action . ' CODE', 'summergame/player/gfc/' . $player['pid'], $options) . ' ]';
+  }
+  $content .= '</div>';
+  $content .= "<p>You now can have a code of your own! If another player enters your Friend Code, they'll start following you, and " .
+              "you'll EACH earn 100 points. If you enter the Friend Code of any of your followers, you'll become Friends and each earn an additional " .
+              "50 point bonus.</p>";
+  $following_header = '<span class="hint--bottom" data-hint="You have entered these players\' Friend Codes">Following: ' .
+                      count($following) . '</span>';
+  $content .= theme('table',
+                    array(array('data' => $following_header, 'colspan' => 2)),
+                    $following);
+  $followers_header = '<span class="hint--bottom" data-hint="These Players have entered your Friend Code">Followers: ' .
+                      count($followers) . '</span>';
+  $content .= theme('table',
+                    array(array('data' => $followers_header, 'colspan' => 2)),
+                    $followers);
+  $friends_header = '<span class="hint--left" data-hint="You and these Players have entered each others\' Friend Codes">Friends: ' .
+                    count($friends) . '</span>';
+  $content .= theme('table',
+                    array(array('data' => $friends_header, 'colspan' => 2)),
+                    $friends);
+  $content .= '</div>'; // $friend-code
 
   $content .= '</div>'; // #player-card
 
@@ -2343,7 +2400,7 @@ function summergame_player_gfc($pid = 0) {
     }
     $player['friend_code'] = $code;
     summergame_player_save($player);
-    drupal_set_message('Your play.aadl.org Friend Code is FC-' . $code . '. Earn bonus points when a friend enters that code as a Game Code.');
+    drupal_set_message("Your play.aadl.org Friend Code is $code. Earn bonus points when a friend enters that code as a Game Code.");
     drupal_goto('summergame/player/' . $player['pid']);
   }
   drupal_goto('summergame/player');
@@ -3492,29 +3549,34 @@ function summergame_redeem_code($pid, $code_text) {
   $code_text = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $code_text));
 
   // Check for Friend Code
-  if (preg_match('/FC[A-Z]+[\d]{3}/', $code_text)) {
-    $friend_code = substr($code_text, 2); // Remove 'FC' from text
-
-    if ($fc_player = summergame_player_load(array('friend_code' => $friend_code))) {
-      // Player Found
-      if ($fc_player['pid'] == $pid) {
-        return array('error' => "Player #$pid cannot redeem own Friend Code");
-      }
-      // Check if player has already redeemed this code
-      else {
-        $res = db_query("SELECT * FROM sg_ledger WHERE pid = %d AND metadata LIKE 'fc_player:%d'", $pid, $fc_player['pid']);
-        if ($existing = db_fetch_object($res)) {
-          $existing_date = date('F j, Y, g:i a', $existing->timestamp);
-          return array('error' => "Friend Code for Player #" . $fc_player['pid'] . " already redeemed on $existing_date");
-        }
-      }
-      // Award points to Friend Code owner and to current player
-      $fc_points = 20;
-      summergame_player_points($fc_player['pid'], $fc_points, 'Friend Code', 'Player #' . $pid . ' entered your Friend Code', 'fc_follower:' . $pid);
-      $points = summergame_player_points($pid, $fc_points, 'Friend Code', 'Entered a Friend Code', 'fc_player:' . $fc_player['pid']);
-      $message = "Redeemed Friend Code for $points points";
-      return array('success' => $message);
+  if ($fc_player = summergame_player_load(array('friend_code' => $code_text))) {
+    // Player Found
+    if ($fc_player['pid'] == $pid) {
+      return array('error' => "Player #$pid cannot redeem own Friend Code");
     }
+    // Check if player has already redeemed this code
+    else {
+      $res = db_query("SELECT * FROM sg_ledger WHERE pid = %d AND metadata LIKE 'fc_player:%d'", $pid, $fc_player['pid']);
+      if ($existing = db_fetch_object($res)) {
+        $existing_date = date('F j, Y, g:i a', $existing->timestamp);
+        return array('error' => "Friend Code for Player #" . $fc_player['pid'] . " already redeemed on $existing_date");
+      }
+    }
+    // Award points to Friend Code owner and to current player
+    $fc_points = 100;
+    summergame_player_points($fc_player['pid'], $fc_points, 'Friend Code', 'Player #' . $pid . ' followed you!', 'fc_follower:' . $pid);
+    $points = summergame_player_points($pid, $fc_points, 'Friend Code', 'You followed Player #' . $fc_player['pid'] . '!', 'fc_player:' . $fc_player['pid']);
+    $message = "You redeemed Player #" . $fc_player['pid'] . "'s Friend Code for $points points!";
+    // Check if reciprocal; award bonus if friends
+    $ledger = db_fetch_object(db_query("SELECT lid FROM sg_ledger WHERE pid = %d AND metadata LIKE '%%fc_player:%d%%' LIMIT 1",
+                                       $fc_player['pid'], $pid));
+    if ($ledger->lid) {
+      $bonus_points = 50;
+      summergame_player_points($fc_player['pid'], $bonus_points, 'Friend Code', 'You and Player #' . $pid . ' are now friends!', 'fc_friend:' . $pid);
+      $points = summergame_player_points($pid, $bonus_points, 'Friend Code', 'You and Player #' . $fc_player['pid'] . ' are now friends!', 'fc_friend:' . $fc_player['pid']);
+      $message .= '. You and Player #' . $fc_player['pid'] . ' are now friends; you both get a ' . $bonus_points . ' point bonus!';
+    }
+    return array('success' => $message);
   }
   else {
     // Check for Game Code
