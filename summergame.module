@@ -3020,10 +3020,11 @@ function summergame_twilio_respond($incoming) {
     }
   }
   else {
-    // check if it's a game code
+    // check if it's a game code OR friend code
     $text = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $incoming['text']));
     $gc = db_fetch_object(db_query("SELECT * FROM sg_game_codes WHERE text = '%s'", $text));
-    if ($gc->code_id) {
+    $fc_player = summergame_player_load(array('friend_code' => $text));
+    if ($gc->code_id || $fc_player['pid']) {
       $game_code_text = TRUE;
       if (!$player['pid']) {
         $new_player_needed = TRUE;
