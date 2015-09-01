@@ -3570,21 +3570,26 @@ function summergame_redeem_code($pid, $code_text) {
         return array('error' => "Friend Code for Player #" . $fc_player['pid'] . " already redeemed on $existing_date");
       }
     }
-    // Award points to Friend Code owner and to current player
-    $fc_points = 100;
-    summergame_player_points($fc_player['pid'], $fc_points, 'Friend Code', 'Player #' . $pid . ' followed you!', 'fc_follower:' . $pid);
-    $points = summergame_player_points($pid, $fc_points, 'Friend Code', 'You followed Player #' . $fc_player['pid'] . '!', 'fc_player:' . $fc_player['pid']);
-    $message = "You redeemed Player #" . $fc_player['pid'] . "'s Friend Code for $points points!";
-    // Check if reciprocal; award bonus if friends
-    $ledger = db_fetch_object(db_query("SELECT lid FROM sg_ledger WHERE pid = %d AND metadata LIKE 'fc_player:%d' LIMIT 1",
-                                       $fc_player['pid'], $pid));
-    if ($ledger->lid) {
-      $bonus_points = 50;
-      summergame_player_points($fc_player['pid'], $bonus_points, 'Friend Code', 'You and Player #' . $pid . ' are now friends!', 'fc_friend:' . $pid);
-      $points = summergame_player_points($pid, $bonus_points, 'Friend Code', 'You and Player #' . $fc_player['pid'] . ' are now friends!', 'fc_friend:' . $fc_player['pid']);
-      $message .= '. You and Player #' . $fc_player['pid'] . ' are now friends; you both get a ' . $bonus_points . ' point bonus!';
+    if (variable_get('summergame_points_enabled', 0)) {
+      // Award points to Friend Code owner and to current player
+      $fc_points = 100;
+      summergame_player_points($fc_player['pid'], $fc_points, 'Friend Code', 'Player #' . $pid . ' followed you!', 'fc_follower:' . $pid);
+      $points = summergame_player_points($pid, $fc_points, 'Friend Code', 'You followed Player #' . $fc_player['pid'] . '!', 'fc_player:' . $fc_player['pid']);
+      $message = "You redeemed Player #" . $fc_player['pid'] . "'s Friend Code for $points points!";
+      // Check if reciprocal; award bonus if friends
+      $ledger = db_fetch_object(db_query("SELECT lid FROM sg_ledger WHERE pid = %d AND metadata LIKE 'fc_player:%d' LIMIT 1",
+                                         $fc_player['pid'], $pid));
+      if ($ledger->lid) {
+        $bonus_points = 50;
+        summergame_player_points($fc_player['pid'], $bonus_points, 'Friend Code', 'You and Player #' . $pid . ' are now friends!', 'fc_friend:' . $pid);
+        $points = summergame_player_points($pid, $bonus_points, 'Friend Code', 'You and Player #' . $fc_player['pid'] . ' are now friends!', 'fc_friend:' . $fc_player['pid']);
+        $message .= '. You and Player #' . $fc_player['pid'] . ' are now friends; you both get a ' . $bonus_points . ' point bonus!';
+      }
+      return array('success' => $message);
     }
-    return array('success' => $message);
+    else {
+      return array('warning' => "Friend Codes can only be entered during Summer Game");
+    }
   }
   else {
     // Check for Game Code
