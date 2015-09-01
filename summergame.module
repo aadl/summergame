@@ -3539,6 +3539,13 @@ function summergame_player_delete($player_info) {
     db_query("DELETE FROM sg_players_teams WHERE pid = %d", $player['pid']);
     // Delete player info
     db_query("DELETE FROM sg_players WHERE pid = %d", $player['pid']);
+    // Check if active player, reset if so
+    if ($player->uid) {
+      $account = user_load($player->uid);
+      if ($account->sg_active_pid == $player->pid) {
+        user_save($account, array('sg_active_pid' => NULL));
+      }
+    }
   }
 }
 
@@ -4066,6 +4073,86 @@ function summergame_players_merge($pid1, $pid2) {
     db_query("DELETE FROM sg_players_badges WHERE pid = %d and bid = %d", $pid2, $badge->bid);
     $badge_description = "Earned the $badge->title Badge";
     db_query("DELETE FROM sg_ledger WHERE pid = %d AND metadata = 'Badge Bonus' AND description = '%s'", $pid2, $badge_description);
+  }
+
+  // FRIEND CODE CLEANUP ///////////////////////////////////////////////////////
+  // Remove friend codes if new and old entered each other's codes
+  db_query("DELETE FROM sg_ledger WHERE pid = %d and metadata LIKE 'fc_player:%d'", $pid1, $pid2);
+  db_query("DELETE FROM sg_ledger WHERE pid = %d AND metadata LIKE 'fc_follower:%d'", $pid1, $pid2);
+  db_query("DELETE FROM sg_ledger WHERE pid = %d AND metadata LIKE 'fc_friend:%d'", $pid1, $pid2);
+  db_query("DELETE FROM sg_ledger WHERE pid = %d and metadata LIKE 'fc_player:%d'", $pid2, $pid1);
+  db_query("DELETE FROM sg_ledger WHERE pid = %d AND metadata LIKE 'fc_follower:%d'", $pid2, $pid1);
+  db_query("DELETE FROM sg_ledger WHERE pid = %d AND metadata LIKE 'fc_friend:%d'", $pid2, $pid1);
+
+  // Remove duplicate Friend Codes from old player
+  $duplicate_fcs = array();
+  $res = db_query("SELECT * FROM sg_ledger WHERE pid = %d AND metadata LIKE 'fc_player:%%'", $pid1);
+  while ($row = db_fetch_array($res)) {
+    if (preg_match('/fc_player:([\d]+)/', $row['metadata'], $matches)) {
+      $duplicate_fcs[] = $matches[1];
+    }
+  }
+  if (count($duplicate_fcs)) {
+    foreach ($duplicate_fcs as $duplicate) {
+      db_query("DELETE FROM sg_ledger WHERE pid = %d AND metadata LIKE 'fc_player:%d'", $pid2, $duplicate);
+    }
+  }
+
+  // Remove duplicate Friend Bonuses from old player
+  $duplicate_fbs = array();
+  $res = db_query("SELECT * FROM sg_ledger WHERE pid = %d AND metadata LIKE 'fc_friend:%%'", $pid1);
+  while ($row = db_fetch_array($res)) {
+    if (preg_match('/fc_friend:([\d]+)/', $row['metadata'], $matches)) {
+      $duplicate_fbs[] = $matches[1];
+    }
+  }
+  if (count($duplicate_fbs)) {
+    foreach ($duplicate_fbs as $duplicate) {
+      db_query("DELETE FROM sg_ledger WHERE pid = %d AND metadata LIKE 'fc_friend:%d'", $pid2, $duplicate);
+    }
+  }
+
+  // Delete old player Friend Codes from any player who also entered new player Friend Code
+  $res = db_query("SELECT * FROM sg_ledger WHERE metadata LIKE 'fc_player:%d'", $pid1);
+  while ($row = db_fetch_object($res)) {
+    db_query("DELETE FROM sg_ledger WHERE pid = %d AND metadata LIKE 'fc_player:%d'", $row->pid, $pid2);
+  }
+
+  // Delete old player Friend Bonuses from any player who also has Friend Bonus from new player
+  $res = db_query("SELECT * FROM sg_ledger WHERE metadata LIKE 'fc_friend:%d'", $pid1);
+  while ($row = db_fetch_object($res)) {
+    db_queryd("DELETE FROM sg_ledger WHERE pid = %d AND metadata LIKE 'fc_friend:%d'", $row->pid, $pid2);
+  }
+
+  // Update Friend Codes from old player to point to new player
+  db_query("UPDATE sg_ledger SET metadata = 'fc_player:%d' WHERE metadata = 'fc_player:%d'", $pid1, $pid2);
+
+  // Award new Friend Bonuses to new player and any player who are now reciprocal friends but do not have bonus
+  $following_pids = array();
+  $res = db_query("SELECT * FROM sg_ledger WHERE pid = %d AND metadata LIKE 'fc_player:%%'", $pid1);
+  while ($row = db_fetch_array($res)) {
+    if (preg_match('/fc_player:([\d]+)/', $row['metadata'], $matches)) {
+      $following_pids[] = $matches[1];
+    }
+  }
+  if (count($following_pids)) {
+    foreach ($following_pids as $following_pid) {
+      // Check if they are a friend
+      $row = db_fetch_object(db_query("SELECT * FROM sg_ledger WHERE pid = %d AND metadata LIKE 'fc_player:%d'", $following_pid, $pid1));
+      if ($row->lid) {
+        // Friends! Check for bonuses
+        $pf_row = db_fetch_object("SELECT * FROM sg_ledger WHERE pid = %d AND metadata LIKE 'fc_friend:%d'", $pid1, $following_pid);
+        if (!$pf_row->lid) {
+          // give player friend bonus
+          summergame_player_points($pid1, 50, 'Friend Code', 'You and Player #' . $following_pid . ' are now friends!', 'fc_friend:' . $following_pid);
+        }
+        $of_row = db_fetch_object("SELECT * FROM sg_ledger WHERE pid = %d AND metadata LIKE 'fc_friend:%d'", $following_pid, $pid1);
+        if (!$of_row->lid) {
+          // give other friend bonus
+          summergame_player_points($following_pid, 50, 'Friend Code', 'You and Player #' . $pid1 . ' are now friends!', 'fc_friend:' . $pid1);
+        }
+      }
+    }
   }
 
   // Update remaing player2 data to point at player1 and delete player 2
