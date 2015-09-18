@@ -1,13 +1,14 @@
 -- phpMyAdmin SQL Dump
--- version 3.4.4
+-- version 4.0.4.1
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Dec 06, 2012 at 04:28 PM
--- Server version: 5.0.84
+-- Generation Time: Sep 18, 2015 at 02:44 PM
+-- Server version: 5.0.84-log
 -- PHP Version: 5.2.6-1+lenny13
 
-SET SQL_MODE="NO_AUTO_VALUE_ON_ZERO";
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+SET time_zone = "+00:00";
 
 -- --------------------------------------------------------
 
@@ -19,7 +20,8 @@ CREATE TABLE IF NOT EXISTS `sg_badges` (
   `bid` int(10) unsigned NOT NULL auto_increment,
   `image` varchar(64) default NULL,
   `title` varchar(64) default NULL,
-  `description` varchar(2000) default NULL,
+  `description` varchar(8000) default NULL,
+  `difficulty` enum('Beginner','Advanced','Expert') NOT NULL default 'Advanced',
   `formula` varchar(2000) default NULL,
   `reveal` varchar(32) NOT NULL,
   `points` int(10) unsigned NOT NULL,
@@ -55,6 +57,7 @@ CREATE TABLE IF NOT EXISTS `sg_game_codes` (
   `num_redemptions` int(10) unsigned NOT NULL default '0',
   `game_term` varchar(32) NOT NULL,
   `game_term_override` varchar(32) NOT NULL,
+  `everlasting` tinyint(1) unsigned NOT NULL default '0',
   PRIMARY KEY  (`code_id`),
   UNIQUE KEY `text` (`text`),
   KEY `created` (`created`)
@@ -100,7 +103,7 @@ CREATE TABLE IF NOT EXISTS `sg_players` (
   `agegroup` enum('youth','teen','adult') NOT NULL default 'adult',
   `school` varchar(64) default NULL,
   `grade` int(10) unsigned default NULL,
-  `prizes` varchar(64) default NULL,
+  `friend_code` varchar(32) default NULL,
   PRIMARY KEY  (`pid`),
   KEY `phone` (`phone`,`uid`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=latin1;
@@ -167,7 +170,8 @@ CREATE TABLE IF NOT EXISTS `sg_teams` (
 CREATE TABLE IF NOT EXISTS `sg_trivia_correct` (
   `id` int(10) unsigned NOT NULL auto_increment,
   `phone` bigint(20) unsigned NOT NULL,
-  PRIMARY KEY  (`id`)
+  PRIMARY KEY  (`id`),
+  UNIQUE KEY `phone` (`phone`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
