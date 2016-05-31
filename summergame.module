@@ -80,6 +80,12 @@ function summergame_menu() {
     'access arguments' => array('administer summergame'),
     'type' => MENU_CALLBACK,
   );
+  $items['summergame/admin/badges'] = array(
+    'title' => 'Administer Badges',
+    'page callback' => 'summergame_admin_badges',
+    'access arguments' => array('administer summergame'),
+    'type' => MENU_CALLBACK,
+  );
   $items['summergame/admin/add'] = array(
     'title' => 'Add new Summer Game Code',
     'page callback' => 'summergame_admin_edit',
@@ -564,7 +570,7 @@ function summergame_admin() {
   $content .= '<h2 class="title">Badges</h2>';
   $sg_image_path = base_path() . file_directory_path() . '/sg_images/';
   $rows = array();
-  $res = db_query("SELECT * FROM sg_badges ORDER BY bid DESC");
+  $res = db_query("SELECT * FROM sg_badges ORDER BY bid DESC LIMIT $limit");
   while ($badge = db_fetch_array($res)) {
     if (!$site_admin) {
       $badge['formula'] = preg_replace('/\B\w/', '*', $badge['formula']);
@@ -573,12 +579,14 @@ function summergame_admin() {
       'Badge ID' => ($site_admin ? l($badge['bid'], 'summergame/admin/badge/' . $badge['bid']) : $badge['bid']),
       'Image' => '<img src="' . $sg_image_path . $badge['image'] . '_100.png">',
       'Title' => '<strong>' . $badge['title'] . '</strong>',
-      'Difficulty' => $badge['difficulty'],
+      'Level' => $badge['level'],
       'Description' => $badge['description'],
       'Formula' => strlen($badge['formula']) > 25 ? substr($badge['formula'], 0, 25) . '...' : $badge['formula'],
     );
   }
   $content .= theme('table', array_keys($rows[0]), $rows);
+  $more_link = l('See all Badges', 'summergame/admin/badges');
+  $content .= "<p class=\"more\">Showing latest $limit badges, $more_link</p>";
 
   $content .= '</div>'; // #summergame-admin-page
 
@@ -645,6 +653,44 @@ function summergame_admin_gamecodes($search_term = '') {
   }
 
   $content .= '</div>';
+
+  return $content;
+}
+
+/**
+ * PAGE: Show all badges
+ */
+function summergame_admin_badges($search_term = '') {
+  drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
+  $site_admin = TRUE; // Use page control for user access
+  $admin_users = user_access('administer users');
+  $content .= '<div id="summergame-admin-page">';
+  $content .= '<h1>Summer Game Badges</h1>';
+
+  // Badges
+  if ($site_admin) {
+    $content .= '<ul class="create-new-code"><li class="button green">' . l("Create New Badge", 'summergame/admin/badge') . '</li></ul>';
+  }
+  $content .= '<h2 class="title">Badges</h2>';
+  $sg_image_path = base_path() . file_directory_path() . '/sg_images/';
+  $rows = array();
+  $res = db_query("SELECT * FROM sg_badges ORDER BY bid DESC");
+  while ($badge = db_fetch_array($res)) {
+    if (!$site_admin) {
+      $badge['formula'] = preg_replace('/\B\w/', '*', $badge['formula']);
+    }
+    $rows[] = array(
+      'Badge ID' => ($site_admin ? l($badge['bid'], 'summergame/admin/badge/' . $badge['bid']) : $badge['bid']),
+      'Image' => '<img src="' . $sg_image_path . $badge['image'] . '_100.png">',
+      'Title' => '<strong>' . $badge['title'] . '</strong>',
+      'Level' => $badge['level'],
+      'Description' => $badge['description'],
+      'Formula' => strlen($badge['formula']) > 25 ? substr($badge['formula'], 0, 25) . '...' : $badge['formula'],
+    );
+  }
+  $content .= theme('table', array_keys($rows[0]), $rows);
+
+  $content .= '</div>'; // #summergame-admin-page
 
   return $content;
 }
@@ -905,14 +951,30 @@ function summergame_admin_badge_form($form_state, $bid = 0) {
     '#default_value' => $badge['description'],
     '#description' => t('Description of the Badge'),
   );
-  $form['difficulty'] = array(
+  $form['level'] = array(
     '#type' => 'radios',
-    '#title' => t('Difficulty'),
-    '#options' => array('Beginner' => 'Beginner', 'Advanced' => 'Advanced', 'Expert' => 'Expert'),
-    '#default_value' => $badge['difficulty'],
-    '#size' => 32,
+    '#title' => t('Level'),
+    '#options' => array(
+      1 => 'Level 1: Tells you explicitly what to do and requires no external sources',
+      2 => 'Level 2: Direct, but brings in external sources, be explicit on search terms and material types',
+      3 => 'Level 3: Difficulty increases in the clues become more obtuse, wordplay or capitalization should help you narrow your search',
+      4 => 'Level 4: Operations are required to get to the next level - decoding, figuring latitute/longitude, etc.',
+    ),
+    '#default_value' => $badge['level'],
+    '#description' => t('The level of the difficulty of the Badge'),
+  );
+  $form['type'] = array(
+    '#type' => 'radios',
+    '#title' => t('Type'),
+    '#options' => array('' => 'N/A', 'Milestone' => 'Milestone', 'Web Search' => 'Web Search', 'Exploration' => 'Exploration', 'Event' => 'Event'),
+    '#default_value' => $badge['type'],
+    '#size' => 64,
     '#maxlength' => 255,
-    '#description' => t('Difficulty of the Badge'),
+    '#description' => t('Type of Badge'),
+  );
+  $form['difficulty'] = array(
+    '#type' => 'value',
+    '#value' => $badge['difficulty'],
   );
   $form['formula'] = array(
     '#type' => 'textarea',
@@ -995,12 +1057,13 @@ function summergame_admin_badge_form_submit($form, &$form_state) {
   if ($form_state['values']['bid']) {
     // Update existing code
     db_query("UPDATE sg_badges SET image = '%s', title = '%s', description = '%s', " .
-             "difficulty = '%s', formula = '%s', reveal = '%s', " .
+             "level = %d, type = '%s', difficulty = '%s', formula = '%s', reveal = '%s', " .
              "points = %d, points_override = '%s', game_term = '%s', " .
              "game_term_override = '%s', active = %d, email_message = '%s', " .
              "email_attachment = '%s' WHERE bid = %d",
              $form_state['values']['image'], $form_state['values']['title'],
-             $form_state['values']['description'], $form_state['values']['difficulty'],
+             $form_state['values']['description'], $form_state['values']['level'],
+             $form_state['values']['type'], $form_state['values']['difficulty'],
              $form_state['values']['formula'], $form_state['values']['reveal'],
              $form_state['values']['points'], $form_state['values']['points_override'],
              $form_state['values']['game_term'], $form_state['values']['game_term_override'],
@@ -1010,10 +1073,12 @@ function summergame_admin_badge_form_submit($form, &$form_state) {
   }
   else {
     db_query("INSERT INTO sg_badges " .
-             "(bid, image, title, description, difficulty, formula, reveal, points, points_override, game_term, game_term_override, active, email_message, email_attachment) " .
-             "VALUES (NULL, '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%d', '%s', '%s')",
+             "(bid, image, title, description, level, type, difficulty, formula, reveal, points, " .
+             "points_override, game_term, game_term_override, active, email_message, email_attachment) " .
+             "VALUES (NULL, '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%d', '%s', '%s')",
              $form_state['values']['image'], $form_state['values']['title'],
-             $form_state['values']['description'], $form_state['values']['difficulty'],
+             $form_state['values']['description'], $form_state['values']['level'],
+             $form_state['values']['type'], $form_state['values']['difficulty'],
              $form_state['values']['formula'], $form_state['values']['reveal'],
              $form_state['values']['points'], $form_state['values']['points_override'],
              $form_state['values']['game_term'], $form_state['values']['game_term_override'],
