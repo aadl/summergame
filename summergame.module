@@ -966,7 +966,7 @@ function summergame_admin_badge_form($form_state, $bid = 0) {
   $form['type'] = array(
     '#type' => 'radios',
     '#title' => t('Type'),
-    '#options' => array('' => 'N/A', 'Milestone' => 'Milestone', 'Web Search' => 'Web Search', 'Exploration' => 'Exploration', 'Event' => 'Event'),
+    '#options' => array('Milestone' => 'Milestone', 'Web Search' => 'Web Search', 'Exploration' => 'Exploration', 'Event' => 'Event'),
     '#default_value' => $badge['type'],
     '#size' => 64,
     '#maxlength' => 255,
