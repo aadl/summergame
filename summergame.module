@@ -143,6 +143,12 @@ function summergame_menu() {
     'access arguments' => array('access summergame'),
     'type' => MENU_CALLBACK,
   );
+  $items['summergame/player/friends'] = array(
+    'title' => 'Summer Game Player Friend Page',
+    'page callback' => 'summergame_player_friend_page',
+    'access arguments' => array('access summergame'),
+    'type' => MENU_CALLBACK,
+  );
   $items['summergame/player/consume'] = array(
     'title' => 'I Read/Listened/Watched Something',
     'page callback' => 'summergame_player_consume_page',
@@ -2131,26 +2137,148 @@ function theme_summergame_player_info($player) {
   $content .= "<p>You now can have a code of your own! If another player enters your Friend Code, they'll start following you, and " .
               "you'll EACH earn 100 points. If you enter the Friend Code of any of your followers, you'll become Friends and each earn an additional " .
               "50 point bonus.</p>";
+  $display_limit = 5;
+
   $following_header = '<span class="hint--bottom" data-hint="You have entered these players\' Friend Codes">Following: ' .
                       count($following) . '</span>';
   $content .= theme('table',
                     array(array('data' => $following_header, 'colspan' => 2)),
-                    $following);
+                    array_slice($following, 0, $display_limit));
   $followers_header = '<span class="hint--bottom" data-hint="These Players have entered your Friend Code">Followers: ' .
                       count($followers) . '</span>';
   $content .= theme('table',
                     array(array('data' => $followers_header, 'colspan' => 2)),
-                    $followers);
+                    array_slice($followers, 0, $display_limit));
   $friends_header = '<span class="hint--left" data-hint="You and these Players have entered each others\' Friend Codes">Friends: ' .
                     count($friends) . '</span>';
   $content .= theme('table',
                     array(array('data' => $friends_header, 'colspan' => 2)),
-                    $friends);
+                    array_slice($friends, 0, $display_limit));
+
+  if ($following_counter > $display_limit ||
+      $follower_counter > $display_limit ||
+      $friend_counter > $display_limit) {
+    $friend_page_link = l('See full list of Friends', 'summergame/player/friends/' . $player['pid']);
+    $content .= "<p style=\"clear: left\">(Limiting display to $display_limit players. $friend_page_link.)</p>";
+  }
+
   $content .= '</div>'; // $friend-code
 
   $content .= '</div>'; // #player-card
 
   return $content;
+}
+
+/**
+ *  PAGE: List all friends
+ */
+function summergame_player_friend_page($pid = 0) {
+  global $user;
+  drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
+  $pid = intval($pid);
+
+  if ($pid) {
+    $player = summergame_player_load(array('pid' => $pid));
+  }
+  else if ($user->uid) {
+    // Default to the logged in player if none specified
+    $player = $user->player;
+  }
+
+  if ($player) {
+    // Following, Followers, Friends
+    $following = array();
+    $following_pids = array();
+    $followers = array();
+    $friends = array();
+
+    $res = db_query("SELECT * FROM sg_ledger WHERE pid = %d AND metadata LIKE '%%fc_player:%%'", $player['pid']);
+    while ($row = db_fetch_object($res)) {
+      // grab player ID
+      preg_match('/fc_player:([\d]+)/', $row->metadata, $matches);
+      $following_player = summergame_player_load($matches[1]);
+      if ($following_player['show_leaderboard']) {
+        $player_name = $following_player['nickname'] ? $following_player['nickname'] : $following_player['name'];
+      }
+      else {
+        $player_name = 'Player #' . $following_player['pid'];
+      }
+      if ($following_player['show_myscore'] || user_access('administer summergame')) {
+        $player_name = l($player_name, 'summergame/player/' . $following_player['pid']);
+      }
+      $following[] = array(
+        'count' => ++$following_counter,
+        'player' => $player_name,
+      );
+      $following_pids[] = $matches[1];
+    }
+    $res = db_query("SELECT * FROM sg_ledger WHERE metadata LIKE 'fc_player:%d'", $player['pid']);
+    while ($row = db_fetch_object($res)) {
+      $follower_player = summergame_player_load($row->pid);
+      if ($follower_player['show_leaderboard']) {
+        $player_name = $follower_player['nickname'] ? $follower_player['nickname'] : $follower_player['name'];
+      }
+      else {
+        $player_name = 'Player #' . $follower_player['pid'];
+      }
+      if ($follower_player['show_myscore'] || user_access('administer summergame')) {
+        $player_name = l($player_name, 'summergame/player/' . $follower_player['pid']);
+      }
+      $followers[] = array(
+        'count' => ++$follower_counter,
+        'player' => $player_name,
+      );
+      if (in_array($row->pid, $following_pids)) {
+        $friends[] = array(
+          'count' => ++$friend_counter,
+          'player' => $player_name,
+        );
+      }
+    }
+
+    $content .= '<div id="friend-code">';
+    $content .= '<div id="friend-title"><h2>FRIEND CODE: ' . $player['friend_code'] . '</h2>';
+    if (count($followers) == 0) {
+      if ($player['friend_code']) {
+        $action = 'I WANT A DIFFERENT';
+        $hint = 'Get a new random Friend Code. You can\'t change it once you give it out.';
+      }
+      else {
+        $action = 'GENERATE';
+        $hint = "Create a random Friend Code for yourself. You can try again if you don't like it.";
+      }
+      $options = array('html' => TRUE, 'attributes' => array('class' => 'hint--bottom',
+                                                             'data-hint' => $hint,
+                                                             ));
+      $content .= '[ ' . l($action . ' CODE', 'summergame/player/gfc/' . $player['pid'], $options) . ' ]';
+    }
+    $content .= '</div>';
+    $content .= "<p>You now can have a code of your own! If another player enters your Friend Code, they'll start following you, and " .
+                "you'll EACH earn 100 points. If you enter the Friend Code of any of your followers, you'll become Friends and each earn an additional " .
+                "50 point bonus.</p>";
+    $following_header = '<span class="hint--bottom" data-hint="You have entered these players\' Friend Codes">Following: ' .
+                        count($following) . '</span>';
+    $content .= theme('table',
+                      array(array('data' => $following_header, 'colspan' => 2)),
+                      $following);
+    $followers_header = '<span class="hint--bottom" data-hint="These Players have entered your Friend Code">Followers: ' .
+                        count($followers) . '</span>';
+    $content .= theme('table',
+                      array(array('data' => $followers_header, 'colspan' => 2)),
+                      $followers);
+    $friends_header = '<span class="hint--left" data-hint="You and these Players have entered each others\' Friend Codes">Friends: ' .
+                      count($friends) . '</span>';
+    $content .= theme('table',
+                      array(array('data' => $friends_header, 'colspan' => 2)),
+                      $friends);
+    $content .= '</div>'; // $friend-code
+  }
+  else {
+    $content .= '<p>No Player Found</p>';
+  }
+
+  return $content;
+
 }
 
 function theme_summergame_player_page($player, $player_access) {
