@@ -54,6 +54,28 @@ function summergame_init() {
 }
 
 /**
+ * Implementation of hook_user()
+ */
+function summergame_user($op, &$edit, &$account, $category = NULL) {
+  if ($op == 'view') {
+    if ($players = summergame_player_load_all($account->uid)) {
+      $account->content['summergame'] = array(
+        '#type' => 'user_profile_category',
+        '#title' => t('Summer Game Player') . (count($players) == 1 ? '' : 's'),
+        '#weight' => 0,
+      );
+      foreach ($players as $player) {
+        $player_text = ($player['nickname'] ? $player['name'] . ' (' . $player['nickname'] . ')' : $player['name']);
+        $account->content['summergame']['player' . $player['pid']] = array(
+          '#type' => 'user_profile_item',
+          '#value' => l($player_text, 'summergame/player/' . $player['pid']),
+        );
+      }
+    }
+  }
+}
+
+/**
  * Implementation of hook_menu().
  */
 function summergame_menu() {
@@ -3358,14 +3380,15 @@ function summergame_twilio_respond($incoming) {
     $answer = variable_get('summergame_trivia_answer', '');
 
     db_query("INSERT INTO sg_trivia_guesses (guess) VALUES ('%s')", $guess);
-    if (stripos($guess, $answer) !== FALSE) {
+    $guesstext = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $incoming['text']));
+    if (stripos($guesstext, $answer) !== FALSE) {
       // Correct Answer
       if (db_query("INSERT INTO sg_trivia_correct (phone) VALUES ('%d')", $incoming['phone'])) {
         $place = db_last_insert_id('sg_trivia', 'id');
         $points = 51 - $place;
 
         summergame_player_points($player['pid'], $points, 'Correct Trivia Answer',
-                                 "Correct Answer #$place: $guess", '', 'GenderMindBender');
+                                 "Correct Answer #$place: $guess", '', 'BuellerBueller');
 
         $response = $response_template;
         $response['text'] = "Your answer of \"$guess\" is Correct Answer #$place! You earn $points points.";
@@ -4130,32 +4153,34 @@ function summergame_pdf($type = 'adult', $code_id = 0) {
     $pdf->setSourceFile($file_path . 'code_template.pdf');
     $tplidx = $pdf->importPage(1);
     $pdf->useTemplate($tplidx);
-    $pdf->SetMargins(18, 17);
+    $pdf->SetMargins(20, 17);
     $page_width = $pdf->w - $pdf->lMargin - $pdf->rMargin;
 
     // now write some text
-    $pdf->AddFont('Neris-Black', '', 'Neris-Black.php');
+    $pdf->AddFont('Quicksand-Bold', '', 'Quicksand-Bold.php');
     $font_size = 100;
-    $pdf->SetFont('Neris-Black', '', $font_size);
+    $pdf->SetFont('Quicksand-Bold', '', $font_size);
     while ($pdf->GetStringWidth($event_code) > $page_width) {
       $font_size -= 5;
-      $pdf->SetFont('Neris-Black', '', $font_size);
+      $pdf->SetFont('Quicksand-Bold', '', $font_size);
     }
-    $pdf->SetXY($pdf->lMargin, 45);
+    $pdf->SetXY($pdf->lMargin, 53);
     $pdf->Cell(0, 10, $event_code, 0, 1, 'C');
 
-    $pdf->SetFont('Neris-Black', '', 95);
-    $pdf->SetXY($pdf->lMargin, 103);
+    $pdf->SetFont('Quicksand-Bold', '', 95);
+    $pdf->SetXY($pdf->lMargin, 125);
     $pdf->Cell(0, 10, $event_points, 0, 1, 'C');
 
+/*
     // Description
     $desc_Y = 192;
-    $pdf->SetFont('Neris-Black', '', 13);
+    $pdf->SetFont('Quicksand-Bold', '', 13);
     foreach ($description as $desc_line) {
       $pdf->SetXY($pdf->lMargin, $desc_Y);
       $pdf->Cell($page_width - 35, 7, $desc_line, 0);
       $desc_Y -= 7;
     }
+*/
 
     // add the QR Code
     $pdf->SetXY(-50, -50);
