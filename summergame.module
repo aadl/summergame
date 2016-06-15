@@ -779,6 +779,25 @@ function summergame_code_edit_form($form_state, $game_code) {
       '#type' => 'value',
       '#value' => $game_code['code_id'],
     );
+
+    // Search for code in catalog
+    $l = sopac_get_locum();
+    $tags = $l->db_query('SELECT * FROM insurge_tags WHERE tag="sg:code=' . $game_code['text'] . '"', 0);
+    foreach ($tags as $tag) {
+      $bibs[] = $l->get_bib_item($tag['bnum']);
+    }
+
+    if (count($bibs)) {
+      $gc_bibs = '<p><h2>Game Code in Catalog:</h2><ul>';
+      foreach ($bibs as $bib) {
+        $gc_bibs .= '<li>' . l($bib['title'], 'catalog/record/' . $bib['bnum']);
+        if ($bib['author']) {
+          $gc_bibs .= ', by ' . $bib['author'];
+        }
+        $gc_bibs .= '</li>';
+      }
+      $gc_bibs .= '</ul></p>';
+    }
   }
   $form['text'] = array(
     '#type' => 'textfield',
@@ -868,6 +887,7 @@ function summergame_code_edit_form($form_state, $game_code) {
     '#size' => 32,
     '#maxlength' => 8,
     '#description' => t('Enter a Bib Number to automatically add this game code as a tag to that Bib record in the catalog'),
+    '#suffix' => $gc_bibs,
   );
 
   $form['submit'] = array(
