@@ -3169,11 +3169,8 @@ function theme_summergame_badge() {
     $img_title = htmlentities($img_title);
     $content .= l("<img class=\"$img_class\" title=\"$img_title\" src=\"$img_src\">",
                   'summergame/badge/' . $bid,
-                  array('html' => TRUE,
-                        'query' => array('lightbox' => 1),
-                        'attributes' => array('rel' => 'lightframe'),
-                    )
-                  );
+                  array('html' => TRUE)
+                );
   }
   return $content;
 }
@@ -4190,11 +4187,11 @@ function summergame_pdf($type = 'adult', $code_id = 0) {
   }
   else if ($type == 'youth') {
     $redis->incr('ygpdfcounter');
-    drupal_goto($file_path . 'SG_Youth_2015.pdf');
+    drupal_goto($file_path . 'SG_Youth_2016.pdf');
   }
   else { // default to the adult single player form
     $redis->incr('agpdfcounter');
-    drupal_goto($file_path . 'SG_Adult_Teen_2015.pdf');
+    drupal_goto($file_path . 'SG_Adult_Teen_2016.pdf');
   }
 }
 
