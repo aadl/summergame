@@ -3385,7 +3385,7 @@ function summergame_twilio_respond($incoming) {
       // Correct Answer
       if (db_query("INSERT INTO sg_trivia_correct (phone) VALUES ('%d')", $incoming['phone'])) {
         $place = db_last_insert_id('sg_trivia', 'id');
-        $points = 51 - $place;
+        $points = 101 - $place;
 
         summergame_player_points($player['pid'], $points, 'Correct Trivia Answer',
                                  "Correct Answer #$place: $guess", '', 'BuellerBueller');
