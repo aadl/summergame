@@ -229,40 +229,6 @@ function summergame_menu() {
     'access arguments' => array(3),
     'type' => MENU_CALLBACK,
   );
-  $items['summergame/team'] = array(
-    'title' => 'Summer Game Team Page',
-    'page callback' => 'summergame_team_page',
-    'access arguments' => array('access summergame'),
-    'type' => MENU_CALLBACK,
-  );
-  $items['summergame/team/delete'] = array(
-    'title' => t('Delete Team'),
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('summergame_delete_team_form'),
-    'access callback' => 'summergame_player_access',
-    'access arguments' => array(3),
-    'type' => MENU_CALLBACK,
-  );
-  $items['summergame/team/edit'] = array(
-    'title' => t('Edit Team'),
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('summergame_team_form'),
-    'access arguments' => array('access summergame'),
-    'type' => MENU_CALLBACK,
-  );
-  $items['summergame/team/join'] = array(
-    'title' => t('Join Team'),
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('summergame_team_join_form'),
-    'access arguments' => array('access summergame'),
-    'type' => MENU_CALLBACK,
-  );
-  $items['summergame/teams'] = array(
-    'title' => t('Team List'),
-    'page callback' => 'summergame_teams_list',
-    'access arguments' => array('access summergame'),
-    'type' => MENU_CALLBACK,
-  );
   $items['summergame/leaderboard'] = array(
     'title' => 'Game Leaderboard',
     'page callback' => 'summergame_leaderboard_page',
@@ -352,9 +318,6 @@ function summergame_leaderboard_filter_block_content() {
   if ($_GET['staff']) {
     $current['staff'] = $_GET['staff'];
   }
-  if ($_GET['team']) {
-    $current['team'] = $_GET['team'];
-  }
 
   // Game Types
   $content .= '<h3>Scores by Game</h3><ul>';
@@ -403,21 +366,6 @@ function summergame_leaderboard_filter_block_content() {
     $query['staff'] = 1;
     $content .= '<li>Public</li>';
     $content .= '<li>' . l('Staff', 'summergame/leaderboard', array('query' => $query)) . '</li>';
-  }
-  $content .= '</ul>';
-
-  // Leaderboard Types
-  $content .= '<h3>Leaderboard Type</h3><ul>';
-  $query = $current;
-  if ($current['team']) {
-    unset($query['team']);
-    $content .= '<li>' . l('Single Player', 'summergame/leaderboard', array('query' => $query)) . '</li>';
-    $content .= '<li>Team</li>';
-  }
-  else {
-    $query['team'] = 1;
-    $content .= '<li>Single Player</li>';
-    $content .= '<li>' . l('Team', 'summergame/leaderboard', array('query' => $query)) . '</li>';
   }
   $content .= '</ul>';
 
@@ -2047,17 +1995,6 @@ function theme_summergame_player_info($player) {
    $completed_classic = 'Not yet! Complete a game card and visit the library to receive a special prize.';
   }
 
-  // List teams
-  $teams = array();
-  $res = db_query("SELECT * FROM sg_players_teams, sg_teams " .
-                  "WHERE sg_players_teams.tid = sg_teams.tid " .
-                  "AND sg_players_teams.pid = %d", $player['pid']);
-  while ($team = db_fetch_array($res)) {
-    $teams[] = l($team['name'], 'summergame/team/' . $team['tid']);
-  }
-  $teams[] = '[ ' . l('See List of Teams', 'summergame/teams') . ' ]';
-  $player['teams'] = implode(', ', $teams);
-
   // Show cell phone options
   if (preg_match('/^[\d]{6}$/', $player['phone'])) {
     // Waiting for cell phone attachment
@@ -2083,7 +2020,6 @@ function theme_summergame_player_info($player) {
     array('<strong>Age Group:</strong>', ucwords($player['agegroup'])),
     array('<strong>Privacy Options:</strong>', $privacy_details),
     array('<strong>Completed Classic Reading Game?:</strong>', $completed_classic),
-    array('<strong>Team Membership:</strong>', $player['teams']),
   );
 
   // Lookup drupal user if admin
@@ -2742,7 +2678,6 @@ function summergame_leaderboard_page() {
   $type = $_GET['type'];
   $range = $_GET['range'];
   $staff = $_GET['staff'];
-  $team = $_GET['team'];
   $rows = ($_GET['rows'] ? $_GET['rows'] : 500);
 
   drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
@@ -2793,63 +2728,34 @@ function summergame_leaderboard_page() {
 
   $args[] = $rows;
   $leaderboard = array();
-  if ($team) {
-    // Show the Team leaderboard
-    $lb_title = 'Team ' . $lb_title;
 
-    $res = db_query('SELECT *, SUM(points) AS lb_total ' .
-                    'FROM sg_ledger, sg_players_teams, sg_teams ' .
-                    "WHERE sg_ledger.metadata NOT LIKE '%%leaderboard:no%%' " .
-                    'AND sg_ledger.pid = sg_players_teams.pid ' .
-                    'AND sg_players_teams.tid = sg_teams.tid ' .
-                    $type_query .
-                    $range_query .
-                    'GROUP BY sg_players_teams.tid ' .
-                    'ORDER BY lb_total DESC ' .
-                    'LIMIT %d', $args);
+  $res = db_query('SELECT *, SUM(points) AS lb_total ' .
+                  'FROM sg_ledger, sg_players ' .
+                  "LEFT JOIN users_roles ON sg_players.uid = users_roles.uid AND users_roles.rid = $staff_rid " .
+                  'WHERE sg_players.pid = sg_ledger.pid ' .
+                  "AND sg_ledger.metadata NOT LIKE '%%leaderboard:no%%' " .
+                  $type_query .
+                  $range_query .
+                  $staff_query .
+                  'GROUP BY sg_players.pid ' .
+                  'ORDER BY lb_total DESC ' .
+                  'LIMIT %d', $args);
 
-    while ($lb_team = db_fetch_array($res)) {
-      // Get player count for the team
-      $players = db_fetch_array(db_query("SELECT COUNT(pid) AS p_count FROM sg_players_teams WHERE tid = %d", $lb_team['tid']));
-
-      $leaderboard[] = array(
-        'Place' => ++$place,
-        'Team' => l($lb_team['name'], 'summergame/team/' . $lb_team['tid']),
-        '# of Players' => array('data' => $players['p_count'], 'class' => 'digits'),
-        'Total Score' => array('data' => $lb_team['lb_total'], 'class' => 'digits'),
-        'Player Average' => array('data' => floor($lb_team['lb_total'] / $players['p_count']), 'class' => 'digits'),
-      );
+  while ($lb_player = db_fetch_array($res)) {
+    if ($lb_player['show_leaderboard']) {
+      $player_name = $lb_player['nickname'] ? $lb_player['nickname'] : $lb_player['name'];
     }
-  }
-  else {
-    $res = db_query('SELECT *, SUM(points) AS lb_total ' .
-                    'FROM sg_ledger, sg_players ' .
-                    "LEFT JOIN users_roles ON sg_players.uid = users_roles.uid AND users_roles.rid = $staff_rid " .
-                    'WHERE sg_players.pid = sg_ledger.pid ' .
-                    "AND sg_ledger.metadata NOT LIKE '%%leaderboard:no%%' " .
-                    $type_query .
-                    $range_query .
-                    $staff_query .
-                    'GROUP BY sg_players.pid ' .
-                    'ORDER BY lb_total DESC ' .
-                    'LIMIT %d', $args);
-
-    while ($lb_player = db_fetch_array($res)) {
-      if ($lb_player['show_leaderboard']) {
-        $player_name = $lb_player['nickname'] ? $lb_player['nickname'] : $lb_player['name'];
-      }
-      else {
-        $player_name = 'Player #' . $lb_player['pid'];
-      }
-      if ($lb_player['show_myscore'] || user_access('administer summergame')) {
-        $player_name = l($player_name, 'summergame/player/' . $lb_player['pid']);
-      }
-      $leaderboard[] = array(
-        'Place' => ++$place,
-        'Player' => $player_name,
-        'Total Score' => array('data' => $lb_player['lb_total'], 'class' => 'digits'),
-      );
+    else {
+      $player_name = 'Player #' . $lb_player['pid'];
     }
+    if ($lb_player['show_myscore'] || user_access('administer summergame')) {
+      $player_name = l($player_name, 'summergame/player/' . $lb_player['pid']);
+    }
+    $leaderboard[] = array(
+      'Place' => ++$place,
+      'Player' => $player_name,
+      'Total Score' => array('data' => $lb_player['lb_total'], 'class' => 'digits'),
+    );
   }
 
   //$pager = theme('pager', NULL, $rows, 0);
@@ -4588,356 +4494,4 @@ function summergame_email_attachment($to, $subject, $message, $from, $fileatt, $
 
   // send mail
   return mail($to, $subject, $message, $headers);
-}
-
-/**
- * UTILITY: Load a team record
- */
-function summergame_team_load($tid) {
-  $result = db_query('SELECT * FROM {sg_teams} WHERE tid = %d', $tid);
-  return db_fetch_array($result);
-}
-
-function summergame_team_access($tid) {
-  $access = FALSE;
-
-  if (user_access('administer summergame')) {
-    $access = TRUE;
-  }
-  else {
-    global $user;
-    if ($user->uid) {
-      $team = summergame_team_load($tid);
-      if ($user->uid == $team['uid']) {
-        $access = TRUE;
-      }
-    }
-  }
-  return $access;
-}
-
-function summergame_team_members($tid) {
-  $members = array();
-
-  $result = db_query('SELECT * FROM sg_players, sg_players_teams ' .
-                     'WHERE sg_players.pid = sg_players_teams.pid ' .
-                     'AND tid = %d', $tid);
-  while ($row = db_fetch_array($result)) {
-    $members[$row['pid']] = $row;
-  }
-
-  return $members;
-}
-
-/**
- * UTILITY: Save a team record
- */
-function summergame_team_save($team) {
-  $query = array();
-  $params = array();
-
-  if ($tid = $team['tid']) {
-    // Update existing team record
-    unset($team['tid']);
-    foreach ($team as $key => $value) {
-      if (strtoupper($value) == 'NULL') {
-        $query[] = $key . ' = NULL';
-      }
-      else {
-        $query[] = $key . ' = ' . (is_numeric($value) ? '%d' : "'%s'");
-        $params[] = $value;
-      }
-    }
-    $params[] = $tid;
-    db_query('UPDATE sg_teams SET ' . implode($query, ', ') . ' WHERE tid = %d', $params);
-  }
-  else {
-    // New team record
-    foreach ($team as $key => $value) {
-      $query[] = $key . ' = ' . (is_numeric($value) ? '%d' : "'%s'");
-      $params[] = $value;
-    }
-    db_query('INSERT INTO sg_teams SET ' . implode($query, ', '), $params);
-    $tid = db_last_insert_id('sg_teams', 'tid');
-  }
-
-  return summergame_team_load(array('tid' => $tid));
-}
-
-/**
- * UTILITY: Delete a team record
- *
- * Uses the same argument as summergame_team_load
- */
-function summergame_team_delete($tid) {
-  if ($team = summergame_team_load($tid)) {
-    // Delete members
-    db_query("DELETE FROM sg_players_teams WHERE tid = %d", $team['tid']);
-    // Delete team info
-    db_query("DELETE FROM sg_teams WHERE tid = %d", $team['tid']);
-  }
-}
-
-function summergame_team_form($form_state, $tid = 0) {
-  global $user;
-  $team = summergame_team_load($tid);
-  $form = array();
-
-  if ($team['tid']) {
-    if (!summergame_team_access($team['tid'])) {
-      drupal_set_message("You do not have acess to this team", 'warning');
-      drupal_goto('summergame/teams');
-    }
-    $form['tid'] = array(
-      '#type' => 'value',
-      '#value' => $team['tid'],
-    );
-    $submit_text = 'Save Team Changes';
-  }
-  else {
-    $submit_text = 'Create New Team';
-  }
-  $form['uid'] = array(
-    '#type' => 'value',
-    '#value' => ($team['uid'] ? $team['uid'] : $user->uid),
-  );
-  $form['name'] = array(
-    '#type' => 'textfield',
-    '#required' => TRUE,
-    '#title' => t('Name'),
-    '#default_value' => $team['name'],
-    '#size' => 30,
-    '#maxlength' => 128,
-    '#description' => t('Name for your team for leaderboards'),
-  );
-  $form['description'] = array(
-    '#type' => 'textarea',
-    '#title' => 'Description',
-    '#default_value' => $team['description'],
-    '#description' => t('More details about your team if needed'),
-  );
-  $form['code'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Team Code'),
-    '#default_value' => $team['code'],
-    '#size' => 16,
-    '#maxlength' => 32,
-    '#description' => t('Want to control who joins your group? Enter a team code to restrict membership. Leave it blank to let anyone join.'),
-  );
-  $form['inline'] = array(
-    '#prefix' => "<div class=\"container-inline\">",
-    '#suffix' => "</div>",
-  );
-  $form['inline']['submit'] = array(
-    '#type' => 'submit',
-    '#value' => t($submit_text),
-  );
-  if ($team['tid']) {
-    $form['inline']['cancel'] = array(
-      '#value' => l('Cancel', 'summergame/team/' . $team['tid']),
-    );
-  }
-
-  return $form;
-}
-
-function summergame_team_form_submit($form, &$form_state) {
-  $team = array(
-    'tid' => $form_state['values']['tid'],
-    'uid' => $form_state['values']['uid'],
-    'name' => $form_state['values']['name'],
-    'description' => $form_state['values']['description'],
-    'code' => $form_state['values']['code'],
-  );
-
-  $team = summergame_team_save($team);
-
-  drupal_goto('summergame/team/' . $team['tid']);
-}
-
-function summergame_teams_list($search = NULL) {
-  $content .= '<ul style="float: right">' .
-              '<li class="button">' .
-              l('Create a New Team', 'summergame/team/edit') .
-              '</li>' .
-              '</ul>';
-
-  $content .= '<h1>Teams List</h1>';
-
-  $res = db_query("SELECT * FROM sg_teams ORDER BY name ASC");
-  while ($team = db_fetch_array($res)) {
-    $member_count = count(summergame_team_members($team['tid']));
-    $content .= '<p>';
-    $content .= '<h2 class="title">' .
-                l($team['name'], 'summergame/team/' . $team['tid']) .
-                '</h2>';
-    $content .= $member_count . ' team member' . ($member_count == 1 ? '' : 's') . '<br />';
-    if ($team['description']) {
-      $content .= '<em>' . $team['description'] . '</em>';
-    }
-    if ($team['code']) {
-      $content .= '<br />*This team requires a code to join';
-    }
-    $content .= '</p>';
-  }
-
-
-
-  return $content;
-}
-
-function summergame_team_page($tid) {
-  global $user;
-  $team = summergame_team_load($tid);
-
-  if ($team['tid']) {
-    drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
-    $team['members'] = summergame_team_members($tid);
-    foreach (summergame_player_load_all($user->uid) as $user_player) {
-      if ($team['members'][$user_player['pid']]) {
-        $team_member = TRUE;
-      }
-    }
-
-    $content .= '<div class="summergame-team-title">';
-    $content .= '<ul class="summergame-team-buttons">';
-    if ($user->uid == $team['uid']) {
-      // User owns this team
-      $content .= '<li class="button">' .
-                  l('Edit Team Details', 'summergame/team/edit/' . $team['tid']) .
-                  '</li>';
-    }
-    $content .= '<li class="button">' .
-                l($team_member ? 'Leave This Team' : 'Join This Team', 'summergame/team/join/' . $team['tid']) .
-                '</li>';
-    $content .= '</ul>';
-
-    $content .= '<h1>Team ' . $team['name'] . '</h1>';
-    if ($team['description']) {
-      $content .= '<p>' . $team['description'] . '</p>';
-    }
-    $content .= '</div>'; // summergame-team-title
-
-    $content .= '<h2>' . count($team['members']) . ' Members:</h2>';
-    foreach ($team['members'] as $member) {
-      if ($member['show_leaderboard']) {
-        $player_name = $member['nickname'] ? $member['nickname'] : $member['name'];
-      }
-      else {
-        $player_name = 'Player #' . $member['pid'];
-      }
-      if ($member['show_myscore'] || user_access('administer summergame')) {
-        $player_name = l($player_name, 'summergame/player/' . $member['pid']);
-      }
-      $content .= "<p>$player_name</p>";
-    }
-  }
-  else {
-    $content .= "<p>No Team with an ID# of $tid could be found.</p>";
-  }
-
-  $content .= '<ul>' .
-              '<li class="button">' .
-              l('Back to Full List of Teams', 'summergame/teams') .
-              '</li>' .
-              '</ul>';
-  return $content;
-}
-
-function summergame_team_join_form($form_state, $tid = 0) {
-  global $user;
-  $player_options = array();
-  $player_defaults = array();
-  $team = summergame_team_load($tid);
-
-  if ($team['tid']) {
-    $team['members'] = summergame_team_members($team['tid']);
-    foreach (summergame_player_load_all($user->uid) as $player) {
-      $player_options[$player['pid']] = $player['name'];
-      if ($team['members'][$player['pid']]) {
-        // Already a member
-        $player_defaults[] = $player['pid'];
-      }
-    }
-
-    $form = array();
-
-    $title = '<p style="float: right">' .
-             l('Back to the Team page', 'summergame/team/' . $team['tid']) .
-             '</p>' .
-             '<h1>Join Team ' . $team['name'] . '</h1>';
-    if ($team['description']) {
-      $title .= '<p>' . $team['description'] . '</p>';
-    }
-    $form['title'] = array(
-      '#value' => $title,
-    );
-    $form['tid'] = array(
-      '#type' => 'value',
-      '#value' => $team['tid'],
-    );
-    $form['pids'] = array(
-      '#type' => 'checkboxes',
-      '#title' => 'Select players to join this team',
-      '#options' => $player_options,
-      '#default_value' => $player_defaults,
-    );
-
-    if ($team['code']) {
-      $form['code'] = array(
-        '#type' => 'textfield',
-        '#title' => 'Team Code',
-        '#size' => 16,
-        '#maxlength' => 32,
-        '#description' => "This team's membership is restricted, please enter the code to join",
-      );
-    }
-    $form['submit'] = array(
-      '#type' => 'submit',
-      '#value' => 'Save Membership',
-    );
-
-    return $form;
-  }
-}
-
-function summergame_team_join_form_submit($form, &$form_state) {
-  $team = summergame_team_load($form_state['values']['tid']);
-  $team['members'] = summergame_team_members($form_state['values']['tid']);
-
-  foreach ($form_state['values']['pids'] as $pid => $checked) {
-    if ($pid == $checked) {
-      // Wants to join
-      if (empty($team['members'][$pid])) {
-        // Not already a member
-        if ($team['code']) {
-          // Check team code
-          if (trim($form_state['values']['code']) == $team['code']) {
-            // Join!
-            db_query("INSERT INTO sg_players_teams SET pid =  %d, tid = %d", $pid, $team['tid']);
-            drupal_set_message('Player #' . $pid . ' joined team ' . $team['name']);
-          }
-          else {
-            drupal_set_message('Sorry, the Team Code you entered is not correct. ' .
-                               'Player #' . $pid . ' unable to join team', 'warning');
-          }
-        }
-        else {
-          // Public team, go ahead and join
-          db_query("INSERT INTO sg_players_teams SET pid =  %d, tid = %d", $pid, $team['tid']);
-          drupal_set_message('Player #' . $pid . ' joined team ' . $team['name']);
-        }
-      }
-    }
-    else {
-      // Doesn't want to be a member
-      if (!empty($team['members'][$pid])) {
-        // Already a member, wants to leave, don't require code
-        db_query("DELETE FROM sg_players_teams WHERE pid = %d AND tid = %d", $pid, $team['tid']);
-        drupal_set_message('Player #' . $pid . ' has left team ' . $team['name']);
-      }
-    }
-  }
-
-  drupal_goto('summergame/team/' . $team['tid']);
 }
