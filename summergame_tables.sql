@@ -185,3 +185,14 @@ CREATE TABLE IF NOT EXISTS `sg_trivia_guesses` (
   `guess` varchar(140) default NULL,
   PRIMARY KEY  (`id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=latin1;
+
+-- ---------------------------------------------------------
+--
+-- Badge Table Alters for 2016
+--
+
+ALTER TABLE `sg_badges` ADD `level` TINYINT NOT NULL AFTER `description`;
+ALTER TABLE `sg_badges` ADD `type` VARCHAR( 64 ) NOT NULL AFTER `level`;
+UPDATE `sg_badges` SET `level` = 1 WHERE `difficulty` = 'Beginner';
+UPDATE `sg_badges` SET `level` = 2 WHERE `difficulty` = 'Advanced';
+UPDATE `sg_badges` SET `level` = 3 WHERE `difficulty` = 'Expert';
