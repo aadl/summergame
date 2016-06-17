@@ -2851,8 +2851,6 @@ FBL;
       }
     }
 
-
-
     $badge_img_src = file_directory_path() . '/sg_images/' . $badge->image;
     if (file_exists($badge_img_src . '_400.png')) {
       $badge_img_src .= '_400.png';
@@ -2879,6 +2877,9 @@ FBL;
       $content .= "?";
     }
     $content .= "</span></span>";
+    if ($badge->type) {
+      $content .= "<br>$badge->type Badge";
+    }
     if ($badge->game_term) {
       $content .= "<br>Part of the $badge->game_term Game";
     }
