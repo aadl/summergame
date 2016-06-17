@@ -81,6 +81,10 @@ td.digits {
   /* margin-top: 0; */
 }
 
+#friend-code {
+  clear: both;
+}
+
 #friend-code #friend-title {
   border-bottom: 1px solid #999;
   padding-bottom: 0.5em;
