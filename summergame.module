@@ -2765,7 +2765,19 @@ FBL;
                   file_create_url($badge_img_src),
                   array('html' => TRUE));
     $content .= "<h1>$badge->title</h1>";
-    $content .= "<p class=\"caption\">Difficulty: $badge->difficulty";
+    $content .= "<p class=\"caption\">Difficulty: ";
+    $content .= "<span class=\"badge-diff\">";
+    $max_level = 4;
+    $cur_level = intval($badge->level);
+    $level_leftover = $max_level - $cur_level;
+    for ($i = 0; $i < $cur_level; $i++) {
+      $content .= "?";
+    }
+    $content .= "<span class=\"badge-diff-faded\">";
+    for ($i = 0; $i < $level_leftover; $i++) {
+      $content .= "?";
+    }
+    $content .= "</span></span>";
     if ($badge->game_term) {
       $content .= "<br>Part of the $badge->game_term Game";
     }
