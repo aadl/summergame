@@ -54,28 +54,6 @@ function summergame_init() {
 }
 
 /**
- * Implementation of hook_user()
- */
-function summergame_user($op, &$edit, &$account, $category = NULL) {
-  if ($op == 'view') {
-    if ($players = summergame_player_load_all($account->uid)) {
-      $account->content['summergame'] = array(
-        '#type' => 'user_profile_category',
-        '#title' => t('Summer Game Player') . (count($players) == 1 ? '' : 's'),
-        '#weight' => 0,
-      );
-      foreach ($players as $player) {
-        $player_text = ($player['nickname'] ? $player['name'] . ' (' . $player['nickname'] . ')' : $player['name']);
-        $account->content['summergame']['player' . $player['pid']] = array(
-          '#type' => 'user_profile_item',
-          '#value' => l($player_text, 'summergame/player/' . $player['pid']),
-        );
-      }
-    }
-  }
-}
-
-/**
  * Implementation of hook_menu().
  */
 function summergame_menu() {
@@ -99,12 +77,6 @@ function summergame_menu() {
   $items['summergame/admin/gamecodes'] = array(
     'title' => 'Administer Game Codes',
     'page callback' => 'summergame_admin_gamecodes',
-    'access arguments' => array('administer summergame'),
-    'type' => MENU_CALLBACK,
-  );
-  $items['summergame/admin/badges'] = array(
-    'title' => 'Administer Badges',
-    'page callback' => 'summergame_admin_badges',
     'access arguments' => array('administer summergame'),
     'type' => MENU_CALLBACK,
   );
@@ -165,12 +137,6 @@ function summergame_menu() {
     'access arguments' => array('access summergame'),
     'type' => MENU_CALLBACK,
   );
-  $items['summergame/player/friends'] = array(
-    'title' => 'Summer Game Player Friend Page',
-    'page callback' => 'summergame_player_friend_page',
-    'access arguments' => array('access summergame'),
-    'type' => MENU_CALLBACK,
-  );
   $items['summergame/player/consume'] = array(
     'title' => 'I Read/Listened/Watched Something',
     'page callback' => 'summergame_player_consume_page',
@@ -227,40 +193,6 @@ function summergame_menu() {
     'page arguments' => array('summergame_delete_player_form'),
     'access callback' => 'summergame_player_access',
     'access arguments' => array(3),
-    'type' => MENU_CALLBACK,
-  );
-  $items['summergame/team'] = array(
-    'title' => 'Summer Game Team Page',
-    'page callback' => 'summergame_team_page',
-    'access arguments' => array('access summergame'),
-    'type' => MENU_CALLBACK,
-  );
-  $items['summergame/team/delete'] = array(
-    'title' => t('Delete Team'),
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('summergame_delete_team_form'),
-    'access callback' => 'summergame_player_access',
-    'access arguments' => array(3),
-    'type' => MENU_CALLBACK,
-  );
-  $items['summergame/team/edit'] = array(
-    'title' => t('Edit Team'),
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('summergame_team_form'),
-    'access arguments' => array('access summergame'),
-    'type' => MENU_CALLBACK,
-  );
-  $items['summergame/team/join'] = array(
-    'title' => t('Join Team'),
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('summergame_team_join_form'),
-    'access arguments' => array('access summergame'),
-    'type' => MENU_CALLBACK,
-  );
-  $items['summergame/teams'] = array(
-    'title' => t('Team List'),
-    'page callback' => 'summergame_teams_list',
-    'access arguments' => array('access summergame'),
     'type' => MENU_CALLBACK,
   );
   $items['summergame/leaderboard'] = array(
@@ -351,9 +283,6 @@ function summergame_leaderboard_filter_block_content() {
   }
   if ($_GET['staff']) {
     $current['staff'] = $_GET['staff'];
-  }
-  if ($_GET['team']) {
-    $current['team'] = $_GET['team'];
   }
 
   // Game Types
@@ -598,7 +527,7 @@ function summergame_admin() {
   $content .= '<h2 class="title">Badges</h2>';
   $sg_image_path = base_path() . file_directory_path() . '/sg_images/';
   $rows = array();
-  $res = db_query("SELECT * FROM sg_badges ORDER BY bid DESC LIMIT $limit");
+  $res = db_query("SELECT * FROM sg_badges ORDER BY bid DESC");
   while ($badge = db_fetch_array($res)) {
     if (!$site_admin) {
       $badge['formula'] = preg_replace('/\B\w/', '*', $badge['formula']);
@@ -607,14 +536,12 @@ function summergame_admin() {
       'Badge ID' => ($site_admin ? l($badge['bid'], 'summergame/admin/badge/' . $badge['bid']) : $badge['bid']),
       'Image' => '<img src="' . $sg_image_path . $badge['image'] . '_100.png">',
       'Title' => '<strong>' . $badge['title'] . '</strong>',
-      'Level' => $badge['level'],
+      'Difficulty' => $badge['difficulty'],
       'Description' => $badge['description'],
       'Formula' => strlen($badge['formula']) > 25 ? substr($badge['formula'], 0, 25) . '...' : $badge['formula'],
     );
   }
   $content .= theme('table', array_keys($rows[0]), $rows);
-  $more_link = l('See all Badges', 'summergame/admin/badges');
-  $content .= "<p class=\"more\">Showing latest $limit badges, $more_link</p>";
 
   $content .= '</div>'; // #summergame-admin-page
 
@@ -685,44 +612,6 @@ function summergame_admin_gamecodes($search_term = '') {
   return $content;
 }
 
-/**
- * PAGE: Show all badges
- */
-function summergame_admin_badges($search_term = '') {
-  drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
-  $site_admin = TRUE; // Use page control for user access
-  $admin_users = user_access('administer users');
-  $content .= '<div id="summergame-admin-page">';
-  $content .= '<h1>Summer Game Badges</h1>';
-
-  // Badges
-  if ($site_admin) {
-    $content .= '<ul class="create-new-code"><li class="button green">' . l("Create New Badge", 'summergame/admin/badge') . '</li></ul>';
-  }
-  $content .= '<h2 class="title">Badges</h2>';
-  $sg_image_path = base_path() . file_directory_path() . '/sg_images/';
-  $rows = array();
-  $res = db_query("SELECT * FROM sg_badges ORDER BY bid DESC");
-  while ($badge = db_fetch_array($res)) {
-    if (!$site_admin) {
-      $badge['formula'] = preg_replace('/\B\w/', '*', $badge['formula']);
-    }
-    $rows[] = array(
-      'Badge ID' => ($site_admin ? l($badge['bid'], 'summergame/admin/badge/' . $badge['bid']) : $badge['bid']),
-      'Image' => '<img src="' . $sg_image_path . $badge['image'] . '_100.png">',
-      'Title' => '<strong>' . $badge['title'] . '</strong>',
-      'Level' => $badge['level'],
-      'Description' => $badge['description'],
-      'Formula' => strlen($badge['formula']) > 25 ? substr($badge['formula'], 0, 25) . '...' : $badge['formula'],
-    );
-  }
-  $content .= theme('table', array_keys($rows[0]), $rows);
-
-  $content .= '</div>'; // #summergame-admin-page
-
-  return $content;
-}
-
 function summergame_admin_gamecode_search_form(&$form_state, $search_query = NULL) {
   $form['inline'] = array(
     '#prefix' => '<div class="container-inline">',
@@ -779,25 +668,6 @@ function summergame_code_edit_form($form_state, $game_code) {
       '#type' => 'value',
       '#value' => $game_code['code_id'],
     );
-
-    // Search for code in catalog
-    $l = sopac_get_locum();
-    $tags = $l->db_query('SELECT * FROM insurge_tags WHERE tag="sg:code=' . $game_code['text'] . '"', 0);
-    foreach ($tags as $tag) {
-      $bibs[] = $l->get_bib_item($tag['bnum']);
-    }
-
-    if (count($bibs)) {
-      $gc_bibs = '<p><h2>Game Code in Catalog:</h2><ul>';
-      foreach ($bibs as $bib) {
-        $gc_bibs .= '<li>' . l($bib['title'], 'catalog/record/' . $bib['bnum']);
-        if ($bib['author']) {
-          $gc_bibs .= ', by ' . $bib['author'];
-        }
-        $gc_bibs .= '</li>';
-      }
-      $gc_bibs .= '</ul></p>';
-    }
   }
   $form['text'] = array(
     '#type' => 'textfield',
@@ -887,7 +757,6 @@ function summergame_code_edit_form($form_state, $game_code) {
     '#size' => 32,
     '#maxlength' => 8,
     '#description' => t('Enter a Bib Number to automatically add this game code as a tag to that Bib record in the catalog'),
-    '#suffix' => $gc_bibs,
   );
 
   $form['submit'] = array(
@@ -999,30 +868,14 @@ function summergame_admin_badge_form($form_state, $bid = 0) {
     '#default_value' => $badge['description'],
     '#description' => t('Description of the Badge'),
   );
-  $form['level'] = array(
-    '#type' => 'radios',
-    '#title' => t('Level'),
-    '#options' => array(
-      1 => 'Level 1: Tells you explicitly what to do and requires no external sources',
-      2 => 'Level 2: Direct, but brings in external sources, be explicit on search terms and material types',
-      3 => 'Level 3: Difficulty increases in the clues become more obtuse, wordplay or capitalization should help you narrow your search',
-      4 => 'Level 4: Operations are required to get to the next level - decoding, figuring latitute/longitude, etc.',
-    ),
-    '#default_value' => $badge['level'],
-    '#description' => t('The level of the difficulty of the Badge'),
-  );
-  $form['type'] = array(
-    '#type' => 'radios',
-    '#title' => t('Type'),
-    '#options' => array('Milestone' => 'Milestone', 'Web Search' => 'Web Search', 'Exploration' => 'Exploration', 'Event' => 'Event'),
-    '#default_value' => $badge['type'],
-    '#size' => 64,
-    '#maxlength' => 255,
-    '#description' => t('Type of Badge'),
-  );
   $form['difficulty'] = array(
-    '#type' => 'value',
-    '#value' => $badge['difficulty'],
+    '#type' => 'radios',
+    '#title' => t('Difficulty'),
+    '#options' => array('Beginner' => 'Beginner', 'Advanced' => 'Advanced', 'Expert' => 'Expert'),
+    '#default_value' => $badge['difficulty'],
+    '#size' => 32,
+    '#maxlength' => 255,
+    '#description' => t('Difficulty of the Badge'),
   );
   $form['formula'] = array(
     '#type' => 'textarea',
@@ -1105,13 +958,12 @@ function summergame_admin_badge_form_submit($form, &$form_state) {
   if ($form_state['values']['bid']) {
     // Update existing code
     db_query("UPDATE sg_badges SET image = '%s', title = '%s', description = '%s', " .
-             "level = %d, type = '%s', difficulty = '%s', formula = '%s', reveal = '%s', " .
+             "difficulty = '%s', formula = '%s', reveal = '%s', " .
              "points = %d, points_override = '%s', game_term = '%s', " .
              "game_term_override = '%s', active = %d, email_message = '%s', " .
              "email_attachment = '%s' WHERE bid = %d",
              $form_state['values']['image'], $form_state['values']['title'],
-             $form_state['values']['description'], $form_state['values']['level'],
-             $form_state['values']['type'], $form_state['values']['difficulty'],
+             $form_state['values']['description'], $form_state['values']['difficulty'],
              $form_state['values']['formula'], $form_state['values']['reveal'],
              $form_state['values']['points'], $form_state['values']['points_override'],
              $form_state['values']['game_term'], $form_state['values']['game_term_override'],
@@ -1121,12 +973,10 @@ function summergame_admin_badge_form_submit($form, &$form_state) {
   }
   else {
     db_query("INSERT INTO sg_badges " .
-             "(bid, image, title, description, level, type, difficulty, formula, reveal, points, " .
-             "points_override, game_term, game_term_override, active, email_message, email_attachment) " .
-             "VALUES (NULL, '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%d', '%s', '%s')",
+             "(bid, image, title, description, difficulty, formula, reveal, points, points_override, game_term, game_term_override, active, email_message, email_attachment) " .
+             "VALUES (NULL, '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%d', '%s', '%s')",
              $form_state['values']['image'], $form_state['values']['title'],
-             $form_state['values']['description'], $form_state['values']['level'],
-             $form_state['values']['type'], $form_state['values']['difficulty'],
+             $form_state['values']['description'], $form_state['values']['difficulty'],
              $form_state['values']['formula'], $form_state['values']['reveal'],
              $form_state['values']['points'], $form_state['values']['points_override'],
              $form_state['values']['game_term'], $form_state['values']['game_term_override'],
@@ -2047,17 +1897,6 @@ function theme_summergame_player_info($player) {
    $completed_classic = 'Not yet! Complete a game card and visit the library to receive a special prize.';
   }
 
-  // List teams
-  $teams = array();
-  $res = db_query("SELECT * FROM sg_players_teams, sg_teams " .
-                  "WHERE sg_players_teams.tid = sg_teams.tid " .
-                  "AND sg_players_teams.pid = %d", $player['pid']);
-  while ($team = db_fetch_array($res)) {
-    $teams[] = l($team['name'], 'summergame/team/' . $team['tid']);
-  }
-  $teams[] = '[ ' . l('See List of Teams', 'summergame/teams') . ' ]';
-  $player['teams'] = implode(', ', $teams);
-
   // Show cell phone options
   if (preg_match('/^[\d]{6}$/', $player['phone'])) {
     // Waiting for cell phone attachment
@@ -2083,7 +1922,6 @@ function theme_summergame_player_info($player) {
     array('<strong>Age Group:</strong>', ucwords($player['agegroup'])),
     array('<strong>Privacy Options:</strong>', $privacy_details),
     array('<strong>Completed Classic Reading Game?:</strong>', $completed_classic),
-    array('<strong>Team Membership:</strong>', $player['teams']),
   );
 
   // Lookup drupal user if admin
@@ -2179,148 +2017,26 @@ function theme_summergame_player_info($player) {
   $content .= "<p>You now can have a code of your own! If another player enters your Friend Code, they'll start following you, and " .
               "you'll EACH earn 100 points. If you enter the Friend Code of any of your followers, you'll become Friends and each earn an additional " .
               "50 point bonus.</p>";
-  $display_limit = 5;
-
   $following_header = '<span class="hint--bottom" data-hint="You have entered these players\' Friend Codes">Following: ' .
                       count($following) . '</span>';
   $content .= theme('table',
                     array(array('data' => $following_header, 'colspan' => 2)),
-                    array_slice($following, 0, $display_limit));
+                    $following);
   $followers_header = '<span class="hint--bottom" data-hint="These Players have entered your Friend Code">Followers: ' .
                       count($followers) . '</span>';
   $content .= theme('table',
                     array(array('data' => $followers_header, 'colspan' => 2)),
-                    array_slice($followers, 0, $display_limit));
+                    $followers);
   $friends_header = '<span class="hint--left" data-hint="You and these Players have entered each others\' Friend Codes">Friends: ' .
                     count($friends) . '</span>';
   $content .= theme('table',
                     array(array('data' => $friends_header, 'colspan' => 2)),
-                    array_slice($friends, 0, $display_limit));
-
-  if ($following_counter > $display_limit ||
-      $follower_counter > $display_limit ||
-      $friend_counter > $display_limit) {
-    $friend_page_link = l('See full list of Friends', 'summergame/player/friends/' . $player['pid']);
-    $content .= "<p style=\"clear: left\">(Limiting display to $display_limit players. $friend_page_link.)</p>";
-  }
-
+                    $friends);
   $content .= '</div>'; // $friend-code
 
   $content .= '</div>'; // #player-card
 
   return $content;
-}
-
-/**
- *  PAGE: List all friends
- */
-function summergame_player_friend_page($pid = 0) {
-  global $user;
-  drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
-  $pid = intval($pid);
-
-  if ($pid) {
-    $player = summergame_player_load(array('pid' => $pid));
-  }
-  else if ($user->uid) {
-    // Default to the logged in player if none specified
-    $player = $user->player;
-  }
-
-  if ($player) {
-    // Following, Followers, Friends
-    $following = array();
-    $following_pids = array();
-    $followers = array();
-    $friends = array();
-
-    $res = db_query("SELECT * FROM sg_ledger WHERE pid = %d AND metadata LIKE '%%fc_player:%%'", $player['pid']);
-    while ($row = db_fetch_object($res)) {
-      // grab player ID
-      preg_match('/fc_player:([\d]+)/', $row->metadata, $matches);
-      $following_player = summergame_player_load($matches[1]);
-      if ($following_player['show_leaderboard']) {
-        $player_name = $following_player['nickname'] ? $following_player['nickname'] : $following_player['name'];
-      }
-      else {
-        $player_name = 'Player #' . $following_player['pid'];
-      }
-      if ($following_player['show_myscore'] || user_access('administer summergame')) {
-        $player_name = l($player_name, 'summergame/player/' . $following_player['pid']);
-      }
-      $following[] = array(
-        'count' => ++$following_counter,
-        'player' => $player_name,
-      );
-      $following_pids[] = $matches[1];
-    }
-    $res = db_query("SELECT * FROM sg_ledger WHERE metadata LIKE 'fc_player:%d'", $player['pid']);
-    while ($row = db_fetch_object($res)) {
-      $follower_player = summergame_player_load($row->pid);
-      if ($follower_player['show_leaderboard']) {
-        $player_name = $follower_player['nickname'] ? $follower_player['nickname'] : $follower_player['name'];
-      }
-      else {
-        $player_name = 'Player #' . $follower_player['pid'];
-      }
-      if ($follower_player['show_myscore'] || user_access('administer summergame')) {
-        $player_name = l($player_name, 'summergame/player/' . $follower_player['pid']);
-      }
-      $followers[] = array(
-        'count' => ++$follower_counter,
-        'player' => $player_name,
-      );
-      if (in_array($row->pid, $following_pids)) {
-        $friends[] = array(
-          'count' => ++$friend_counter,
-          'player' => $player_name,
-        );
-      }
-    }
-
-    $content .= '<div id="friend-code">';
-    $content .= '<div id="friend-title"><h2>FRIEND CODE: ' . $player['friend_code'] . '</h2>';
-    if (count($followers) == 0) {
-      if ($player['friend_code']) {
-        $action = 'I WANT A DIFFERENT';
-        $hint = 'Get a new random Friend Code. You can\'t change it once you give it out.';
-      }
-      else {
-        $action = 'GENERATE';
-        $hint = "Create a random Friend Code for yourself. You can try again if you don't like it.";
-      }
-      $options = array('html' => TRUE, 'attributes' => array('class' => 'hint--bottom',
-                                                             'data-hint' => $hint,
-                                                             ));
-      $content .= '[ ' . l($action . ' CODE', 'summergame/player/gfc/' . $player['pid'], $options) . ' ]';
-    }
-    $content .= '</div>';
-    $content .= "<p>You now can have a code of your own! If another player enters your Friend Code, they'll start following you, and " .
-                "you'll EACH earn 100 points. If you enter the Friend Code of any of your followers, you'll become Friends and each earn an additional " .
-                "50 point bonus.</p>";
-    $following_header = '<span class="hint--bottom" data-hint="You have entered these players\' Friend Codes">Following: ' .
-                        count($following) . '</span>';
-    $content .= theme('table',
-                      array(array('data' => $following_header, 'colspan' => 2)),
-                      $following);
-    $followers_header = '<span class="hint--bottom" data-hint="These Players have entered your Friend Code">Followers: ' .
-                        count($followers) . '</span>';
-    $content .= theme('table',
-                      array(array('data' => $followers_header, 'colspan' => 2)),
-                      $followers);
-    $friends_header = '<span class="hint--left" data-hint="You and these Players have entered each others\' Friend Codes">Friends: ' .
-                      count($friends) . '</span>';
-    $content .= theme('table',
-                      array(array('data' => $friends_header, 'colspan' => 2)),
-                      $friends);
-    $content .= '</div>'; // $friend-code
-  }
-  else {
-    $content .= '<p>No Player Found</p>';
-  }
-
-  return $content;
-
 }
 
 function theme_summergame_player_page($player, $player_access) {
@@ -2742,7 +2458,6 @@ function summergame_leaderboard_page() {
   $type = $_GET['type'];
   $range = $_GET['range'];
   $staff = $_GET['staff'];
-  $team = $_GET['team'];
   $rows = ($_GET['rows'] ? $_GET['rows'] : 500);
 
   drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
@@ -2793,64 +2508,36 @@ function summergame_leaderboard_page() {
 
   $args[] = $rows;
   $leaderboard = array();
-  if ($team) {
-    // Show the Team leaderboard
-    $lb_title = 'Team ' . $lb_title;
 
-    $res = db_query('SELECT *, SUM(points) AS lb_total ' .
-                    'FROM sg_ledger, sg_players_teams, sg_teams ' .
-                    "WHERE sg_ledger.metadata NOT LIKE '%%leaderboard:no%%' " .
-                    'AND sg_ledger.pid = sg_players_teams.pid ' .
-                    'AND sg_players_teams.tid = sg_teams.tid ' .
-                    $type_query .
-                    $range_query .
-                    'GROUP BY sg_players_teams.tid ' .
-                    'ORDER BY lb_total DESC ' .
-                    'LIMIT %d', $args);
+  $res = db_query('SELECT *, SUM(points) AS lb_total ' .
+                  'FROM sg_ledger, sg_players ' .
+                  "LEFT JOIN users_roles ON sg_players.uid = users_roles.uid AND users_roles.rid = $staff_rid " .
+                  'WHERE sg_players.pid = sg_ledger.pid ' .
+                  "AND sg_ledger.metadata NOT LIKE '%%leaderboard:no%%' " .
+                  $type_query .
+                  $range_query .
+                  $staff_query .
+                  'GROUP BY sg_players.pid ' .
+                  'ORDER BY lb_total DESC ' .
+                  'LIMIT %d', $args);
 
-    while ($lb_team = db_fetch_array($res)) {
-      // Get player count for the team
-      $players = db_fetch_array(db_query("SELECT COUNT(pid) AS p_count FROM sg_players_teams WHERE tid = %d", $lb_team['tid']));
-
-      $leaderboard[] = array(
-        'Place' => ++$place,
-        'Team' => l($lb_team['name'], 'summergame/team/' . $lb_team['tid']),
-        '# of Players' => array('data' => $players['p_count'], 'class' => 'digits'),
-        'Total Score' => array('data' => $lb_team['lb_total'], 'class' => 'digits'),
-        'Player Average' => array('data' => floor($lb_team['lb_total'] / $players['p_count']), 'class' => 'digits'),
-      );
+  while ($lb_player = db_fetch_array($res)) {
+    if ($lb_player['show_leaderboard']) {
+      $player_name = $lb_player['nickname'] ? $lb_player['nickname'] : $lb_player['name'];
     }
-  }
-  else {
-    $res = db_query('SELECT *, SUM(points) AS lb_total ' .
-                    'FROM sg_ledger, sg_players ' .
-                    "LEFT JOIN users_roles ON sg_players.uid = users_roles.uid AND users_roles.rid = $staff_rid " .
-                    'WHERE sg_players.pid = sg_ledger.pid ' .
-                    "AND sg_ledger.metadata NOT LIKE '%%leaderboard:no%%' " .
-                    $type_query .
-                    $range_query .
-                    $staff_query .
-                    'GROUP BY sg_players.pid ' .
-                    'ORDER BY lb_total DESC ' .
-                    'LIMIT %d', $args);
-
-    while ($lb_player = db_fetch_array($res)) {
-      if ($lb_player['show_leaderboard']) {
-        $player_name = $lb_player['nickname'] ? $lb_player['nickname'] : $lb_player['name'];
-      }
-      else {
-        $player_name = 'Player #' . $lb_player['pid'];
-      }
-      if ($lb_player['show_myscore'] || user_access('administer summergame')) {
-        $player_name = l($player_name, 'summergame/player/' . $lb_player['pid']);
-      }
-      $leaderboard[] = array(
-        'Place' => ++$place,
-        'Player' => $player_name,
-        'Total Score' => array('data' => $lb_player['lb_total'], 'class' => 'digits'),
-      );
+    else {
+      $player_name = 'Player #' . $lb_player['pid'];
     }
+    if ($lb_player['show_myscore'] || user_access('administer summergame')) {
+      $player_name = l($player_name, 'summergame/player/' . $lb_player['pid']);
+    }
+    $leaderboard[] = array(
+      'Place' => ++$place,
+      'Player' => $player_name,
+      'Total Score' => array('data' => $lb_player['lb_total'], 'class' => 'digits'),
+    );
   }
+  
 
   //$pager = theme('pager', NULL, $rows, 0);
 
@@ -3201,8 +2888,11 @@ function theme_summergame_badge() {
     $img_title = htmlentities($img_title);
     $content .= l("<img class=\"$img_class\" title=\"$img_title\" src=\"$img_src\">",
                   'summergame/badge/' . $bid,
-                  array('html' => TRUE)
-                );
+                  array('html' => TRUE,
+                        'query' => array('lightbox' => 1),
+                        'attributes' => array('rel' => 'lightframe'),
+                    )
+                  );
   }
   return $content;
 }
@@ -3409,15 +3099,14 @@ function summergame_twilio_respond($incoming) {
     $answer = variable_get('summergame_trivia_answer', '');
 
     db_query("INSERT INTO sg_trivia_guesses (guess) VALUES ('%s')", $guess);
-    $guesstext = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $incoming['text']));
-    if (stripos($guesstext, $answer) !== FALSE) {
+    if (stripos($guess, $answer) !== FALSE) {
       // Correct Answer
       if (db_query("INSERT INTO sg_trivia_correct (phone) VALUES ('%d')", $incoming['phone'])) {
         $place = db_last_insert_id('sg_trivia', 'id');
-        $points = 101 - $place;
+        $points = 51 - $place;
 
         summergame_player_points($player['pid'], $points, 'Correct Trivia Answer',
-                                 "Correct Answer #$place: $guess", '', 'BuellerBueller');
+                                 "Correct Answer #$place: $guess", '', 'GenderMindBender');
 
         $response = $response_template;
         $response['text'] = "Your answer of \"$guess\" is Correct Answer #$place! You earn $points points.";
@@ -4182,34 +3871,32 @@ function summergame_pdf($type = 'adult', $code_id = 0) {
     $pdf->setSourceFile($file_path . 'code_template.pdf');
     $tplidx = $pdf->importPage(1);
     $pdf->useTemplate($tplidx);
-    $pdf->SetMargins(20, 17);
+    $pdf->SetMargins(18, 17);
     $page_width = $pdf->w - $pdf->lMargin - $pdf->rMargin;
 
     // now write some text
-    $pdf->AddFont('Quicksand-Bold', '', 'Quicksand-Bold.php');
+    $pdf->AddFont('Neris-Black', '', 'Neris-Black.php');
     $font_size = 100;
-    $pdf->SetFont('Quicksand-Bold', '', $font_size);
+    $pdf->SetFont('Neris-Black', '', $font_size);
     while ($pdf->GetStringWidth($event_code) > $page_width) {
       $font_size -= 5;
-      $pdf->SetFont('Quicksand-Bold', '', $font_size);
+      $pdf->SetFont('Neris-Black', '', $font_size);
     }
-    $pdf->SetXY($pdf->lMargin, 53);
+    $pdf->SetXY($pdf->lMargin, 45);
     $pdf->Cell(0, 10, $event_code, 0, 1, 'C');
 
-    $pdf->SetFont('Quicksand-Bold', '', 95);
-    $pdf->SetXY($pdf->lMargin, 125);
+    $pdf->SetFont('Neris-Black', '', 95);
+    $pdf->SetXY($pdf->lMargin, 103);
     $pdf->Cell(0, 10, $event_points, 0, 1, 'C');
 
-/*
     // Description
     $desc_Y = 192;
-    $pdf->SetFont('Quicksand-Bold', '', 13);
+    $pdf->SetFont('Neris-Black', '', 13);
     foreach ($description as $desc_line) {
       $pdf->SetXY($pdf->lMargin, $desc_Y);
       $pdf->Cell($page_width - 35, 7, $desc_line, 0);
       $desc_Y -= 7;
     }
-*/
 
     // add the QR Code
     $pdf->SetXY(-50, -50);
@@ -4219,11 +3906,11 @@ function summergame_pdf($type = 'adult', $code_id = 0) {
   }
   else if ($type == 'youth') {
     $redis->incr('ygpdfcounter');
-    drupal_goto($file_path . 'SG_Youth_2016.pdf');
+    drupal_goto($file_path . 'SG_Youth_2015.pdf');
   }
   else { // default to the adult single player form
     $redis->incr('agpdfcounter');
-    drupal_goto($file_path . 'SG_Adult_Teen_2016.pdf');
+    drupal_goto($file_path . 'SG_Adult_Teen_2015.pdf');
   }
 }
 
@@ -4588,356 +4275,4 @@ function summergame_email_attachment($to, $subject, $message, $from, $fileatt, $
 
   // send mail
   return mail($to, $subject, $message, $headers);
-}
-
-/**
- * UTILITY: Load a team record
- */
-function summergame_team_load($tid) {
-  $result = db_query('SELECT * FROM {sg_teams} WHERE tid = %d', $tid);
-  return db_fetch_array($result);
-}
-
-function summergame_team_access($tid) {
-  $access = FALSE;
-
-  if (user_access('administer summergame')) {
-    $access = TRUE;
-  }
-  else {
-    global $user;
-    if ($user->uid) {
-      $team = summergame_team_load($tid);
-      if ($user->uid == $team['uid']) {
-        $access = TRUE;
-      }
-    }
-  }
-  return $access;
-}
-
-function summergame_team_members($tid) {
-  $members = array();
-
-  $result = db_query('SELECT * FROM sg_players, sg_players_teams ' .
-                     'WHERE sg_players.pid = sg_players_teams.pid ' .
-                     'AND tid = %d', $tid);
-  while ($row = db_fetch_array($result)) {
-    $members[$row['pid']] = $row;
-  }
-
-  return $members;
-}
-
-/**
- * UTILITY: Save a team record
- */
-function summergame_team_save($team) {
-  $query = array();
-  $params = array();
-
-  if ($tid = $team['tid']) {
-    // Update existing team record
-    unset($team['tid']);
-    foreach ($team as $key => $value) {
-      if (strtoupper($value) == 'NULL') {
-        $query[] = $key . ' = NULL';
-      }
-      else {
-        $query[] = $key . ' = ' . (is_numeric($value) ? '%d' : "'%s'");
-        $params[] = $value;
-      }
-    }
-    $params[] = $tid;
-    db_query('UPDATE sg_teams SET ' . implode($query, ', ') . ' WHERE tid = %d', $params);
-  }
-  else {
-    // New team record
-    foreach ($team as $key => $value) {
-      $query[] = $key . ' = ' . (is_numeric($value) ? '%d' : "'%s'");
-      $params[] = $value;
-    }
-    db_query('INSERT INTO sg_teams SET ' . implode($query, ', '), $params);
-    $tid = db_last_insert_id('sg_teams', 'tid');
-  }
-
-  return summergame_team_load(array('tid' => $tid));
-}
-
-/**
- * UTILITY: Delete a team record
- *
- * Uses the same argument as summergame_team_load
- */
-function summergame_team_delete($tid) {
-  if ($team = summergame_team_load($tid)) {
-    // Delete members
-    db_query("DELETE FROM sg_players_teams WHERE tid = %d", $team['tid']);
-    // Delete team info
-    db_query("DELETE FROM sg_teams WHERE tid = %d", $team['tid']);
-  }
-}
-
-function summergame_team_form($form_state, $tid = 0) {
-  global $user;
-  $team = summergame_team_load($tid);
-  $form = array();
-
-  if ($team['tid']) {
-    if (!summergame_team_access($team['tid'])) {
-      drupal_set_message("You do not have acess to this team", 'warning');
-      drupal_goto('summergame/teams');
-    }
-    $form['tid'] = array(
-      '#type' => 'value',
-      '#value' => $team['tid'],
-    );
-    $submit_text = 'Save Team Changes';
-  }
-  else {
-    $submit_text = 'Create New Team';
-  }
-  $form['uid'] = array(
-    '#type' => 'value',
-    '#value' => ($team['uid'] ? $team['uid'] : $user->uid),
-  );
-  $form['name'] = array(
-    '#type' => 'textfield',
-    '#required' => TRUE,
-    '#title' => t('Name'),
-    '#default_value' => $team['name'],
-    '#size' => 30,
-    '#maxlength' => 128,
-    '#description' => t('Name for your team for leaderboards'),
-  );
-  $form['description'] = array(
-    '#type' => 'textarea',
-    '#title' => 'Description',
-    '#default_value' => $team['description'],
-    '#description' => t('More details about your team if needed'),
-  );
-  $form['code'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Team Code'),
-    '#default_value' => $team['code'],
-    '#size' => 16,
-    '#maxlength' => 32,
-    '#description' => t('Want to control who joins your group? Enter a team code to restrict membership. Leave it blank to let anyone join.'),
-  );
-  $form['inline'] = array(
-    '#prefix' => "<div class=\"container-inline\">",
-    '#suffix' => "</div>",
-  );
-  $form['inline']['submit'] = array(
-    '#type' => 'submit',
-    '#value' => t($submit_text),
-  );
-  if ($team['tid']) {
-    $form['inline']['cancel'] = array(
-      '#value' => l('Cancel', 'summergame/team/' . $team['tid']),
-    );
-  }
-
-  return $form;
-}
-
-function summergame_team_form_submit($form, &$form_state) {
-  $team = array(
-    'tid' => $form_state['values']['tid'],
-    'uid' => $form_state['values']['uid'],
-    'name' => $form_state['values']['name'],
-    'description' => $form_state['values']['description'],
-    'code' => $form_state['values']['code'],
-  );
-
-  $team = summergame_team_save($team);
-
-  drupal_goto('summergame/team/' . $team['tid']);
-}
-
-function summergame_teams_list($search = NULL) {
-  $content .= '<ul style="float: right">' .
-              '<li class="button">' .
-              l('Create a New Team', 'summergame/team/edit') .
-              '</li>' .
-              '</ul>';
-
-  $content .= '<h1>Teams List</h1>';
-
-  $res = db_query("SELECT * FROM sg_teams ORDER BY name ASC");
-  while ($team = db_fetch_array($res)) {
-    $member_count = count(summergame_team_members($team['tid']));
-    $content .= '<p>';
-    $content .= '<h2 class="title">' .
-                l($team['name'], 'summergame/team/' . $team['tid']) .
-                '</h2>';
-    $content .= $member_count . ' team member' . ($member_count == 1 ? '' : 's') . '<br />';
-    if ($team['description']) {
-      $content .= '<em>' . $team['description'] . '</em>';
-    }
-    if ($team['code']) {
-      $content .= '<br />*This team requires a code to join';
-    }
-    $content .= '</p>';
-  }
-
-
-
-  return $content;
-}
-
-function summergame_team_page($tid) {
-  global $user;
-  $team = summergame_team_load($tid);
-
-  if ($team['tid']) {
-    drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
-    $team['members'] = summergame_team_members($tid);
-    foreach (summergame_player_load_all($user->uid) as $user_player) {
-      if ($team['members'][$user_player['pid']]) {
-        $team_member = TRUE;
-      }
-    }
-
-    $content .= '<div class="summergame-team-title">';
-    $content .= '<ul class="summergame-team-buttons">';
-    if ($user->uid == $team['uid']) {
-      // User owns this team
-      $content .= '<li class="button">' .
-                  l('Edit Team Details', 'summergame/team/edit/' . $team['tid']) .
-                  '</li>';
-    }
-    $content .= '<li class="button">' .
-                l($team_member ? 'Leave This Team' : 'Join This Team', 'summergame/team/join/' . $team['tid']) .
-                '</li>';
-    $content .= '</ul>';
-
-    $content .= '<h1>Team ' . $team['name'] . '</h1>';
-    if ($team['description']) {
-      $content .= '<p>' . $team['description'] . '</p>';
-    }
-    $content .= '</div>'; // summergame-team-title
-
-    $content .= '<h2>' . count($team['members']) . ' Members:</h2>';
-    foreach ($team['members'] as $member) {
-      if ($member['show_leaderboard']) {
-        $player_name = $member['nickname'] ? $member['nickname'] : $member['name'];
-      }
-      else {
-        $player_name = 'Player #' . $member['pid'];
-      }
-      if ($member['show_myscore'] || user_access('administer summergame')) {
-        $player_name = l($player_name, 'summergame/player/' . $member['pid']);
-      }
-      $content .= "<p>$player_name</p>";
-    }
-  }
-  else {
-    $content .= "<p>No Team with an ID# of $tid could be found.</p>";
-  }
-
-  $content .= '<ul>' .
-              '<li class="button">' .
-              l('Back to Full List of Teams', 'summergame/teams') .
-              '</li>' .
-              '</ul>';
-  return $content;
-}
-
-function summergame_team_join_form($form_state, $tid = 0) {
-  global $user;
-  $player_options = array();
-  $player_defaults = array();
-  $team = summergame_team_load($tid);
-
-  if ($team['tid']) {
-    $team['members'] = summergame_team_members($team['tid']);
-    foreach (summergame_player_load_all($user->uid) as $player) {
-      $player_options[$player['pid']] = $player['name'];
-      if ($team['members'][$player['pid']]) {
-        // Already a member
-        $player_defaults[] = $player['pid'];
-      }
-    }
-
-    $form = array();
-
-    $title = '<p style="float: right">' .
-             l('Back to the Team page', 'summergame/team/' . $team['tid']) .
-             '</p>' .
-             '<h1>Join Team ' . $team['name'] . '</h1>';
-    if ($team['description']) {
-      $title .= '<p>' . $team['description'] . '</p>';
-    }
-    $form['title'] = array(
-      '#value' => $title,
-    );
-    $form['tid'] = array(
-      '#type' => 'value',
-      '#value' => $team['tid'],
-    );
-    $form['pids'] = array(
-      '#type' => 'checkboxes',
-      '#title' => 'Select players to join this team',
-      '#options' => $player_options,
-      '#default_value' => $player_defaults,
-    );
-
-    if ($team['code']) {
-      $form['code'] = array(
-        '#type' => 'textfield',
-        '#title' => 'Team Code',
-        '#size' => 16,
-        '#maxlength' => 32,
-        '#description' => "This team's membership is restricted, please enter the code to join",
-      );
-    }
-    $form['submit'] = array(
-      '#type' => 'submit',
-      '#value' => 'Save Membership',
-    );
-
-    return $form;
-  }
-}
-
-function summergame_team_join_form_submit($form, &$form_state) {
-  $team = summergame_team_load($form_state['values']['tid']);
-  $team['members'] = summergame_team_members($form_state['values']['tid']);
-
-  foreach ($form_state['values']['pids'] as $pid => $checked) {
-    if ($pid == $checked) {
-      // Wants to join
-      if (empty($team['members'][$pid])) {
-        // Not already a member
-        if ($team['code']) {
-          // Check team code
-          if (trim($form_state['values']['code']) == $team['code']) {
-            // Join!
-            db_query("INSERT INTO sg_players_teams SET pid =  %d, tid = %d", $pid, $team['tid']);
-            drupal_set_message('Player #' . $pid . ' joined team ' . $team['name']);
-          }
-          else {
-            drupal_set_message('Sorry, the Team Code you entered is not correct. ' .
-                               'Player #' . $pid . ' unable to join team', 'warning');
-          }
-        }
-        else {
-          // Public team, go ahead and join
-          db_query("INSERT INTO sg_players_teams SET pid =  %d, tid = %d", $pid, $team['tid']);
-          drupal_set_message('Player #' . $pid . ' joined team ' . $team['name']);
-        }
-      }
-    }
-    else {
-      // Doesn't want to be a member
-      if (!empty($team['members'][$pid])) {
-        // Already a member, wants to leave, don't require code
-        db_query("DELETE FROM sg_players_teams WHERE pid = %d AND tid = %d", $pid, $team['tid']);
-        drupal_set_message('Player #' . $pid . ' has left team ' . $team['name']);
-      }
-    }
-  }
-
-  drupal_goto('summergame/team/' . $team['tid']);
 }
