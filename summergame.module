@@ -241,12 +241,6 @@ function summergame_menu() {
     'access arguments' => array('access summergame'),
     'type' => MENU_CALLBACK,
   );
-  $items['summergame/badges'] = array(
-    'title' => 'Summer Game Badges',
-    'page callback' => 'summergame_badges_page',
-    'access arguments' => array('access summergame'),
-    'type' => MENU_CALLBACK,
-  );
   $items['summergame/pdf'] = array(
     'title' => t('Summer Game PDF'),
     'page callback' => 'summergame_pdf',
@@ -2767,40 +2761,6 @@ function summergame_leaderboard_page() {
   else {
     $content .= "<p>No scores found</p>";
   }
-
-  return $content;
-}
-
-/**
- * PAGE: Badges Page
- */
-function summergame_badges_page($game_term = '') {
-  $sg_image_path = base_path() . file_directory_path() . '/sg_images/';
-  $rows = array();
-  if ($game_term) {
-    $res = db_query("SELECT * FROM sg_badges WHERE game_term = '%s' ORDER BY title ASC", $game_term);
-  }
-  else {
-    $res = db_query("SELECT * FROM sg_badges ORDER BY title ASC");
-  }
-  while ($badge = db_fetch_array($res)) {
-    if ($game_term) {
-      if ($game_term == $badge['game_term']) {
-        $headline = $game_term;
-      }
-    }
-    $row = array(
-      'Image' => '<img src="' . $sg_image_path . $badge['image'] . '_100.png">',
-      'Description' => '<strong>' . $badge['title'] . '</strong><p>' . $badge['description'] . '</p>',
-    );
-    if ($badge['points']) {
-      $row['Description'] .= '<p><em>' . $badge['points'] . ' point bonus when earned</em></p>';
-    }
-    $rows[] = $row;
-  }
-
-  $content .= "<h1>$game_term Game Badges</h1>";
-  $content .= theme('table', array(), $rows);
 
   return $content;
 }
