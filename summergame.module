@@ -3208,6 +3208,7 @@ function summergame_twilio_respond($incoming) {
   // New Nickname
   else if ($nickname_update) {
     $player['nickname'] = substr($incoming['text'], strpos($incoming['text'], ' ') + 1);
+    $player['show_leaderboard'] = 1;
     $player = summergame_player_save($player);
     $response = $response_template;
     $response['text'] .= 'Your Player nickname has been set to ' . $player['nickname'];
@@ -3284,7 +3285,7 @@ function summergame_twilio_respond($incoming) {
         $points = 101 - $place;
 
         summergame_player_points($player['pid'], $points, 'Correct Trivia Answer',
-                                 "Correct Answer #$place: $guess", '', 'BuellerBueller');
+                                 "Correct Answer #$place: $guess", '', 'LabyrinthTrivia');
 
         $response = $response_template;
         $response['text'] = "Your answer of \"$guess\" is Correct Answer #$place! You earn $points points.";
