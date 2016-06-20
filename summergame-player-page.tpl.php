@@ -135,7 +135,6 @@ $player['points'] = summergame_get_player_points($player['pid']);
         echo "<p>This player hasn't earned any $game_term badges yet.</p>";
       }
 
-      echo '<p>[ ' . l("See All $game_term Badges", 'summergame/badges/' . $game_term) . ' ]</p>';
 ?>
   </div>
   <div style="clear:both"></div>
