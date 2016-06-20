@@ -2358,7 +2358,6 @@ function theme_summergame_player_page($player, $player_access) {
         $content .= "<p>This player hasn't earned any $game_term badges yet.</p>";
       }
 
-      $content .= '<p>[ ' . l("See All $game_term Badges", 'summergame/badges/' . $game_term) . ' ]</p>';
       $content .= '</div>';
 
       $content .= '<div style="clear:both"></div>';
@@ -3052,7 +3051,7 @@ function theme_summergame_badge() {
       $img_src = $sg_image_path . 'hidden_100.png';
     }
     else {
-      $img_title = $badge['title'] . " (Difficulty: " . $badge['difficulty'] . ")";
+      $img_title = $badge['title'];
       $img_src = $sg_image_path . $badge['image'] . '_100.png';
     }
 
