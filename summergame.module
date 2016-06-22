@@ -703,6 +703,7 @@ function summergame_admin_gamecode_search_reset($form, &$form_state) {
  * PAGE: Edit a game code
  */
 function summergame_admin_edit($code_id = 0) {
+  drupal_add_js(drupal_get_path('module', 'summergame') . '/summergame.staff.forms.js');
   if ($code_id) {
     $game_code = db_fetch_array(db_query("SELECT * FROM sg_game_codes WHERE code_id = %d", $code_id));
   }
@@ -748,12 +749,14 @@ function summergame_code_edit_form($form_state, $game_code) {
     '#size' => 32,
     '#maxlength' => 255,
     '#description' => t('Keyword text for this game code (e.g. APPLESAUCE)'),
+    '#required' => TRUE,
   );
   $form['description'] = array(
     '#type' => 'textarea',
     '#title' => t('Description'),
     '#default_value' => $game_code['description'],
     '#description' => t('Description of the game code award (e.g. Attended Apple Peeling Event)'),
+    '#required' => TRUE,
   );
   $form['hint'] = array(
     '#type' => 'textarea',
@@ -768,6 +771,7 @@ function summergame_code_edit_form($form_state, $game_code) {
     '#size' => 16,
     '#maxlength' => 8,
     '#description' => t('Points to be awarded for the game code (e.g. 100)'),
+    '#required' => TRUE,
   );
   $form['diminishing'] = array(
     '#type' => 'checkbox',
@@ -800,6 +804,7 @@ function summergame_code_edit_form($form_state, $game_code) {
     '#size' => 32,
     '#maxlength' => 32,
     '#description' => t('Date/Time for when the code becomes active (e.g. "2012-07-01 9:00 AM")'),
+    '#required' => TRUE,
   );
   $form['valid_end'] = array(
     '#type' => 'textfield',
@@ -808,6 +813,7 @@ function summergame_code_edit_form($form_state, $game_code) {
     '#size' => 32,
     '#maxlength' => 32,
     '#description' => t('Date/Time for when the code stops being active (e.g. "2013-08-31 12:00 AM")'),
+    '#required' => TRUE,
   );
   $form['game_term'] = array(
     '#type' => 'textfield',
@@ -816,6 +822,7 @@ function summergame_code_edit_form($form_state, $game_code) {
     '#size' => 32,
     '#maxlength' => 32,
     '#description' => t('Points will be awarded under this Game Term'),
+    '#required' => TRUE,
   );
   $form['everlasting'] = array(
     '#type' => 'checkbox',
@@ -823,12 +830,19 @@ function summergame_code_edit_form($form_state, $game_code) {
     '#default_value' => $game_code['everlasting'],
     '#description' => 'Should this code be active in following seasons of the Game? (e.g. a code for a collection badge)',
   );
+  $form['tag_bib_confirm'] = array(
+    '#type' => 'radios',
+    '#title' => t('Is this code for a catalog item?'),
+    '#options' => array('tag_bib_yes' => t('Yes'), 'tag_bib_no' => t('No')),
+    '#required' => TRUE,
+  );
   $form['tag_bib'] = array(
     '#type' => 'textfield',
     '#title' => t('Tag Bib Number'),
     '#size' => 32,
     '#maxlength' => 8,
     '#description' => t('Enter a Bib Number to automatically add this game code as a tag to that Bib record in the catalog'),
+    '#attributes' => array('pattern' => '[0-9]{7}', 'title' => t('Please enter a 7-digit number')),
     '#suffix' => $gc_bibs,
   );
 
