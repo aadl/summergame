@@ -834,6 +834,7 @@ function summergame_code_edit_form($form_state, $game_code) {
     '#type' => 'radios',
     '#title' => t('Is this code for a catalog item?'),
     '#options' => array('tag_bib_yes' => t('Yes'), 'tag_bib_no' => t('No')),
+    '#description' => 'If you are editing a code and have already tagged the item, select "No"',
     '#required' => TRUE,
   );
   $form['tag_bib'] = array(
