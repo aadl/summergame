@@ -2425,7 +2425,7 @@ function summergame_player_ledger_page($pid = 0) {
       // Change bnum: code to a link to the bib record
       if (preg_match('/bnum:([\w-]+)/', $row['metadata'], $matches)) {
         if (preg_match('/^\d{7}$/', $matches[1])) {
-          $row['description'] = '<img src="http://media.aadl.org/covers/' . $matches[1] . '_50.jpg"> ' . $row['description'];
+          $row['description'] = '<img src="http://media.aadl.org/covers/' . $matches[1] . '_100.jpg" width="50"> ' . $row['description'];
         }
         if ($row['type'] != 'Download of the Day' || $player_access) { // Don't link to DotD records
           $row['description'] = l($row['description'],
