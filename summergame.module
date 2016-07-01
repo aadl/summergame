@@ -830,13 +830,14 @@ function summergame_code_edit_form($form_state, $game_code) {
     '#default_value' => $game_code['everlasting'],
     '#description' => 'Should this code be active in following seasons of the Game? (e.g. a code for a collection badge)',
   );
-  $form['tag_bib_confirm'] = array(
-    '#type' => 'radios',
-    '#title' => t('Is this code for a catalog item?'),
-    '#options' => array('tag_bib_yes' => t('Yes'), 'tag_bib_no' => t('No')),
-    '#description' => 'If you are editing a code and have already tagged the item, select "No"',
-    '#required' => TRUE,
-  );
+  if (!$game_code['code_id']) {
+    $form['tag_bib_confirm'] = array(
+      '#type' => 'radios',
+      '#title' => t('Is this code for a catalog item?'),
+      '#options' => array('tag_bib_yes' => t('Yes'), 'tag_bib_no' => t('No')),
+      '#required' => TRUE,
+    );
+  }
   $form['tag_bib'] = array(
     '#type' => 'textfield',
     '#title' => t('Tag Bib Number'),
