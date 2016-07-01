@@ -2686,7 +2686,7 @@ function summergame_leaderboard_page() {
   $type = $_GET['type'];
   $range = $_GET['range'];
   $staff = $_GET['staff'];
-  $rows = ($_GET['rows'] ? $_GET['rows'] : 500);
+  $rows = ($_GET['rows'] ? $_GET['rows'] : 1000);
 
   drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
   $args = array();
