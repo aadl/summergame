@@ -19,7 +19,7 @@ function summergame_help($path, $arg) {
  * Implementation of hook_perm().
  */
 function summergame_perm() {
-  return array('access summergame', 'administer summergame');
+  return array('access summergame', 'manage summergame', 'administer summergame');
 }
 
 /**
@@ -93,19 +93,19 @@ function summergame_menu() {
     'title' => 'Summer Game Admin',
     'description' => 'Administer the Summer Game',
     'page callback' => 'summergame_admin',
-    'access arguments' => array('administer summergame'),
+    'access arguments' => array('manage summergame'),
     'type' => MENU_NORMAL_ITEM,
   );
   $items['summergame/admin/gamecodes'] = array(
     'title' => 'Administer Game Codes',
     'page callback' => 'summergame_admin_gamecodes',
-    'access arguments' => array('administer summergame'),
+    'access arguments' => array('manage summergame'),
     'type' => MENU_CALLBACK,
   );
   $items['summergame/admin/badges'] = array(
     'title' => 'Administer Badges',
     'page callback' => 'summergame_admin_badges',
-    'access arguments' => array('administer summergame'),
+    'access arguments' => array('manage summergame'),
     'type' => MENU_CALLBACK,
   );
   $items['summergame/admin/add'] = array(
@@ -470,7 +470,7 @@ function summergame_settings() {
  */
 function summergame_admin() {
   drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
-  $site_admin = TRUE; // Use page control for user access
+  $sg_admin = user_access('administer summergame');
   $admin_users = user_access('administer users');
   $content .= '<div id="summergame-admin-page">';
   $content .= '<h1>Summer Game Admin Page</h1>';
@@ -485,7 +485,7 @@ function summergame_admin() {
   $content .= '</div>';
 
   // Players
-  if ($site_admin) {
+  if ($sg_admin) {
     $content .= '<div class="admin-page-player-search">';
     $content .= '<h2 class="title">Players</h2>';
     $content .= drupal_get_form('summergame_player_search_form');
@@ -493,7 +493,9 @@ function summergame_admin() {
   }
 
   // Game Codes
-  $content .= '<ul class="create-new-code"><li class="button green">' . l("Create New Game Code", 'summergame/admin/add') . '</li></ul>';
+  if ($sg_admin) {
+    $content .= '<ul class="create-new-code"><li class="button green">' . l("Create New Game Code", 'summergame/admin/add') . '</li></ul>';
+  }
   $content .= '<h2 class="title game-codes">Game Codes</h2>';
   $content .= drupal_get_form('summergame_admin_gamecode_search_form');
 
@@ -509,7 +511,7 @@ function summergame_admin() {
     }
     $creator = $creators[$creator_uid];
 
-    if (!$site_admin) {
+    if (!$sg_admin) {
       $game_code['text'] = preg_replace('/\B\w/', '*', $game_code['text']);
     }
 
@@ -534,7 +536,7 @@ function summergame_admin() {
   $content .= "<p class=\"more\">Showing latest $limit game codes, $more_link</p>";
 
   // Badges
-  if ($site_admin) {
+  if ($sg_admin) {
     $content .= '<ul class="create-new-code"><li class="button green">' . l("Create New Badge", 'summergame/admin/badge') . '</li></ul>';
   }
   $content .= '<h2 class="title">Badges</h2>';
@@ -542,11 +544,11 @@ function summergame_admin() {
   $rows = array();
   $res = db_query("SELECT * FROM sg_badges ORDER BY bid DESC LIMIT $limit");
   while ($badge = db_fetch_array($res)) {
-    if (!$site_admin) {
+    if (!$sg_admin) {
       $badge['formula'] = preg_replace('/\B\w/', '*', $badge['formula']);
     }
     $rows[] = array(
-      'Badge ID' => ($site_admin ? l($badge['bid'], 'summergame/admin/badge/' . $badge['bid']) : $badge['bid']),
+      'Badge ID' => ($sg_admin ? l($badge['bid'], 'summergame/admin/badge/' . $badge['bid']) : $badge['bid']),
       'Image' => '<img src="' . $sg_image_path . $badge['image'] . '_100.png">',
       'Title' => '<strong>' . $badge['title'] . '</strong>',
       'Level' => $badge['level'],
@@ -632,13 +634,13 @@ function summergame_admin_gamecodes($search_term = '') {
  */
 function summergame_admin_badges($search_term = '') {
   drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
-  $site_admin = TRUE; // Use page control for user access
+  $sg_admin = user_access('administer summergame');
   $admin_users = user_access('administer users');
   $content .= '<div id="summergame-admin-page">';
   $content .= '<h1>Summer Game Badges</h1>';
 
   // Badges
-  if ($site_admin) {
+  if ($sg_admin) {
     $content .= '<ul class="create-new-code"><li class="button green">' . l("Create New Badge", 'summergame/admin/badge') . '</li></ul>';
   }
   $content .= '<h2 class="title">Badges</h2>';
@@ -646,11 +648,11 @@ function summergame_admin_badges($search_term = '') {
   $rows = array();
   $res = db_query("SELECT * FROM sg_badges ORDER BY bid DESC");
   while ($badge = db_fetch_array($res)) {
-    if (!$site_admin) {
+    if (!$sg_admin) {
       $badge['formula'] = preg_replace('/\B\w/', '*', $badge['formula']);
     }
     $rows[] = array(
-      'Badge ID' => ($site_admin ? l($badge['bid'], 'summergame/admin/badge/' . $badge['bid']) : $badge['bid']),
+      'Badge ID' => ($sg_admin ? l($badge['bid'], 'summergame/admin/badge/' . $badge['bid']) : $badge['bid']),
       'Image' => '<img src="' . $sg_image_path . $badge['image'] . '_100.png">',
       'Title' => '<strong>' . $badge['title'] . '</strong>',
       'Level' => $badge['level'],
