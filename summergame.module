@@ -887,8 +887,10 @@ function summergame_code_edit_form_submit($form, &$form_state) {
     db_query("UPDATE sg_game_codes SET text = '%s', description = '%s', hint = '%s', " .
              "points = %d, diminishing = %d, max_redemptions = %d, " .
              "valid_start = %d, valid_end = %d, game_term = '%s', everlasting = %d WHERE code_id = %d",
-             strtoupper($form_state['values']['text']), $form_state['values']['description'],
-             $form_state['values']['hint'], $form_state['values']['points'],
+             strtoupper(str_replace(array("\r", "\n"), '', $form_state['values']['text'])), 
+             str_replace(array("\r", "\n"), '', $form_state['values']['description']),
+             str_replace(array("\r", "\n"), '', $form_state['values']['hint']), 
+             $form_state['values']['points'],
              $form_state['values']['diminishing'], $form_state['values']['max_redemptions'],
              strtotime($form_state['values']['valid_start']), strtotime($form_state['values']['valid_end']),
              $form_state['values']['game_term'], $form_state['values']['everlasting'], $form_state['values']['code_id']);
@@ -899,8 +901,10 @@ function summergame_code_edit_form_submit($form, &$form_state) {
              "(creator_uid, created, text, description, hint, points, diminishing, max_redemptions, " .
              "valid_start, valid_end, game_term, everlasting) " .
              "VALUES (%d, %d, '%s', '%s', '%s', %d, %d, %d, %d, %d, '%s', %d)",
-             $user->uid, time(), strtoupper($form_state['values']['text']), $form_state['values']['description'],
-             $form_state['values']['hint'], $form_state['values']['points'], $form_state['values']['diminishing'],
+             $user->uid, time(), strtoupper(str_replace(array("\r", "\n"), '', $form_state['values']['text'])), 
+             str_replace(array("\r", "\n"), '', $form_state['values']['description']),
+             str_replace(array("\r", "\n"), '', $form_state['values']['hint']),
+             $form_state['values']['points'], $form_state['values']['diminishing'],
              $form_state['values']['max_redemptions'], strtotime($form_state['values']['valid_start']),
              strtotime($form_state['values']['valid_end']),  $form_state['values']['game_term'],
              $form_state['values']['everlasting']);
@@ -941,6 +945,7 @@ function summergame_admin_badge_form($form_state, $bid = 0) {
     '#size' => 32,
     '#maxlength' => 255,
     '#description' => t('File name for the badge image (no extention). Place original in "files/sg_images_for_resize" to be processed.'),
+    '#required' => TRUE,
   );
   $form['title'] = array(
     '#type' => 'textfield',
@@ -949,12 +954,14 @@ function summergame_admin_badge_form($form_state, $bid = 0) {
     '#size' => 64,
     '#maxlength' => 255,
     '#description' => t('Title for the Badge'),
+    '#required' => TRUE,
   );
   $form['description'] = array(
     '#type' => 'textarea',
     '#title' => t('Description'),
     '#default_value' => $badge['description'],
     '#description' => t('Description of the Badge'),
+    '#required' => TRUE,
   );
   $form['level'] = array(
     '#type' => 'radios',
@@ -967,6 +974,7 @@ function summergame_admin_badge_form($form_state, $bid = 0) {
     ),
     '#default_value' => $badge['level'],
     '#description' => t('The level of the difficulty of the Badge'),
+    '#required' => TRUE,
   );
   $form['type'] = array(
     '#type' => 'radios',
@@ -976,6 +984,7 @@ function summergame_admin_badge_form($form_state, $bid = 0) {
     '#size' => 64,
     '#maxlength' => 255,
     '#description' => t('Type of Badge'),
+    '#required' => TRUE,
   );
   $form['difficulty'] = array(
     '#type' => 'value',
@@ -990,6 +999,7 @@ function summergame_admin_badge_form($form_state, $bid = 0) {
   <li><strong>Ledger Multiple Badge:</strong> awarded when a term appears in the player's ledger a certain number of times. Number and Term are separated by a '::' in the formula. e.g. '10::Checkout History'</li>
   <li><strong>Collection Badge:</strong> list of ledger types or gamecodes needed for awarding a badge. Separate required AND terms with a comma, separate OR terms with a pipe. e.g. 'CODE1|CODE2,CODE3' = badge is awarded is player has CODE1 OR CODE2, AND also has CODE3</li>
 </ul>"),
+    '#required' => TRUE,
   );
   $form['reveal'] = array(
     '#type' => 'textfield',
@@ -1006,6 +1016,7 @@ function summergame_admin_badge_form($form_state, $bid = 0) {
     '#size' => 16,
     '#maxlength' => 8,
     '#description' => t('Points to be awarded for the Badge (e.g. 100)'),
+    '#required' => TRUE,
   );
   $form['points_override'] = array(
     '#type' => 'textfield',
@@ -1022,6 +1033,7 @@ function summergame_admin_badge_form($form_state, $bid = 0) {
     '#size' => 32,
     '#maxlength' => 32,
     '#description' => t('Points will be awarded under this Game Term'),
+    '#required' => TRUE,
   );
   $form['game_term_override'] = array(
     '#type' => 'textfield',
@@ -1058,6 +1070,13 @@ function summergame_admin_badge_form($form_state, $bid = 0) {
   return $form;
 }
 
+function summergame_admin_badge_form_validate($form, &$form_state) {
+  $res = db_query("SELECT bid FROM sg_badges WHERE title LIKE '%s'", $form_state['values']['title']);
+  if ($badge = db_fetch_object($res)) {
+    form_set_error('title', 'Badge title is already in use. Please select another.');
+  }
+}
+
 function summergame_admin_badge_form_submit($form, &$form_state) {
   if ($form_state['values']['bid']) {
     // Update existing code
@@ -1066,10 +1085,13 @@ function summergame_admin_badge_form_submit($form, &$form_state) {
              "points = %d, points_override = '%s', game_term = '%s', " .
              "game_term_override = '%s', active = %d, email_message = '%s', " .
              "email_attachment = '%s' WHERE bid = %d",
-             $form_state['values']['image'], $form_state['values']['title'],
-             $form_state['values']['description'], $form_state['values']['level'],
+             $form_state['values']['image'], 
+             str_replace(array("\r", "\n"), '', $form_state['values']['title']),
+             str_replace(array("\r", "\n"), '', $form_state['values']['description']),
+             $form_state['values']['level'],
              $form_state['values']['type'], $form_state['values']['difficulty'],
-             $form_state['values']['formula'], $form_state['values']['reveal'],
+             str_replace(array("\r", "\n"), '', $form_state['values']['formula']),
+             $form_state['values']['reveal'],
              $form_state['values']['points'], $form_state['values']['points_override'],
              $form_state['values']['game_term'], $form_state['values']['game_term_override'],
              $form_state['values']['active'], $form_state['values']['email_message'],
@@ -1081,10 +1103,13 @@ function summergame_admin_badge_form_submit($form, &$form_state) {
              "(bid, image, title, description, level, type, difficulty, formula, reveal, points, " .
              "points_override, game_term, game_term_override, active, email_message, email_attachment) " .
              "VALUES (NULL, '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%d', '%s', '%s')",
-             $form_state['values']['image'], $form_state['values']['title'],
-             $form_state['values']['description'], $form_state['values']['level'],
+             $form_state['values']['image'],
+             str_replace(array("\r", "\n"), '', $form_state['values']['title']),
+             str_replace(array("\r", "\n"), '', $form_state['values']['description']),
+             $form_state['values']['level'],
              $form_state['values']['type'], $form_state['values']['difficulty'],
-             $form_state['values']['formula'], $form_state['values']['reveal'],
+             str_replace(array("\r", "\n"), '', $form_state['values']['formula']),
+             $form_state['values']['reveal'],
              $form_state['values']['points'], $form_state['values']['points_override'],
              $form_state['values']['game_term'], $form_state['values']['game_term_override'],
              $form_state['values']['active'], $form_state['values']['email_message'],

@@ -4,6 +4,7 @@ $(document).ready(function() {
 		if ($(this).val() == 'tag_bib_yes') {
 			bibField.required = true;
 			bibField.disabled = false;
+			document.getElementById('edit-everlasting').checked = true;
 		}
 		else {
 			bibField.required = false;
