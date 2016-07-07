@@ -1071,13 +1071,6 @@ function summergame_admin_badge_form($form_state, $bid = 0) {
   return $form;
 }
 
-function summergame_admin_badge_form_validate($form, &$form_state) {
-  $res = db_query("SELECT bid FROM sg_badges WHERE title LIKE '%s'", $form_state['values']['title']);
-  if ($badge = db_fetch_object($res)) {
-    form_set_error('title', 'Badge title is already in use. Please select another.');
-  }
-}
-
 function summergame_admin_badge_form_submit($form, &$form_state) {
   if ($form_state['values']['bid']) {
     // Update existing code
