@@ -947,7 +947,6 @@ function summergame_admin_badge_form($form_state, $bid = 0) {
     '#size' => 32,
     '#maxlength' => 255,
     '#description' => t('File name for the badge image (no extention). Place original in "files/sg_images_for_resize" to be processed.'),
-    '#required' => TRUE,
   );
   $form['title'] = array(
     '#type' => 'textfield',
