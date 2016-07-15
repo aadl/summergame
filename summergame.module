@@ -844,7 +844,6 @@ function summergame_code_edit_form($form_state, $game_code) {
     '#type' => 'textfield',
     '#title' => t('Tag Bib Number'),
     '#size' => 32,
-    '#maxlength' => 8,
     '#description' => t('Enter a Bib Number/Text to automatically add this game code as a tag to that Bib record in the catalog'),
     '#suffix' => $gc_bibs,
   );
