@@ -1072,6 +1072,12 @@ function summergame_admin_badge_form($form_state, $bid = 0) {
 }
 
 function summergame_admin_badge_form_submit($form, &$form_state) {
+  if (strpos($form_state['values']['formula'], ':') !== FALSE) {
+    $form_state['values']['formula'] = str_replace(array("\r", "\n"), '', $form_state['values']['formula']);
+  }
+  else {
+    $form_state['values']['formula'] = str_replace(array("\r", "\n", ' '), '', $form_state['values']['formula']);
+  }
   if ($form_state['values']['bid']) {
     // Update existing code
     db_query("UPDATE sg_badges SET image = '%s', title = '%s', description = '%s', " .
@@ -1084,7 +1090,7 @@ function summergame_admin_badge_form_submit($form, &$form_state) {
              str_replace(array("\r", "\n"), '', $form_state['values']['description']),
              $form_state['values']['level'],
              $form_state['values']['type'], $form_state['values']['difficulty'],
-             str_replace(array("\r", "\n", ' '), '', $form_state['values']['formula']),
+             $form_state['values']['formula'],
              $form_state['values']['reveal'],
              $form_state['values']['points'], $form_state['values']['points_override'],
              $form_state['values']['game_term'], $form_state['values']['game_term_override'],
@@ -1102,7 +1108,7 @@ function summergame_admin_badge_form_submit($form, &$form_state) {
              str_replace(array("\r", "\n"), '', $form_state['values']['description']),
              $form_state['values']['level'],
              $form_state['values']['type'], $form_state['values']['difficulty'],
-             str_replace(array("\r", "\n", ' '), '', $form_state['values']['formula']),
+             $form_state['values']['formula'],
              $form_state['values']['reveal'],
              $form_state['values']['points'], $form_state['values']['points_override'],
              $form_state['values']['game_term'], $form_state['values']['game_term_override'],
