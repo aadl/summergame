@@ -2829,7 +2829,7 @@ function summergame_badge_detail_page($bid) {
         $share_links .= '<div class="twitter-share">';
         $share_links .= '<script type="text/javascript" src="http://platform.twitter.com/widgets.js"></script>';
         $share_links .= '<a href="http://twitter.com/share/?url=/" class="twitter-share-button" data-text="I earned the ' .
-                                $badge->title . ' Badge in the @aadl Summer Game! ' . url($_GET['q'], array('absolute' => TRUE)) .
+                                $badge->title . ' Badge in the @aadl #summergame! ' . url($_GET['q'], array('absolute' => TRUE)) .
                                 ' Play along at http://play.aadl.org/." data-count="none">Tweet</a>';
         $share_links .= '</div>';
 
