@@ -601,6 +601,7 @@ function summergame_admin_gamecodes($search_term = '') {
     }
     $creator = $creators[$creator_uid];
 
+    $game_code['text'] = (strlen($game_code['text']) > 25 ? substr($game_code['text'], 0, 25) . '...' : $game_code['text']);
     $valid_start = $game_code['valid_start'] ? date('n/d/Y H:i:s', $game_code['valid_start']) : 'Now';
     $valid_end = date('n/d/Y H:i:s', $game_code['valid_end']);
     $rows[] = array(
