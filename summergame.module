@@ -740,7 +740,15 @@ function summergame_code_edit_form($form_state, $game_code) {
         if ($bib['author']) {
           $gc_bibs .= ', by ' . $bib['author'];
         }
-        $gc_bibs .= '</li>';
+        // link for deleting tag, has delay on refresh for tag removal to process
+        $delURL = l('[Remove]', 'catalog/record/' . $bib['bnum'], array(
+          'attributes' => array(
+            'target' => '_blank',
+            'onclick' => 'setTimeout("document.location.reload()", 5000)',
+          ),
+          'query' => 'deltag=sg:code=' . $game_code['text'] . '&uid=106148',
+        ));
+        $gc_bibs .= '&nbsp;' . $delURL . '</li>';
       }
       $gc_bibs .= '</ul></p>';
     }
