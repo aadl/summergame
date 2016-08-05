@@ -743,12 +743,12 @@ function summergame_code_edit_form($form_state, $game_code) {
     if (count($bibs)) {
       $gc_bibs = '<p><h2>Game Code in Catalog:</h2><ul>';
       foreach ($bibs as $bib) {
-        $gc_bibs .= '<li>' . l($bib['title'], 'catalog/record/' . $bib['bnum']);
+        $gc_bibs .= '<li>' . l($bib['title'], 'catalog/record/' . $bib['_id']);
         if ($bib['author']) {
           $gc_bibs .= ', by ' . $bib['author'];
         }
         // link for deleting tag, has delay on refresh for tag removal to process
-        $delURL = l('[Remove]', 'catalog/record/' . $bib['bnum'], array(
+        $delURL = l('[Remove]', 'catalog/record/' . $bib['_id'], array(
           'attributes' => array(
             'target' => '_blank',
             'onclick' => 'setTimeout("document.location.reload()", 5000)',
