@@ -153,6 +153,13 @@ function summergame_menu() {
     'access arguments' => array('administer summergame'),
     'type' => MENU_CALLBACK,
   );
+  $items['summergame/admin/badgeify'] = array(
+    'title' => t('Player Badgeifier'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('summergame_badgeifier_form'),
+    'access arguments' => array('administer summergame'),
+    'type' => MENU_CALLBACK,
+  );
   $items['summergame/player'] = array(
     'title' => 'Summer Game Player Page',
     'page callback' => 'summergame_player_page',
@@ -897,9 +904,9 @@ function summergame_code_edit_form_submit($form, &$form_state) {
     db_query("UPDATE sg_game_codes SET text = '%s', description = '%s', hint = '%s', " .
              "points = %d, diminishing = %d, max_redemptions = %d, " .
              "valid_start = %d, valid_end = %d, game_term = '%s', everlasting = %d WHERE code_id = %d",
-             strtoupper(str_replace(array("\r", "\n"), '', $form_state['values']['text'])), 
+             strtoupper(str_replace(array("\r", "\n"), '', $form_state['values']['text'])),
              str_replace(array("\r", "\n"), '', $form_state['values']['description']),
-             str_replace(array("\r", "\n"), '', $form_state['values']['hint']), 
+             str_replace(array("\r", "\n"), '', $form_state['values']['hint']),
              $form_state['values']['points'],
              $form_state['values']['diminishing'], $form_state['values']['max_redemptions'],
              strtotime($form_state['values']['valid_start']), strtotime($form_state['values']['valid_end']),
@@ -911,7 +918,7 @@ function summergame_code_edit_form_submit($form, &$form_state) {
              "(creator_uid, created, text, description, hint, points, diminishing, max_redemptions, " .
              "valid_start, valid_end, game_term, everlasting) " .
              "VALUES (%d, %d, '%s', '%s', '%s', %d, %d, %d, %d, %d, '%s', %d)",
-             $user->uid, time(), strtoupper(str_replace(array("\r", "\n"), '', $form_state['values']['text'])), 
+             $user->uid, time(), strtoupper(str_replace(array("\r", "\n"), '', $form_state['values']['text'])),
              str_replace(array("\r", "\n"), '', $form_state['values']['description']),
              str_replace(array("\r", "\n"), '', $form_state['values']['hint']),
              $form_state['values']['points'], $form_state['values']['diminishing'],
@@ -1093,7 +1100,7 @@ function summergame_admin_badge_form_submit($form, &$form_state) {
              "points = %d, points_override = '%s', game_term = '%s', " .
              "game_term_override = '%s', active = %d, email_message = '%s', " .
              "email_attachment = '%s' WHERE bid = %d",
-             $form_state['values']['image'], 
+             $form_state['values']['image'],
              str_replace(array("\r", "\n"), '', $form_state['values']['title']),
              str_replace(array("\r", "\n"), '', $form_state['values']['description']),
              $form_state['values']['level'],
@@ -4412,6 +4419,54 @@ function summergame_intervention_form_submit($form, &$form_state) {
   }
   else {
     drupal_set_message("No player with ID #$to_pid could be found", 'error');
+  }
+
+  drupal_goto('summergame/admin');
+}
+
+function summergame_badgeifier_form(&$form_state) {
+  $form = array(
+    'title' => array('#value' => '<h1>Player Badgeifier</h1>'),
+  );
+
+  $form['pid'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Player ID'),
+    '#size' => 10,
+    '#maxlength' => 10,
+    '#description' => t('Player ID of the player to receive the Badge'),
+  );
+  $form['badge_id'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Badge ID'),
+    '#size' => 10,
+    '#maxlength' => 10,
+    '#description' => t('ID of the Badge to award to the player'),
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Badgeify'),
+  );
+
+  return $form;
+}
+
+function summergame_badgeifier_form_submit($form, &$form_state) {
+  $pid = $form_state['values']['pid'];
+  $badge_id = $form_state['values']['badge_id'];
+
+  if ($player = summergame_player_load(array('pid' => $pid))) {
+    $player_link = l('Player #' . $pid, 'summergame/player/' . $pid);
+    // Award badge to the player
+    if (summergame_player_award_badge($pid, $badge_id)) {
+      drupal_set_message("Awarded Badge #$badge_id to $player_link");
+    }
+    else {
+      drupal_set_message("Badge #$badge_id NOT awarded to $player_link. Already awarded?", 'error');
+    }
+  }
+  else {
+    drupal_set_message("No player with ID #$pid could be found", 'error');
   }
 
   drupal_goto('summergame/admin');
