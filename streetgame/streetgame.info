@@ -1,0 +1,6 @@
+; $Id$
+name = Street Game
+description = This module enables the Street Game system
+core = 6.x
+package = AADL Modules
+dependencies[] = summergame

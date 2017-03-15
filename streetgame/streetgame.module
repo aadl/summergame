@@ -1,0 +1,58 @@
+<?php
+use PHPOnCouch\Couch,
+    PHPOnCouch\CouchAdmin,
+    PHPOnCouch\CouchClient;
+
+function streetgame_help($path, $arg) {
+  $output = '';
+  switch ($path) {
+    case "admin/help#streetgame":
+      $output = '<p>'.  t("Enables the Street Game function. All interactions are text message based, no web interaction.") .'</p>';
+      break;
+  }
+  return $output;
+}
+
+function streetgame_twilio_respond($incoming) {
+  // Set up data connections
+  $libphp_path = variable_get('summergame_libphp_path', '');
+  include_once($libphp_path . 'contrib/PHP-on-Couch/src/Couch.php');
+  include_once($libphp_path . 'contrib/PHP-on-Couch/src/CouchClient.php');
+  include_once($libphp_path . 'contrib/PHP-on-Couch/src/CouchDocument.php');
+  require_once($libphp_path . 'contrib/redisent/redisent.php');
+  $couch = new CouchClient('COUCHDB_DSN_STRING', 'streetgame');
+  $redis = new Redisent('multivac');
+
+  // Prep generic response array
+  $response_template = array('uid' => twilio_lookup_user($incoming['phone']),
+                             'phone' => $incoming['phone'],
+                             'incoming' => 0);
+  $responses = array();
+
+  // Sanitize data to characters only
+  $incomingtext = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $incoming['text']));
+
+  // Current Street Game Player? Check as answer to question
+
+  // New Sticker Code?
+  // Grab Street Game data from Couch
+
+
+  $couchDocs = $couch->setQueryParameters(array('include_docs' => TRUE))->getAllDocs();
+
+  foreach ($couchDocs->rows as $game) {
+dpm($game);
+    foreach ($game->doc->stickercodes as $id => $stickercode) {
+      if ($incomingtext == $stickercode) {
+        // New sticker location, return corresponding question
+        $response = $response_template;
+        $response['text'] = $game->doc->questions[$id]->questiontext;
+        $responses[] = $response;
+      }
+    }
+  }
+
+  if (count($responses)) {
+    return $responses;
+  }
+}
