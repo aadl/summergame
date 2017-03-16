@@ -1,7 +1,4 @@
 <?php
-use PHPOnCouch\Couch,
-    PHPOnCouch\CouchAdmin,
-    PHPOnCouch\CouchClient;
 
 function streetgame_help($path, $arg) {
   $output = '';
@@ -16,9 +13,9 @@ function streetgame_help($path, $arg) {
 function streetgame_twilio_respond($incoming) {
   // Set up data connections
   $libphp_path = variable_get('summergame_libphp_path', '');
-  include_once($libphp_path . 'contrib/PHP-on-Couch/src/Couch.php');
-  include_once($libphp_path . 'contrib/PHP-on-Couch/src/CouchClient.php');
-  include_once($libphp_path . 'contrib/PHP-on-Couch/src/CouchDocument.php');
+  include_once($libphp_path . 'contrib/PHP-on-Couch/lib/couch.php');
+  include_once($libphp_path . 'contrib/PHP-on-Couch/lib/couchClient.php');
+  include_once($libphp_path . 'contrib/PHP-on-Couch/lib/couchDocument.php');
   $couch = new CouchClient('COUCHDB_DSN_STRING', 'streetgame');
   $redis = new Redisent('multivac');
 
