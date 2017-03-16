@@ -743,12 +743,12 @@ function summergame_code_edit_form($form_state, $game_code) {
     if (count($bibs)) {
       $gc_bibs = '<p><h2>Game Code in Catalog:</h2><ul>';
       foreach ($bibs as $bib) {
-        $gc_bibs .= '<li>' . l($bib['title'], 'catalog/record/' . $bib['bnum']);
+        $gc_bibs .= '<li>' . l($bib['title'], 'catalog/record/' . $bib['_id']);
         if ($bib['author']) {
           $gc_bibs .= ', by ' . $bib['author'];
         }
         // link for deleting tag, has delay on refresh for tag removal to process
-        $delURL = l('[Remove]', 'catalog/record/' . $bib['bnum'], array(
+        $delURL = l('[Remove]', 'catalog/record/' . $bib['_id'], array(
           'attributes' => array(
             'target' => '_blank',
             'onclick' => 'setTimeout("document.location.reload()", 5000)',
@@ -931,7 +931,7 @@ function summergame_code_edit_form_submit($form, &$form_state) {
   // Add tag to catalog if selected
   if ($form_state['values']['tag_bib']) {
     if ($tagger_uid = variable_get('summergame_tagger_uid', '')) {
-      $bib_num = substr(preg_replace('/[^0-9]/', '', $form_state['values']['tag_bib']), 0, 7);
+      $bib_num = $form_state['values']['tag_bib'];
       $machine_tag = 'sg:code=' . strtolower(trim($form_state['values']['text']));
       $insurge = sopac_get_insurge();
       $insurge->submit_tags($tagger_uid, $bib_num, $machine_tag);
