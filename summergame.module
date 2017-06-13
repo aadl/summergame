@@ -3339,7 +3339,7 @@ function summergame_twilio_respond($incoming) {
         $points = 101 - $place;
 
         summergame_player_points($player['pid'], $points, 'Correct Trivia Answer',
-                                 "Correct Answer #$place: $guess", '', 'IndyTrivia');
+                                 "Correct Answer #$place: $guess", '', 'BillMurrayTrivia');
 
         $response = $response_template;
         $response['text'] = "Your answer of \"$guess\" is Correct Answer #$place! You earn $points points.";
