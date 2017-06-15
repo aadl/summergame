@@ -4141,11 +4141,11 @@ function summergame_pdf($type = 'adult', $code_id = 0) {
   }
   else if ($type == 'youth') {
     $redis->incr('ygpdfcounter');
-    drupal_goto($file_path . 'SG_Youth_2016.pdf');
+    drupal_goto($file_path . 'SG_Youth_2017.pdf');
   }
   else { // default to the adult single player form
     $redis->incr('agpdfcounter');
-    drupal_goto($file_path . 'SG_Adult_Teen_2016.pdf');
+    drupal_goto($file_path . 'SG_Adult_Teen_2017.pdf');
   }
 }
 
