@@ -3329,6 +3329,7 @@ function summergame_twilio_respond($incoming) {
   if (variable_get('summergame_trivia_active', FALSE) && !count($responses) && $player['pid']) {
     $guess = $incoming['text'];
     $answer = variable_get('summergame_trivia_answer', '');
+    $trivia_game_term = variable_get('summergame_trivia_game_term', '');
 
     db_query("INSERT INTO sg_trivia_guesses (guess) VALUES ('%s')", $guess);
     $guesstext = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $incoming['text']));
@@ -3339,7 +3340,7 @@ function summergame_twilio_respond($incoming) {
         $points = 101 - $place;
 
         summergame_player_points($player['pid'], $points, 'Correct Trivia Answer',
-                                 "Correct Answer #$place: $guess", '', 'BillMurrayTrivia');
+                                 "Correct Answer #$place: $guess", '', $trivia_game_term);
 
         $response = $response_template;
         $response['text'] = "Your answer of \"$guess\" is Correct Answer #$place! You earn $points points.";

@@ -62,7 +62,15 @@ function summergame_trivia_settings() {
     '#maxlength' => 32,
     '#description' => t("Current Answer to the Trivia Game"),
   );
-
+  $form['summergame_trivia_game_term'] = array(
+    '#type' => 'textfield',
+    '#title' => t("Trivia Game Term"),
+    '#default_value' => variable_get('summergame_trivia_game_term', ''),
+    '#size' => 32,
+    '#maxlength' => 32,
+    '#description' => t("Active Game Term for trivia (e.g. SpaceProgramTrivia)"),
+  );
+  
   return system_settings_form($form);
 }
 
