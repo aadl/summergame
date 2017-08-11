@@ -1294,6 +1294,12 @@ function summergame_redeem_form($form_state, $player) {
     '#prefix' => '<div class="container-inline">',
     '#suffix' => '</div>',
   );
+  $form['setfocus'] = array(
+    '#value' => "<script type=\"text/javascript\" language=\"JavaScript\">\n" .
+                "document.getElementById('edit-code-text').focus();\n" .
+                "</script>",
+  );
+
   $all_players = summergame_player_load_all($player['uid']);
   if (count($all_players) > 1) {
     $pid_options = array();
