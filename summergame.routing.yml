@@ -1,0 +1,203 @@
+summergame.admin_form:
+  path: '/admin/settings/summergame'
+  defaults:
+    _title: 'Summer Game Settings'
+    _form: '\Drupal\summergame\Form\SummerGameAdminForm'
+  requirements:
+    _permission: 'access administration pages'
+summergame.admin:
+  path: '/summergame/admin'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\AdminController::index'
+    _title: 'Summer Game Admin'
+  requirements:
+    _permission: 'manage summergame'
+summergame.admin.gamecodes:
+  path: '/summergame/admin/gamecodes'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\AdminController::gamecodes'
+    _title: 'Administer Game Codes'
+  requirements:
+    _permission: 'manage summergame'
+summergame.admin.badges:
+  path: '/summergame/admin/badges'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\AdminController::badges'
+    _title: 'Administer Badges'
+  requirements:
+    _permission: 'manage summergame'
+summergame.admin.add:
+  path: '/summergame/admin/add'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\AdminController::add'
+    _title: 'Add new Summer Game Code'
+  requirements:
+    _permission: 'administer summergame'
+summergame.admin.edit:
+  path: '/summergame/admin/edit'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\AdminController::edit'
+    _title: 'Edit Summer Game Code'
+  requirements:
+    _permission: 'administer summergame'
+summergame.admin.delete:
+  path: '/summergame/admin/delete'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\AdminController::delete'
+    _title: 'Delete Summer Game Code'
+  requirements:
+    _permission: 'administer summergame'
+summergame.admin.badge:
+  path: '/summergame/admin/badge'
+  defaults:
+    _title: 'Edit Summer Game Badge'
+    _form: '\Drupal\summergame\Form\SummerGameBadgeForm'
+  requirements:
+    _permission: 'administer summergame'
+summergame.admin.players:
+  path: '/summergame/admin/players'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\AdminController::players'
+    _title: 'Administer Players'
+  requirements:
+    _permission: 'administer summergame'
+summergame.admin.players.merge:
+  path: '/summergame/admin/players/merge'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\AdminController::players_merge'
+    _title: 'Merge Players'
+  requirements:
+    _permission: 'administer summergame'
+summergame.admin.intervention:
+  path: '/summergame/admin/intervention'
+  defaults:
+    _title: 'Geekly Intervention'
+    _form: '\Drupal\summergame\Form\SummerGameInterventionForm'
+  requirements:
+    _permission: 'administer summergame'
+summergame.admin.badgeify:
+  path: '/summergame/admin/badgeify'
+  defaults:
+    _title: 'Summer Game Badgeifier'
+    _form: '\Drupal\summergame\Form\SummerGameBadgeifierForm'
+  requirements:
+    _permission: 'administer summergame'
+summergame.player:
+  path: '/summergame/player'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\PlayerController::index'
+    _title: 'Summer Game Player Page'
+  requirements:
+    _permission: 'access summergame'
+summergame.player.gamecode:
+  path: '/summergame/player/gamecode'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\PlayerController::redeem'
+    _title: 'Redeem a Summer Game Code'
+  requirements:
+    _permission: 'access summergame'
+summergame.player.friends:
+  path: '/summergame/player/friends'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\PlayerController::friends'
+    _title: 'Summer Game Player Friends'
+  requirements:
+    _permission: 'access summergame'
+summergame.player.consume:
+  path: '/summergame/player/consume'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\PlayerController::consume'
+    _title: 'I Read/Listened/Watched Something'
+  requirements:
+    _permission: 'access summergame'
+summergame.player.edit:
+  path: '/summergame/player/edit'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\PlayerController::edit'
+    _title: 'I Read/Listened/Watched Something'
+  requirements:
+    _permission: 'access summergame'
+summergame.player.setactive:
+  path: '/summergame/player/{pid}/setactive'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\PlayerController::set_active'
+    _title: 'Set Active Player'
+  requirements:
+    _permission: 'access summergame'
+summergame.player.gcpc:
+  path: '/summergame/player/gcpc'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\PlayerController::gcpc'
+    _title: 'Summer Game Player Generate Cell Phone Code'
+  requirements:
+    _permission: 'access summergame'
+summergame.player.gfc:
+  path: '/summergame/player/gfc'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\PlayerController::gfc'
+    _title: 'Summer Game Player Generate Friend Code'
+  requirements:
+    _permission: 'access summergame'
+summergame.player.ledger:
+  path: '/summergame/player/ledger'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\PlayerController::ledger'
+    _title: 'Summer Game Player Ledger Page'
+  requirements:
+    _permission: 'access summergame'
+summergame.player.deletescore:
+  path: '/summergame/player/deletescore'
+  defaults:
+    _title: 'Delete Player Score'
+    _form: '\Drupal\summergame\Form\SummerGameDeleteScoreForm'
+  requirements:
+    _permission: 'access summergame'
+summergame.player.delete:
+  path: '/summergame/player/delete'
+  defaults:
+    _title: 'Delete Player'
+    _form: '\Drupal\summergame\Form\SummerGameDeletePlayerForm'
+  requirements:
+    _permission: 'access summergame'
+summergame.leaderboard:
+  path: '/summergame/leaderboard'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\DefaultController::leaderboard'
+    _title: 'Summer Game Leaderboard'
+  requirements:
+    _permission: 'access summergame'
+summergame.badge:
+  path: '/summergame/badge'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\DefaultController::badge'
+    _title: 'Summer Game Badge Detail'
+  requirements:
+    _permission: 'access summergame'
+summergame.pdf:
+  path: '/summergame/pdf'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\DefaultController::pdf'
+    _title: 'Summer Game PDF'
+  requirements:
+    _permission: 'access summergame'
+summergame.admin.trivia:
+  path: '/summergame/admin/trivia'
+  defaults:
+    _title: 'Summer Game Trivia Settings'
+    _form: '\Drupal\summergame\Form\SummerGameTriviaSettingsForm'
+  requirements:
+    _permission: 'administer summergame'
+summergame.trivia:
+  path: '/summergame/trivia'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\TriviaController::index'
+    _title: 'Summer Game Trivia'
+  requirements:
+    _permission: 'access summergame'
+summergame.trivia.update:
+  path: '/summergame/triviaupdate'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\TriviaController::update'
+    _title: 'Summer Game Trivia Update'
+  requirements:
+    _permission: 'access summergame'

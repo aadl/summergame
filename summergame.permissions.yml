@@ -1,0 +1,10 @@
+access summergame:
+  title: 'Access Summer Game'
+  description: 'Access the Summer Game as a player'
+manage summergame:
+  title: 'Manage Summer Game'
+  description: 'Limited management of Summer Game'
+administer summergame:
+  title: 'Administer Summer Game'
+  description: 'Administer all aspects of the Summer Game'
+  restrict access: TRUE

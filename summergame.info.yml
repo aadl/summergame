@@ -1,0 +1,5 @@
+name: 'Summer Game'
+description: 'Play the Summer Game'
+core: 8.x
+package: 'AADL Modules'
+type: module
