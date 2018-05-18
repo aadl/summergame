@@ -112,10 +112,11 @@ summergame.player.consume:
   requirements:
     _permission: 'access summergame'
 summergame.player.edit:
-  path: '/summergame/player/edit'
+  path: '/summergame/player/edit/{pid}'
   defaults:
-    _controller: '\Drupal\summergame\Controller\PlayerController::edit'
-    _title: 'I Read/Listened/Watched Something'
+    _form: '\Drupal\summergame\Form\SummerGamePlayerForm'
+    _title: 'Summer Game Player Edit'
+    pid: 0
   requirements:
     _permission: 'access summergame'
 summergame.player.setactive:
