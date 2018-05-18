@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Contains \Drupal\arborcat\Form\SummerGameAdminForm.
+ * Contains \Drupal\summergame\Form\SummerGameAdminForm.
  */
 
 namespace Drupal\summergame\Form;
