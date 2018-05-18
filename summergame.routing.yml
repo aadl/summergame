@@ -1,5 +1,5 @@
 summergame.admin_form:
-  path: '/admin/settings/summergame'
+  path: '/admin/config/summergame'
   defaults:
     _title: 'Summer Game Settings'
     _form: '\Drupal\summergame\Form\SummerGameAdminForm'
@@ -83,10 +83,11 @@ summergame.admin.badgeify:
   requirements:
     _permission: 'administer summergame'
 summergame.player:
-  path: '/summergame/player'
+  path: '/summergame/player/{pid}'
   defaults:
     _controller: '\Drupal\summergame\Controller\PlayerController::index'
     _title: 'Summer Game Player Page'
+    pid: 0
   requirements:
     _permission: 'access summergame'
 summergame.player.gamecode:

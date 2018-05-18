@@ -16,13 +16,6 @@ function summergame_help($path, $arg) {
 }
 
 /**
- * Implementation of hook_perm().
- */
-function summergame_perm() {
-  return array('access summergame', 'manage summergame', 'administer summergame');
-}
-
-/**
  * Implementation of hook_init()
  * Turns off caching for all summergame pages
  */
@@ -78,6 +71,7 @@ function summergame_user($op, &$edit, &$account, $category = NULL) {
 /**
  * Implementation of hook_menu().
  */
+/*
 function summergame_menu() {
   $items = array();
 
@@ -278,14 +272,23 @@ function summergame_menu() {
   );
   return $items;
 }
+*/
 
 function summergame_theme() {
-  return array(
-    'summergame_player_page' => array(
-      'template' => 'summergame-player-page',
-      'arguments' => array('player' => NULL, 'player_access' => NULL, 'other_players' => NULL),
-    ),
-  );
+  return [
+    'summergame_player_page' => [
+      'variables' => [
+        'summergame_points_enabled' => NULL,
+        'playername' => NULL,
+        'player' => NULL,
+        'player_access' => NULL,
+        'other_players' => NULL,
+        'points' => NULL,
+        'completed_classic' => NULL,
+        'website_user' => NULL,
+      ],
+    ],
+  ];
 }
 
 function summergame_block($op = 'list', $delta = 0, $edit = array()) {
@@ -376,6 +379,7 @@ function summergame_leaderboard_filter_block_content() {
 /**
  * PAGE: Summer Game Site Settings
  */
+ /*
 function summergame_settings() {
   $form['summergame_points_enabled'] = array(
     '#type' => 'checkbox',
@@ -471,10 +475,12 @@ function summergame_settings() {
 
   return system_settings_form($form);
 }
+*/
 
 /**
  * PAGE: Summer Game Admin overview
  */
+/*
 function summergame_admin() {
   drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
   $sg_admin = user_access('administer summergame');
@@ -571,10 +577,12 @@ function summergame_admin() {
 
   return $content;
 }
+*/
 
 /**
  * PAGE: Show all game codes
  */
+/*
 function summergame_admin_gamecodes($search_term = '') {
   $admin_users = user_access('administer users');
   drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
@@ -636,10 +644,12 @@ function summergame_admin_gamecodes($search_term = '') {
 
   return $content;
 }
+*/
 
 /**
  * PAGE: Show all badges
  */
+/*
 function summergame_admin_badges($search_term = '') {
   drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
   $sg_admin = user_access('administer summergame');
@@ -674,6 +684,7 @@ function summergame_admin_badges($search_term = '') {
 
   return $content;
 }
+*/
 
 function summergame_admin_gamecode_search_form(&$form_state, $search_query = NULL) {
   $form['inline'] = array(
@@ -1138,6 +1149,7 @@ function summergame_admin_badge_form_submit($form, &$form_state) {
 /**
  * PAGE: Administer Players
  */
+/*
 function summergame_admin_players($search_term = '') {
   drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
 
@@ -1240,6 +1252,7 @@ function summergame_admin_players($search_term = '') {
 
   return $content;
 }
+*/
 
 /**
  * FORM: Player search form
@@ -1886,6 +1899,7 @@ function summergame_delete_score_form_submit($form, &$form_state) {
 /**
  * PAGE: Summer Game Player Account page
  */
+/*
 function summergame_player_page($pid = 0) {
   // Redirect to the right domain
   if ($sg_did = variable_get('summergame_default_domain_id', FALSE)) {
@@ -1980,7 +1994,7 @@ function summergame_player_page($pid = 0) {
 
   return $content;
 }
-
+*/
 
 /**
  * UTILITY: Theme player info table
@@ -2205,6 +2219,7 @@ function theme_summergame_player_info($player) {
 /**
  *  PAGE: List all friends
  */
+/*
 function summergame_player_friend_page($pid = 0) {
   global $user;
   drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
@@ -2311,8 +2326,8 @@ function summergame_player_friend_page($pid = 0) {
   }
 
   return $content;
-
 }
+*/
 
 function theme_summergame_player_page($player, $player_access) {
   global $user;
@@ -2430,6 +2445,7 @@ function theme_summergame_player_page($player, $player_access) {
   return $content;
 }
 
+/*
 function summergame_player_ledger_page($pid = 0) {
   global $user;
   drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
@@ -2544,6 +2560,7 @@ function summergame_player_ledger_page($pid = 0) {
 
   return $content;
 }
+*/
 
 /**
  * PAGE: Player Edit page
@@ -2565,6 +2582,7 @@ function summergame_player_edit_page($pid = 0) {
 /**
  * PAGE: Generate Cell Phone Code
  */
+/*
 function summergame_player_gcpc($pid = 0) {
   if ($player = summergame_player_load(array('pid' => $pid))) {
     if (!$player['phone']) {
@@ -2586,10 +2604,12 @@ function summergame_player_gcpc($pid = 0) {
   }
   drupal_goto('summergame/player');
 }
+*/
 
 /**
  * PAGE: Generate Friend Code
  */
+/*
 function summergame_player_gfc($pid = 0) {
   if ($player = summergame_player_load(array('pid' => $pid))) {
     // Check to see if player already has a code
@@ -2630,6 +2650,7 @@ function summergame_player_gfc($pid = 0) {
   }
   drupal_goto('summergame/player');
 }
+*/
 
 /**
  * PAGE: Game Code Redeem Page
@@ -2703,31 +2724,18 @@ function summergame_player_consume_page($pid = 0, $bnum = 0) {
  * UTILITY: Get array of all Game Terms
  */
 function summergame_get_game_terms() {
-  require_once(variable_get('summergame_libphp_path', '') . 'contrib/redisent/redisent.php');
-  $redis = new Redisent('multivac');
-  $terms = array();
-  global $base_url;
-  $game_term_key = $base_url . ':sg_game_terms';
-
-  if ($term_string = $redis->get($game_term_key)) {
-    $terms = explode(',', $term_string);
+  $db = \Drupal::database();
+  $res = $db->query('SELECT DISTINCT game_term FROM `sg_ledger` ORDER BY game_term ASC');
+  foreach ($res as $row) {
+    $terms[] = $row->game_term;
   }
-  else {
-    $terms = array();
-    $res = db_query('SELECT DISTINCT game_term FROM `sg_ledger` ORDER BY game_term ASC');
-    while ($row = db_fetch_object($res)) {
-      $terms[] = $row->game_term;
-    }
-    $redis->set($game_term_key, implode(',', $terms));
-    $redis->expire($game_term_key, 300); // 5 minutes
-  }
-
   return $terms;
 }
 
 /**
  * PAGE: Leaderboard Page
  */
+/*
 function summergame_leaderboard_page() {
   $type = $_GET['type'];
   $range = $_GET['range'];
@@ -2824,7 +2832,9 @@ function summergame_leaderboard_page() {
 
   return $content;
 }
+*/
 
+/*
 function summergame_badge_detail_page($bid) {
   // Redirect to the right domain
   if ($sg_did = variable_get('summergame_default_domain_id', FALSE)) {
@@ -3079,6 +3089,7 @@ FBL;
 
   return $content;
 }
+*/
 
 function theme_summergame_badge() {
   global $user;
@@ -3473,7 +3484,8 @@ function summergame_comment($action, $op) {
 
 /**
  * HOOK: Add points when someone views a node
- *
+ */
+/*
 function summergame_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
   if (variable_get('summergame_points_enabled', 0)) {
     global $user;
@@ -3503,11 +3515,11 @@ function summergame_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
 function summergame_player_access($pid) {
   $access = FALSE;
 
-  if (user_access('administer summergame')) {
+  $user = \Drupal::currentUser();
+  if ($user->hasPermission('administer summergame')) {
     $access = TRUE;
   }
   else {
-    global $user;
     if ($user->uid) {
       $player = summergame_player_load($pid);
       if ($user->uid == $player['uid']) {
@@ -3521,14 +3533,14 @@ function summergame_player_access($pid) {
 /**
  * UTILITY: Lookup a player record (based on the user_load function)
  */
-function summergame_player_load($player_info = array()) {
+function summergame_player_load($player_info = []) {
   // Dynamically compose a SQL query:
-  $query = array();
-  $params = array();
+  $query = [];
+  $params = [];
 
   // Default to pid lookup
   if (is_numeric($player_info)) {
-    $player_info = array('pid' => $player_info);
+    $player_info = ['pid' => $player_info];
   }
   else if (!is_array($player_info)) {
     return FALSE;
@@ -3537,26 +3549,26 @@ function summergame_player_load($player_info = array()) {
   foreach ($player_info as $key => $value) {
     if ($value) {
       if ($key == 'pid' || $key == 'phone' || $key == 'uid') {
-        $query[] = "$key = %d";
-        $params[] = $value;
+        $query[] = "$key = :$key";
       }
       else {
-        $query[] = "LOWER($key) = LOWER('%s')";
-        $params[] = $value;
+        $query[] = "LOWER($key) = LOWER(:$key)";
       }
+      $params[":$key"] = $value;
     }
   }
 
   if (count($params)) {
-    $result = db_query('SELECT * FROM {sg_players} WHERE ' . implode(' AND ', $query) .
-                       ' ORDER BY pid ASC LIMIT 1', $params);
-    $player = db_fetch_array($result);
+    $db = \Drupal::database();
+    $result = $db->query('SELECT * FROM {sg_players} WHERE ' . implode(' AND ', $query) .
+                         ' ORDER BY pid ASC LIMIT 1', $params);
+    $player = $result->fetchAssoc();
   }
 
   if ($player['pid']) {
     // Load badge ids
-    $result2 = db_query("SELECT * FROM {sg_players_badges} WHERE pid = %d", $player['pid']);
-    while ($badge = db_fetch_object($result2)) {
+    $result2 = $db->query('SELECT * FROM {sg_players_badges} WHERE pid = ' . $player['pid']);
+    while ($badge = $result2->fetchObject()) {
       $player['bids'][$badge->bid] = $badge->timestamp;
     }
     return $player;
@@ -3570,9 +3582,10 @@ function summergame_player_load($player_info = array()) {
  * UTILITY: Load ALL players associated with a user
  */
 function summergame_player_load_all($uid) {
-  $result = db_query("SELECT * FROM sg_players WHERE uid = %d ORDER BY pid ASC", $uid);
-  $players = array();
-  while ($player = db_fetch_array($result)) {
+  $db = \Drupal::database();
+  $result = $db->query('SELECT * FROM sg_players WHERE uid = ' . (int) $uid . ' ORDER BY pid ASC');
+  $players = [];
+  while ($player = $result->fetchAssoc()) {
     $players[] = $player;
   }
 
@@ -3609,25 +3622,26 @@ function summergame_player_set_active($pid) {
  * UTILITY: Load player points
  */
 function summergame_get_player_points($pid, $game_term = '', $type = '') {
-  $player_points = array(
+  $player_points = [
     'career' => 0,
-  );
+  ];
 
-  $query = 'SELECT * FROM sg_ledger WHERE pid = %d';
-  $args = array($pid);
+  $query = 'SELECT * FROM sg_ledger WHERE pid = :pid';
+  $args = [':pid' => $pid];
   if ($game_term) {
-    $query .= " AND game_term = '%s'";
-    $args[] = $game_term;
+    $query .= " AND game_term = :game_term";
+    $args[':game_term'] = $game_term;
   }
   if ($type) {
-    $query .= " AND type = '%s'";
-    $args[] = $type;
+    $query .= " AND type = :type";
+    $args[':type'] = $type;
   }
   $query .= ' ORDER BY timestamp DESC';
 
-  $res = db_query($query, $args);
+  $db = \Drupal::database();
+  $res = $db->query($query, $args);
 
-  while ($row = db_fetch_array($res)) {
+  while ($row = $res->fetchAssoc()) {
     $game_term = $row['game_term'];
     $type = $row['type'];
     $player_points[$game_term]['ledger'][] = $row;
@@ -3648,10 +3662,10 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
   }
 
   // Get badges
-  $res = db_query("SELECT * FROM sg_players_badges, sg_badges " .
-                  "WHERE sg_players_badges.pid = %d AND sg_players_badges.bid = sg_badges.bid " .
-                  "ORDER BY sg_players_badges.timestamp ASC", $pid);
-  while ($badge = db_fetch_array($res)) {
+  $res = $db->query("SELECT * FROM sg_players_badges, sg_badges " .
+                    "WHERE sg_players_badges.pid = :pid AND sg_players_badges.bid = sg_badges.bid " .
+                    "ORDER BY sg_players_badges.timestamp ASC", [':pid' => $pid]);
+  while ($badge = $res->fetchAssoc()) {
     $game_term = $badge['game_term'];
     $player_points[$game_term]['badges'][] = $badge;
   }
@@ -4078,6 +4092,7 @@ function summergame_check_all_player_badges($game_term = '') {
 /**
  * PAGE: Generate and return a PDF version of the game card PDF
  */
+/*
 function summergame_pdf($type = 'adult', $code_id = 0) {
   $libphp_path = variable_get('summergame_libphp_path', '');
   require_once($libphp_path . 'contrib/fpdf/fpdf.php');
@@ -4103,7 +4118,7 @@ function summergame_pdf($type = 'adult', $code_id = 0) {
               urlencode($code_link);
 
     // initiate FPDI
-    $pdf =& new FPDI('L', 'mm', 'Letter');
+    //$pdf =& new FPDI('L', 'mm', 'Letter');
     $pdf->SetAutoPageBreak(FALSE);
     $pdf->AddPage();
 
@@ -4139,7 +4154,7 @@ function summergame_pdf($type = 'adult', $code_id = 0) {
       $desc_Y -= 7;
     }
 */
-
+/*
     // add the QR Code
     $pdf->SetXY(-50, -50);
     $pdf->Image($qrcode, NULL, NULL, 30, 30, 'PNG');
@@ -4155,10 +4170,12 @@ function summergame_pdf($type = 'adult', $code_id = 0) {
     drupal_goto($file_path . 'SG_Adult_Teen_2017.pdf');
   }
 }
+*/
 
 /**
  * Page: Merge Two Player Records
  */
+/*
 function summergame_admin_players_merge($pid1, $pid2, $confirm = '') {
   if ($confirm) {
     summergame_players_merge($pid1, $pid2);
@@ -4201,6 +4218,7 @@ function summergame_admin_players_merge($pid1, $pid2, $confirm = '') {
     drupal_goto('summergame/admin');
   }
 }
+*/
 
 /**
  * UTILITY: Merge Two Player Records
