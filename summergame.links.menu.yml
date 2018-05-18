@@ -1,0 +1,5 @@
+summergame.admin_form:
+  title: 'Summer Game Settings'
+  description: 'Configuration for the Summer Game module'
+  route_name: summergame.admin_form
+  parent: 'system.admin_config_system'
