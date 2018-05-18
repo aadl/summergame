@@ -272,135 +272,97 @@ class SummerGamePlayerForm extends FormBase {
    * {@inheritdoc}
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
-    $trigger = $form_state->getTriggeringElement();
-    if ($trigger['#id'] == 'edit-add-barcode') {
-      $barcode = preg_replace('/[^0-9]/', '', $form_state->getValue('barcode'));
-      // Make sure barcode is correct format
-      if (!preg_match('/21621[0-9]{9}/', $barcode)) {
-        $form_state->setErrorByName('barcode', $this->t('Invalid format. Barcodes are 14 digits long and start with "21621"'));
-      }
-      else {
-        // Make sure barcode isn't already attached to Account
-        if (in_array($barcode, $form_state->getValue('barcodes'))) {
-          $form_state->setErrorByName('barcode', $this->t('Barcode already attached to account'));
-        }
-        else {
-          // Make sure barcode exists in Evergreen
-          $api_url = \Drupal::config('arborcat.settings')->get('api_url');
-          $guzzle = \Drupal::httpClient();
-
-          $query = [
-            'barcode' => $barcode,
-          ];
-          if ($form_state->getValue('name')) {
-            $query['name'] = $form_state->getValue('name');
-          }
-          else if ($form_state->getValue('street')) {
-            $query['street'] = $form_state->getValue('street');
-          }
-          else if ($form_state->getValue('phone')) {
-            $query['phone'] = $form_state->getValue('phone');
-          }
-
-          $response = $guzzle->request('GET', "$api_url/patron/validate_barcode", ['query' => $query]);
-          $response_body = json_decode($response->getBody()->getContents());
-
-          if ($response_body->status == 'ERROR') {
-            $form_state->setErrorByName($response_body->error, $response_body->message);
-          }
-          else {
-            $form_state->setValue('barcode', $barcode);
-            $form_state->setValue('patron_id', $response_body->patron_id);
-          }
-        }
-      }
-    }
   }
 
   /**
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    // Set Barcode and Patron ID fields, generate API Key
-    $account = $form_state->getValue('account');
-    $account->field_barcode[] = $form_state->getValue('barcode');
-    $account->field_patron_id[] = $form_state->getValue('patron_id');
-    $account->field_api_key[] = arborcat_generate_api_key();
-    $account->save();
+    // Check for merge ID
+    if ($form_state->getValue('pid') && $form_state->getValue('merge_id')) {
+      $form_state->setRedirect('summergame.admin.players.merge',
+                              ['merge_id' => $form_state->getValue('merge_id'), 'pid' => $form_state->getValue('pid')]);
+    }
+    else {
+      $player_info = [
+        'name' => $form_state->getValue('name'),
+        'nickname' => trim($form_state->getValue('nickname')),
+        'gamecard' => str_replace(' ', '', strtoupper($form_state->getValue('gamecard'))),
+        'agegroup' => $form_state->getValue('agegroup'),
+        'school' => $form_state->getValue('school'),
+        'phone' => 'NULL', // default, handled below
+      ];
 
-    drupal_set_message('Successfully added library card barcode to your website account');
-
-    $form_state->setRedirect('entity.user.canonical', ['user' => $account->get('uid')->value]);
-
-    return;
-  }
-
-  public function removeBarcodeSubmit(array &$form, FormStateInterface $form_state) {
-    $te = $form_state->getTriggeringElement();
-    $delta = str_replace('edit-remove-barcode-', '', $te['#id']);
-
-    $account = $form_state->getValue('account');
-    unset($account->field_barcode[$delta]);
-    unset($account->field_patron_id[$delta]);
-    unset($account->field_api_key[$delta]);
-    $account->save();
-
-    drupal_set_message('Successfully removed barcode from your website account');
-
-    $form_state->setRedirect('entity.user.canonical', ['user' => $account->get('uid')->value]);
-
-    return;
-  }
-
-  public function primaryBarcodeSubmit(array &$form, FormStateInterface $form_state) {
-    $te = $form_state->getTriggeringElement();
-    $top_delta = str_replace('edit-make-primary-barcode-', '', $te['#id']);
-
-    $account = $form_state->getValue('account');
-
-    // Reorder Barcodes
-    $field_barcodes = $account->get('field_barcode')->getValue();
-    $new_field_barcodes = [$field_barcodes[$top_delta]['value']];
-    foreach ($field_barcodes as $delta => $field_barcode) {
-      if ($delta != $top_delta) {
-        $new_field_barcodes[] = $field_barcode['value'];
+      // Special field handling
+      if ($form_state->getValue('phone')) {
+        $phone = preg_replace('/[^\d]/', '', $form_state->getValue('phone'));
+        if (strlen($phone) == 7) {
+          // preface with local area code
+          $phone = '1734' . $phone;
+        }
+        else if (strlen($phone) == 10) {
+          // preface with a 1
+          $phone = '1' . $phone;
+        }
+        $player_info['phone'] = $phone;
       }
-    }
-    unset($account->field_barcode);
-    foreach ($new_field_barcodes as $new_field_barcode) {
-      $account->field_barcode[] = $new_field_barcode;
-    }
+      $player_info['grade'] = ($form_state->getValue('grade') == '' ? 'NULL' : $form_state->getValue('grade'));
 
-    // Reorder Patron IDs
-    $field_patron_ids = $account->get('field_patron_id')->getValue();
-    $new_field_patron_ids = [$field_patron_ids[$top_delta]['value']];
-    foreach ($field_patron_ids as $delta => $field_patron_id) {
-      if ($delta != $top_delta) {
-        $new_field_patron_ids[] = $field_patron_id['value'];
+      foreach ($form_state->getValue('privacy') as $name => $value) {
+        $player_info[$name] = ($value ? 1 : 0);
       }
-    }
-    unset($account->field_patron_id);
-    foreach ($new_field_patron_ids as $new_field_patron_id) {
-      $account->field_patron_id[] = $new_field_patron_id;
-    }
 
-    // Reorder API Keys
-    $field_api_keys = $account->get('field_api_key')->getValue();
-    $new_field_api_keys = [$field_api_keys[$top_delta]['value']];
-    foreach ($field_api_keys as $delta => $field_api_key) {
-      if ($delta != $top_delta) {
-        $new_field_api_keys[] = $field_api_key['value'];
+      if ($form_state->getValue('uid')) {
+        $player_info['uid'] = $form_state->getValue('uid');
       }
+
+      if ($form_state->getValue('pid')) {
+        $player_info['pid'] = $form_state->getValue('pid');
+
+        if ($form_state->getValue('signup_eligible') && $form_state->getValue('gamecard')) {
+          $signup_bonus = TRUE;
+        }
+      }
+      else {
+        $signup_bonus = TRUE;
+      }
+
+      $player = summergame_player_save($player_info);
+
+      if (\Drupal::config('summergame.settings')->get('summergame_points_enabled')) {
+        if ($signup_bonus) {
+          $points = summergame_player_points($player['pid'], 100, 'Signup',
+                                             'Signed Up for the Summer Game');
+          drupal_set_message("Earned $points Summer Game points for signing up!");
+        }
+    /*
+        // Check for referral bonus
+        if ($form_state->getValue('referred_by']) {
+          // Check for referral player
+          $referring_player = summergame_player_load(array('friend_code' => $form_state->getValue('referred_by']));
+          if ($referring_player['pid']) {
+            // Make sure no one has already gotten points for this player
+            $existing_bonus = db_fetch_object(db_query("SELECT * FROM sg_ledger WHERE metadata LIKE '%referred:%s%'", $player['pid']));
+            if ($existing_bonus->points) {
+              drupal_set_message('Sorry, you entered a Referral Code, but your player has already been awarded points for a referral.');
+            }
+            else {
+              summergame_player_points($player['pid'], 500, 'Referral',
+                                       'Referred by Player #' . $referring_player['pid'], 'referred_by:' . $referring_player['pid']);
+              summergame_player_points($referring_player['pid'], 500, 'Referral',
+                                       'Referral Bonus for Player #' . $player['pid'], 'referred:' . $player['pid']);
+              drupal_set_message('You were referred by Player #' . $referring_player['pid'] . ' and you each earned a 500 point bonus!');
+            }
+          }
+          else {
+            drupal_set_message('Sorry, you entered a referral code, but no player with that code exists');
+          }
+        }
+    */
+      }
+
+      $form_state->setRedirect('summergame.player', ['pid' => $player['pid']]);
     }
-    unset($account->field_api_key);
-    foreach ($new_field_api_keys as $new_field_api_key) {
-      $account->field_api_key[] = $new_field_api_key;
-    }
-
-    $account->save();
-
-    drupal_set_message('Successfully reordered barcodes');
-
     return;
   }
 }
