@@ -3,80 +3,83 @@
  * Summer Game Player Info
  */
 #}
-
+{% spaceless %}
 <div id="player-card">
 
   {# Link to Points Forms #}
   <div id="player-earn-links">
     <h2>Earn Game Points</h2>
-    <ul class="no-padding-left">
-      <li class="button"><a href="/summergame/player/gamecode/{{ player.pid }}">I have a Game Code!</a></li>
+    <div class="no-padding-left">
+      <a class="button" href="/summergame/player/gamecode/{{ player.pid }}">I have a Game Code!</a>
       {% if summergame_points_enabled %}
-        <li class="button"><a href="/summergame/player/consume/{{ player.pid }}">I Read, Listened to, or Watched something!</a></li>
+        <a clas="button" href="/summergame/player/consume/{{ player.pid }}">I Read, Listened to, or Watched something!</a>
       {% endif %}
-    </ul>
+    </div>
   </div>
 
-  {# Points Summary #}
-  {% set sg_balance = 0 %}
-  <div id="player-points-summary">
-    <h2>Points Summary</h2>
-    <table>
-      <tr><th>Game</th><th>Points</th></tr>
-      {% for game_term, player_game_points in points %}
-        {% if player_game_points.total %}
-          <tr><td><a href="#{{ game_term }}">{{ game_term }}</a></td><td>{{ player_game_points.total }}</td></tr>
-          {% if game_term starts with 'SummerGame' %}
-            {% set sg_balance = sg_balance + player_game_points.balance %}
-          {% endif %}
+  
+  
+  <div class="l-overflow-clear no-margin">
+    <div id="player-info-table">
+      <h2>Player Details (<a href="/summergame/player/edit/{{ player.pid }}">Edit Player Info</a>)</h2>
+      <table class="account-summary">
+        <tr><th>Real Name:</th><td>{{ player.name }}</td></tr>
+        <tr><th>Nickname:</th><td>{{ player.nickname }}</td></tr>
+        <tr>
+          <th>Cell Phone:</th>
+          <td>
+            {% if player.phone %}
+              {{ player.phone }}
+            {% else %}
+              <a href="/summergame/player/gcpc/{{ player.pid }}">GENERATE CODE</a> to attach your cell phone to your player.
+            {% endif %}
+          </td>
+        </tr>
+        <tr>
+          <th>Game Card:</th>
+          <td>Print to complete the Classic Reading Game: [<a href="/summergame/pdf/adult" target="_blank">Adult/Teen</a>] | [<a href="/summergame/pdf/youth" target="_blank">Youth Card</a>]</td>
+        </tr>
+        <tr><th>Age Group:</th><td>{{ player.agegroup|title }}</td></tr>
+        <tr>
+          <th>Privacy Options:</th>
+          <td>
+            <ul>
+              {% if player.show_leaderboard %}
+                <li>Show Nickname & Total Score on Public Leaderboard</li>
+              {% endif %}
+              {% if player.show_myscore %}
+                <li>Show Player Page Score Card and Badges</li>
+              {% endif %}
+              {% if player.show_titles %}
+                <li>Show Titles of Books/Movies/Music in the Score Card</li>
+              {% endif %}
+            </ul>
+          </td>
+        </tr>
+        <tr><th>Completed Classic Reading Game?:</th><td>{{ completed_classic }}</td></tr>
+        {% if website_user %}
+          <tr><th>Website User:</th><td>{{ website_user|raw }}</td></tr>
         {% endif %}
-      {% endfor %}
-      <tr><td>Summer Game Shop Balance</td><td>{{ sg_balance }}</td></tr>
-    </table>
-  </div>
+      </table>
+    </div>
 
-  <div id="player-info-table">
-    <h2>Player Details:</h2>
-    <table>
-      <tr><th>Player Details</th><th>[ <a href="/summergame/player/edit/{{ player.pid }}">Edit Player Info</a> ]</th></tr>
-      <tr><td>Real Name:</td><td>{{ player.name }}</td></tr>
-      <tr><td>Nickname:</td><td>{{ player.nickname }}</td></tr>
-      <tr>
-        <td>Cell Phone:</td>
-        <td>
-          {% if player.phone %}
-            {{ player.phone }}
-          {% else %}
-            <a href="/summergame/player/gcpc/{{ player.pid }}">GENERATE CODE</a> to attach your cell phone to your player.
+    {# Points Summary #}
+    {% set sg_balance = 0 %}
+    <div id="player-points-summary">
+      <h2>Points Summary</h2>
+      <table class="account-summary">
+        <tr><th>Game</th><th>Points</th></tr>
+        {% for game_term, player_game_points in points %}
+          {% if player_game_points.total %}
+            <tr><th><a href="#{{ game_term }}">{{ game_term }}</a></th><td>{{ player_game_points.total }}</td></tr>
+            {% if game_term starts with 'SummerGame' %}
+              {% set sg_balance = sg_balance + player_game_points.balance %}
+            {% endif %}
           {% endif %}
-        </td>
-      </tr>
-      <tr>
-        <td>Game Card:</td>
-        <td>Print to complete the Classic Reading Game: [<a href="/summergame/pdf/adult" target="_blank">Adult/Teen</a>] | [<a href="/summergame/pdf/youth" target="_blank">Youth Card</a>]</td>
-      </tr>
-      <tr><td>Age Group:</td><td>{{ player.agegroup|title }}</td></tr>
-      <tr>
-        <td>Privacy Options:</td>
-        <td>
-          <ul>
-            {% if player.show_leaderboard %}
-              <li>Show Nickname & Total Score on Public Leaderboard</li>
-            {% endif %}
-            {% if player.show_myscore %}
-              <li>Show Player Page Score Card and Badges</li>
-            {% endif %}
-            {% if player.show_titles %}
-              <li>Show Titles of Books/Movies/Music in the Score Card</li>
-            {% endif %}
-          </ul>
-        </td>
-      </tr>
-      <tr><td>Completed Classic Reading Game?:</td><td>{{ completed_classic }}</td></tr>
-      {% if website_user %}
-        <tr><td>Website User:</td><td>{{ website_user|raw }}</td></tr>
-      {% endif %}
-    </table>
+        {% endfor %}
+        <tr><th>Summer Game Shop Balance</th><td>{{ sg_balance }}</td></tr>
+      </table>
+    </div>
   </div>
 
 {#
@@ -179,3 +182,4 @@ $content .= '</div>'; // $friend-code
 #}
 
 </div>
+{% endspaceless %}
