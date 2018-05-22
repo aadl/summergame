@@ -290,7 +290,7 @@ class SummerGamePlayerForm extends FormBase {
         'gamecard' => str_replace(' ', '', strtoupper($form_state->getValue('gamecard'))),
         'agegroup' => $form_state->getValue('agegroup'),
         'school' => $form_state->getValue('school'),
-        'phone' => 'NULL', // default, handled below
+        'phone' => NULL, // default, handled below
       ];
 
       // Special field handling
@@ -306,7 +306,7 @@ class SummerGamePlayerForm extends FormBase {
         }
         $player_info['phone'] = $phone;
       }
-      $player_info['grade'] = ($form_state->getValue('grade') == '' ? 'NULL' : $form_state->getValue('grade'));
+      $player_info['grade'] = ($form_state->getValue('grade') == '' ? NULL : $form_state->getValue('grade'));
 
       foreach ($form_state->getValue('privacy') as $name => $value) {
         $player_info[$name] = ($value ? 1 : 0);

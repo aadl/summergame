@@ -276,6 +276,15 @@ function summergame_menu() {
 
 function summergame_theme() {
   return [
+    'summergame_admin_page' => [
+      'variables' => [
+        'print_page_url' => NULL,
+        'sg_admin' => NULL,
+        'gc_rows' => NULL,
+        'badge_rows' => NULL,
+        'limit' => NULL,
+      ],
+    ],
     'summergame_player_page' => [
       'variables' => [
         'summergame_points_enabled' => NULL,
@@ -3677,36 +3686,16 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
  * UTILITY: Save a player record
  */
 function summergame_player_save($player) {
-  $query = array();
-  $params = array();
+  $db = \Drupal::database();
 
   if ($pid = $player['pid']) {
     // Update existing player record
     unset($player['pid']);
-    foreach ($player as $key => $value) {
-      if (db_column_exists('sg_players', $key)) {
-        if (strtoupper($value) == 'NULL') {
-          $query[] = $key . ' = NULL';
-        }
-        else {
-          $query[] = $key . ' = ' . (is_numeric($value) ? '%d' : "'%s'");
-          $params[] = $value;
-        }
-      }
-    }
-    $params[] = $pid;
-    db_query('UPDATE sg_players SET ' . implode($query, ', ') . ' WHERE pid = %d', $params);
+    $db->update('sg_players')->fields($player)->condition('pid', $pid)->execute();
   }
   else {
     // New player record
-    foreach ($player as $key => $value) {
-      if (db_column_exists('sg_players', $key)) {
-        $query[] = $key . ' = ' . (is_numeric($value) ? '%d' : "'%s'");
-        $params[] = $value;
-      }
-    }
-    db_query('INSERT INTO sg_players SET ' . implode($query, ', '), $params);
-    $pid = db_last_insert_id('sg_players', 'pid');
+    $pid = $db->insert('sg_players')->fields($player)->execute();
   }
 
   return summergame_player_load(array('pid' => $pid));
@@ -3857,15 +3846,17 @@ function summergame_get_ledger_count($pid, $filter = '') {
  * UTILITY: Apply points to a player
  */
 function summergame_player_points($pid, $points, $type, $description = '', $metadata = '', $game_term = '') {
+  $db = \Drupal::database();
+
   if (is_array($metadata)) {
     if ($limit = $metadata['daily_limit']) {
       $day_start = mktime(0, 0, 0);
 
       $sql = "SELECT SUM(points) AS total FROM sg_ledger " .
-             "WHERE pid = %d " .
+             "WHERE pid = :pid " .
              "AND timestamp > %d " .
-             "AND metadata LIKE '%%daily_limit:%d%%'";
-      $row = db_fetch_object(db_query($sql, $pid, $day_start, $limit));
+             "AND metadata LIKE '%:limit%'";
+      $row = $db->query($sql, [':pid' => $pid, ':timestamp' => $day_start, ':limit' => 'daily_limit:' . $limit])->fetchObject();
 
       $total = $row->total + $points;
       if ($total > $limit) {
@@ -3896,12 +3887,18 @@ function summergame_player_points($pid, $points, $type, $description = '', $meta
 
   // Set game_term
   if (empty($game_term)) {
-    $game_term = variable_get('summergame_current_game_term', '');
+    $game_term = \Drupal::config('summergame.settings')->get('summergame_current_game_term');
   }
 
-  db_query("INSERT INTO sg_ledger (pid, points, type, metadata, description, game_term, timestamp) " .
-           "VALUES (%d, %d, '%s', '%s', '%s', '%s', %d)",
-           $pid, $points, $type, $metadata, $description, $game_term, time());
+  $db->insert('sg_ledger')->fields([
+    'pid' => $pid,
+    'points' => $points,
+    'type' => $type,
+    'metadata' => $metadata,
+    'description' => $description,
+    'game_term' => $game_term,
+    'timestamp' => time(),
+  ])->execute();
 
   // Check if the new points affect any badges
   if ($messages = summergame_player_check_badges($pid, $game_term)) {
@@ -3934,17 +3931,19 @@ function summergame_other_players_message() {
  * UTILITY: Check player for new badges
  */
 function summergame_player_check_badges($pid, $game_term) {
-  $messages = array();
+  $pid = (int) $pid;
+  $db = \Drupal::database();
+  $messages = [];
 
-  $player_bids = array();
-  $res = db_query("SELECT * FROM sg_players_badges WHERE pid = %d", $pid);
-  while ($player_badge = db_fetch_object($res)) {
+  $player_bids = [];
+  $res = $db->query('SELECT * FROM sg_players_badges WHERE pid = ' . $pid);
+  while ($player_badge = $res->fetchObject()) {
     $player_bids[] = $player_badge->bid;
   }
 
-  $res = db_query("SELECT * FROM sg_badges WHERE game_term = '%s' " .
-                  "AND active = 1 AND formula != '' ORDER BY bid ASC", $game_term);
-  while ($badge = db_fetch_object($res)) {
+  $res = $db->query("SELECT * FROM sg_badges WHERE game_term = :game_term " .
+                    "AND active = 1 AND formula != '' ORDER BY bid ASC", [':game_term' => $game_term]);
+  while ($badge = $res->fetchObject()) {
     if (!in_array($badge->bid, $player_bids)) {
       $awarded = FALSE;
       if (preg_match('/^{([\d,]+)}$/', $badge->formula, $matches)) {
@@ -3963,8 +3962,9 @@ function summergame_player_check_badges($pid, $game_term) {
       else if (strpos($badge->formula, '::')) {
         // Multiple of a ledger type formula
         list($count_limit, $text_pattern) = explode('::', $badge->formula);
-        $lid_count = db_fetch_object(db_query("SELECT COUNT(lid) AS lid_count FROM sg_ledger WHERE pid = %d AND (type LIKE '%s' OR metadata LIKE 'gamecode:%s%%') AND game_term = '%s'",
-                                              $pid, $text_pattern, $text_pattern, $badge->game_term));
+        $lid_count = $db->query("SELECT COUNT(lid) AS lid_count FROM sg_ledger WHERE pid = $pid " .
+                                "AND (type LIKE :text_pattern OR metadata LIKE :gamecode_pattern) AND game_term = :game_term",
+                                [':text_pattern' => $text_pattern, ':gamecode_pattern' => "gamecode:$text_pattern%", ':game_term' => $badge->game_term]);
         if ($lid_count->lid_count >= $count_limit) {
           $awarded = summergame_player_award_badge($pid, $badge->bid);
         }
@@ -3973,7 +3973,7 @@ function summergame_player_check_badges($pid, $game_term) {
         // Collection Badge
         $eligible = TRUE;
         foreach (explode(',', $badge->formula) as $text_pattern) {
-          $query = "SELECT lid FROM sg_ledger WHERE pid = %d AND (";
+          $query = "SELECT lid FROM sg_ledger WHERE pid = $pid AND (";
           $args = array($pid);
 
           $text_patterns = explode('|', $text_pattern);
@@ -4067,10 +4067,14 @@ function summergame_player_check_badges($pid, $game_term) {
  * UTILITY: Award a badge to a player
  */
 function summergame_player_award_badge($pid, $bid) {
-  db_query("INSERT IGNORE INTO sg_players_badges (pid, bid, timestamp) " .
-           "VALUES (%d, %d, %d)",
-           $pid, $bid, time());
-  return db_affected_rows();
+  $db = \Drupal::database();
+  $res = $db->insert('sg_players_badges')->fields([
+    'pid' => $pid,
+    'bid' => $bid,
+    'timestamp' => time(),
+  ])->execute();
+
+  return $res->rowCount();
 }
 
 /**

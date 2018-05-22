@@ -17,44 +17,25 @@ class AdminController extends ControllerBase {
   public function index() {
     $sg_admin = \Drupal::currentUser()->hasPermission('administer summergame');
     $admin_users = \Drupal::currentUser()->hasPermission('administer users');
-    $content .= '<div id="summergame-admin-page">';
-    $content .= '<h1>Summer Game Admin Page</h1>';
-
-    // Print game cards
-    $print_page_url = \Drupal::config('summergame.settings')->get('summergame_print_page');
-    $content .= '<div class="print-game-cards">';
-    $content .= '<h2 class="title">Print Game Cards</h2>';
-    $content .= '<ul>';
-    $content .= '<li class="button green">"Batch Print Game Cards</li>';
-    $content .= '</ul>';
-    $content .= '</div>';
-
-    // Players
-    if ($sg_admin) {
-      $content .= '<div class="admin-page-player-search">';
-      $content .= '<h2 class="title">Players</h2>';
-      //$content .= drupal_get_form('summergame_player_search_form');
-      $content .= '</div>';
-    }
-
-    // Game Codes
-    if ($sg_admin) {
-      $content .= '<ul class="create-new-code"><li class="button green">' . l("Create New Game Code", 'summergame/admin/add') . '</li></ul>';
-    }
-    $content .= '<h2 class="title game-codes">Game Codes</h2>';
-    //$content .= drupal_get_form('summergame_admin_gamecode_search_form');
 
     $limit = 25;
-    $rows = array();
-    $creators = array();
-    $res = db_query("SELECT * FROM sg_game_codes ORDER BY created DESC LIMIT $limit");
-    while ($game_code = db_fetch_array($res)) {
+    $gc_rows = [];
+    $creator_names = [];
+    $db = \Drupal::database();
+
+    $res = $db->query("SELECT * FROM sg_game_codes ORDER BY created DESC LIMIT $limit");
+    while ($game_code = $res->fetchAssoc()) {
       // Load creator info
       $creator_uid = $game_code['creator_uid'];
-      if (!$creators[$creator_uid]) {
-        $creators[$creator_uid] = user_load($creator_uid);
+      if (!isset($creator_names[$creator_uid])) {
+        if ($account = \Drupal\user\Entity\User::load($creator_uid)) {
+          $creator_names[$creator_uid] = $account->get('name')->value;
+        }
+        else {
+          $creator_names[$creator_uid] = 'UNKNOWN';
+        }
       }
-      $creator = $creators[$creator_uid];
+      $creator_name = $creator_names[$creator_uid];
 
       if (!$sg_admin) {
         $game_code['text'] = preg_replace('/\B\w/', '*', $game_code['text']);
@@ -62,52 +43,51 @@ class AdminController extends ControllerBase {
 
       $valid_start = $game_code['valid_start'] ? date('n/d/Y H:i:s', $game_code['valid_start']) : 'Now';
       $valid_end = date('n/d/Y H:i:s', $game_code['valid_end']);
-      $rows[] = array(
+      $gc_rows[] = [
         'Text' => strlen($game_code['text']) > 25 ? substr($game_code['text'], 0, 25) . '...' : $game_code['text'],
         'Description' => $game_code['description'],
         'Hint' => $game_code['hint'],
         'Points' => $game_code['points'] . ($game_code['diminishing'] ? ' (diminishing)' : ''),
         'Created' => date('n/d/Y', $game_code['created']),
-        'Created By' => ($admin_users ? l($creator->name, 'user/' . $creator->uid) : $creator->name),
-        'Valid Dates' => $valid_start . '-<br />' . $valid_end,
-        'Game Term' => $game_code['game_term'],
+        'CreatedBy' => ($admin_users ? '<a href="/user/' . $creator_uid . '">' . $creator_name . '</a>' : $creator_name),
+        'ValidDates' => $valid_start . '-<br>' . $valid_end,
+        'GameTerm' => $game_code['game_term'],
         'Redemptions' => $game_code['num_redemptions'] . ' of ' . $game_code['max_redemptions'],
-        'Print Sign' => l('print', 'summergame/pdf/gamecode/' . $game_code['code_id']),
-        'Edit' => l('edit', 'summergame/admin/edit/' . $game_code['code_id']),
-      );
+        'PrintSign' => '<a href="/summergame/pdf/gamecode/' . $game_code['code_id'] . '">print</a>',
+        'Edit' => '<a href="/summergame/admin/edit/' . $game_code['code_id'] . '">edit</a>',
+      ];
     }
-    $content .= theme('table', array_keys($rows[0]), $rows);
-    $more_link = l('See all Game Codes', 'summergame/admin/gamecodes');
-    $content .= "<p class=\"more\">Showing latest $limit game codes, $more_link</p>";
 
     // Badges
-    if ($sg_admin) {
-      $content .= '<ul class="create-new-code"><li class="button green">' . l("Create New Badge", 'summergame/admin/badge') . '</li></ul>';
-    }
-    $content .= '<h2 class="title">Badges</h2>';
-    $sg_image_path = base_path() . file_directory_path() . '/sg_images/';
-    $rows = array();
-    $res = db_query("SELECT * FROM sg_badges ORDER BY bid DESC LIMIT $limit");
-    while ($badge = db_fetch_array($res)) {
+    $badge_rows = [];
+    $res = $db->query("SELECT * FROM sg_badges ORDER BY bid DESC LIMIT $limit");
+    while ($badge = $res->fetchAssoc()) {
       if (!$sg_admin) {
         $badge['formula'] = preg_replace('/\B\w/', '*', $badge['formula']);
       }
-      $rows[] = array(
-        'Badge ID' => ($sg_admin ? l($badge['bid'], 'summergame/admin/badge/' . $badge['bid']) : $badge['bid']),
-        'Image' => '<img src="' . $sg_image_path . $badge['image'] . '_100.png">',
-        'Title' => '<strong>' . $badge['title'] . '</strong>',
+      $badge_rows[] = [
+        'BadgeID' => ($sg_admin ? '<a href="/summergame/admin/badge/' . $badge['bid'] . '">' . $badge['bid'] . '</a>' : $badge['bid']),
+        'Image' => $badge['image'],
+        'Title' => $badge['title'],
         'Level' => $badge['level'],
         'Description' => $badge['description'],
         'Formula' => strlen($badge['formula']) > 25 ? substr($badge['formula'], 0, 25) . '...' : $badge['formula'],
-      );
+      ];
     }
-    $content .= theme('table', array_keys($rows[0]), $rows);
-    $more_link = l('See all Badges', 'summergame/admin/badges');
-    $content .= "<p class=\"more\">Showing latest $limit badges, $more_link</p>";
 
-    $content .= '</div>'; // #summergame-admin-page
+    $render[] = [
+      '#cache' => [
+        'max-age' => 0, // Don't cache, always get fresh data
+      ],
+      '#theme' => 'summergame_admin_page',
+      '#print_page_url' => \Drupal::config('summergame.settings')->get('summergame_print_page'),
+      '#sg_admin' => $sg_admin,
+      '#gc_rows' => $gc_rows,
+      '#badge_rows' => $badge_rows,
+      '#limit' => $limit,
+    ];
 
-    return ['#markup' => $content];
+    return $render;
   }
 
   public function gamecodes() {

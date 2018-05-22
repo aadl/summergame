@@ -1,0 +1,90 @@
+{#
+/**
+ * Summer Game Admin Page
+ */
+#}
+
+<div id="summergame-admin-page">
+  <h1>Summer Game Admin Page</h1>
+
+  <div class="print-game-cards">
+    <h2 class="title">Print Game Cards</h2>
+    <ul>
+      <li class="button green"><a href="{{ print_page_url }}">Batch Print Game Cards</a></li>
+    </ul>
+  </div>
+
+  {% if sg_admin %}
+    <div class="admin-page-player-search">
+      <h2 class="title">Players</h2>
+      {{ summergame_player_search_form }}
+    </div>
+    <ul class="create-new-code">
+      <li class="button green"><a href="/summergame/admin/add">Create New Game Code</a></li>
+    </ul>
+  {% endif %}
+
+  <h2 class="title game-codes">Game Codes</h2>
+  {{ summergame_admin_gamecode_search_form }}
+  <table>
+    <tr>
+      <th>Text</th>
+      <th>Description</th>
+      <th>Hint</th>
+      <th>Points</th>
+      <th>Created</th>
+      <th>Created By</th>
+      <th>Valid Dates</th>
+      <th>Game Term</th>
+      <th>Redemptions</th>
+      <th>Print Sign</th>
+      <th>Edit</th>
+    </tr>
+    {% for gc_row in gc_rows %}
+      <tr>
+        <td>{{ gc_row.Text }}</td>
+        <td>{{ gc_row.Description }}</td>
+        <td>{{ gc_row.Hint }}</td>
+        <td>{{ gc_row.Points }}</td>
+        <td>{{ gc_row.Created }}</td>
+        <td>{{ gc_row.CreatedBy|raw }}</td>
+        <td>{{ gc_row.ValidDates|raw }}</td>
+        <td>{{ gc_row.GameTerm }}</td>
+        <td>{{ gc_row.Redemptions }}</td>
+        <td>{{ gc_row.PrintSign|raw }}</td>
+        <td>{{ gc_row.Edit|raw }}</td>
+      </tr>
+    {% endfor %}
+  </table>
+  <p>Showing latest {{ limit }} Game Codes, <a href="/summergame/admin/gamecodes">See all Game Codes</a></p>
+
+  {% if sg_admin %}
+    <ul class="create-new-code"><li class="button green"><a href="/summergame/admin/badge">Create New Badge</a></li></ul>
+  {% endif %}
+  <h2 class="title">Badges</h2>
+  <table>
+    <tr>
+      <th>Badge ID</th>
+      <th>Image</th>
+      <th>Title</th>
+      <th>Level</th>
+      <th>Description</th>
+      <th>Formula</th>
+    </tr>
+    {% for badge_row in badge_rows %}
+      <tr>
+        <td>{{ badge_row.BadgeID|raw }}</td>
+        <td>
+          <img class="summergame-badge" title="{{ badge_row.Title }}" src="http://play.old.aadl.org/files/sg_images/{{ badge_row.Image }}_100.png">
+        </td>
+        <td>{{ badge_row.Title }}</td>
+        <td>{{ badge_row.Level }}</td>
+        <td>{{ badge_row.Description }}</td>
+        <td>{{ badge_row.Formula }}</td>
+      </tr>
+    {% endfor %}
+  </table>
+
+  <p>Showing latest {{ limit }} Badges, <a href="/summergame/admin/badges">See all Badges</a></p>
+
+</div>
