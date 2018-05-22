@@ -276,6 +276,15 @@ function summergame_menu() {
 
 function summergame_theme() {
   return [
+    'summergame_admin_page' => [
+      'variables' => [
+        'print_page_url' => NULL,
+        'sg_admin' => NULL,
+        'gc_rows' => NULL,
+        'badge_rows' => NULL,
+        'limit' => NULL,
+      ],
+    ],
     'summergame_player_page' => [
       'variables' => [
         'summergame_points_enabled' => NULL,
