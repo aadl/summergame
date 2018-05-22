@@ -44,6 +44,7 @@ class AdminController extends ControllerBase {
       $valid_start = $game_code['valid_start'] ? date('n/d/Y H:i:s', $game_code['valid_start']) : 'Now';
       $valid_end = date('n/d/Y H:i:s', $game_code['valid_end']);
       $gc_rows[] = [
+        'id' => $game_code['code_id'],
         'Text' => strlen($game_code['text']) > 25 ? substr($game_code['text'], 0, 25) . '...' : $game_code['text'],
         'Description' => $game_code['description'],
         'Hint' => $game_code['hint'],
@@ -52,9 +53,7 @@ class AdminController extends ControllerBase {
         'CreatedBy' => ($admin_users ? '<a href="/user/' . $creator_uid . '">' . $creator_name . '</a>' : $creator_name),
         'ValidDates' => $valid_start . '-<br>' . $valid_end,
         'GameTerm' => $game_code['game_term'],
-        'Redemptions' => $game_code['num_redemptions'] . ' of ' . $game_code['max_redemptions'],
-        'PrintSign' => '<a href="/summergame/pdf/gamecode/' . $game_code['code_id'] . '">print</a>',
-        'Edit' => '<a href="/summergame/admin/edit/' . $game_code['code_id'] . '">edit</a>',
+        'Redemptions' => $game_code['num_redemptions'] . ' of ' . $game_code['max_redemptions']
       ];
     }
 
