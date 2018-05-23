@@ -9,9 +9,7 @@
 
   <div class="print-game-cards">
     <h2 class="title">Print Game Cards</h2>
-    <ul>
-      <li class="button green"><a href="{{ print_page_url }}">Batch Print Game Cards</a></li>
-    </ul>
+    <a class="button" href="{{ print_page_url }}">Batch Print Game Cards</a>
   </div>
 
   {% if sg_admin %}
@@ -19,14 +17,12 @@
       <h2 class="title">Players</h2>
       {{ summergame_player_search_form }}
     </div>
-    <ul class="create-new-code">
-      <li class="button green"><a href="/summergame/admin/add">Create New Game Code</a></li>
-    </ul>
+    <a class="button" href="/summergame/admin/add">Create New Game Code</a>
   {% endif %}
 
   <h2 class="title game-codes">Game Codes</h2>
   {{ summergame_admin_gamecode_search_form }}
-  <table>
+  <table class="not-fixed-table smaller-font">
     <tr>
       <th>Text</th>
       <th>Description</th>
@@ -38,12 +34,11 @@
       <th>Game Term</th>
       <th>Redemptions</th>
       <th>Print Sign</th>
-      <th>Edit</th>
     </tr>
     {% for gc_row in gc_rows %}
       <tr>
-        <td>{{ gc_row.Text }}</td>
-        <td>{{ gc_row.Description }}</td>
+        <td><a href="/summergame/edit/{{ gc_row.id }}">{{ gc_row.Text }}</a></td>
+        <td>{{ gc_row.Description|raw|slice(0, 70) }}</td>
         <td>{{ gc_row.Hint }}</td>
         <td>{{ gc_row.Points }}</td>
         <td>{{ gc_row.Created }}</td>
@@ -51,18 +46,17 @@
         <td>{{ gc_row.ValidDates|raw }}</td>
         <td>{{ gc_row.GameTerm }}</td>
         <td>{{ gc_row.Redemptions }}</td>
-        <td>{{ gc_row.PrintSign|raw }}</td>
-        <td>{{ gc_row.Edit|raw }}</td>
+        <td><a href="/summergame/pdf/gamecode/{{ gc_row.id }}">Print</a></td>
       </tr>
     {% endfor %}
   </table>
   <p>Showing latest {{ limit }} Game Codes, <a href="/summergame/admin/gamecodes">See all Game Codes</a></p>
 
   {% if sg_admin %}
-    <ul class="create-new-code"><li class="button green"><a href="/summergame/admin/badge">Create New Badge</a></li></ul>
+    <a class="button" href="/summergame/admin/badge">Create New Badge</a>
   {% endif %}
   <h2 class="title">Badges</h2>
-  <table>
+  <table class="not-fixed-table smaller-font">
     <tr>
       <th>Badge ID</th>
       <th>Image</th>
@@ -79,7 +73,7 @@
         </td>
         <td>{{ badge_row.Title }}</td>
         <td>{{ badge_row.Level }}</td>
-        <td>{{ badge_row.Description }}</td>
+        <td>{{ badge_row.Description|raw|slice(0, 70) }}</td>
         <td>{{ badge_row.Formula }}</td>
       </tr>
     {% endfor %}
