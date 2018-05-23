@@ -36,14 +36,14 @@
                 <span class="facets-toggle-icon">
                   <span class="facets-toggle-symbol">+</span>
                 </span>
-                <h2 id="{{ game_term }}" class="l-inline-b">{{ game_term }} Scorecard</h2>
+                <h2 id="{{ game_term }}" class="l-inline-b no-margin-bottom">{{ game_term }} Scorecard</h2>
               </div>
             {% else %}
-              <h2 id="{{ game_term }}" class="l-inline-b">{{ game_term }} Scorecard</h2>
+              <h2 id="{{ game_term }}" class="l-inline-b no-margin-bottom">{{ game_term }} Scorecard</h2>
             {% endif %}
             <div {% if loop.index0 != 1 %} class="no-display" {% endif %}>
               <div class="player-points">
-                <h3>Points</h3>
+                <h3 class="no-margin-bottom">Points</h3>
                 <table>
                   <tr><th>Type</th><th>Points</th></tr>
                   {% for type, type_points in player_game_points.types %}
