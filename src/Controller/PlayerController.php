@@ -6,6 +6,7 @@
 namespace Drupal\summergame\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 //use Drupal\Core\Database\Database;
 //use Drupal\Core\Url;
 
@@ -147,7 +148,7 @@ class PlayerController extends ControllerBase {
           $completed_classic = 'Yes, completed on ' . date('F j, Y', $row->timestamp);
         }
         else {
-         $completed_classic = 'Not yet! Complete a game card and visit the library to receive a special prize.';
+         $completed_classic = false;
         }
 
         // Check for cell phone attachment code
@@ -395,53 +396,51 @@ class PlayerController extends ControllerBase {
     drupal_goto('summergame/player');
   }
 
-  public function ledger() {
-    global $user;
-    drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
+  public function ledger($pid) {
     $pid = intval($pid);
 
     if ($pid) {
       $player = summergame_player_load(array('pid' => $pid));
     }
-    else if ($user->uid) {
-      // Default to the logged in player if none specified
-      $player = $user->player;
-    }
 
     if ($player) {
-      $locum = sopac_get_locum();
       $player_access = summergame_player_access($player['pid']);
 
       if (!$player['show_myscore'] && !$player_access) {
         drupal_set_message("Player #$pid's Score Card is private", 'error');
-        drupal_goto('<front>');
+        return new RedirectResponse(\Drupal::url('<front>'));
       }
 
-      $rows_per_page = 100;
-      $rows = array();
-      $args = array($player['pid']);
-      if ($_GET['term']) {
-        $term_query = " AND game_term = '%s'";
-        $args[] = $_GET['term'];
-      }
+      // build the pager
+      $page = pager_find_page();
+      $per_page = 100;
+      $offset = $per_page * $page;
 
-      $locum = sopac_get_locum();
-      if ($catalog_domain = variable_get('summergame_catalog_domain', '')) {
-        $catalog_domain = 'http://' . $catalog_domain . '/';
+      $db = \Drupal::database();
+      if (isset($_GET['term'])) {
+        $total = $db->query("SELECT COUNT(lid) as total FROM sg_ledger WHERE pid = :pid AND game_term = :term",
+        [':pid' => $pid, ':term' => $_GET['term']])->fetch();
+        $total = $total->total;
+        $pager = pager_default_initialize($total, $per_page);
+        $result = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND game_term = :term ORDER BY timestamp DESC LIMIT $offset, $per_page",
+        [':pid' => $pid, ':term' => $_GET['term']])->fetchAll();
+      } else {
+        $total = $db->query("SELECT COUNT(lid) as total FROM sg_ledger WHERE pid = :pid", 
+          [':pid' => $pid])->fetch();
+        $total = $total->total;
+        $pager = pager_default_initialize($total, $per_page);
+        $result = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid ORDER BY timestamp DESC LIMIT $offset, $per_page", 
+          [':pid' => $pid]);
       }
-
-      $result = pager_query("SELECT * FROM sg_ledger WHERE pid = %d $term_query ORDER BY timestamp DESC",
-                            $rows_per_page, 0, NULL, $args);
-      while ($row = db_fetch_array($result)) {
+      
+      while ($row = $result->fetchAssoc()) {
         // Change bnum: code to a link to the bib record
         if (preg_match('/bnum:([\w-]+)/', $row['metadata'], $matches)) {
           if (preg_match('/^\d{7}$/', $matches[1])) {
-            $row['description'] = '<img src="http://media.aadl.org/covers/' . $matches[1] . '_100.jpg" width="50"> ' . $row['description'];
+            $row['description'] = '<img src="http://cdn.aadl.com/covers/' . $matches[1] . '_100.jpg" width="50"> ' . $row['description'];
           }
           if ($row['type'] != 'Download of the Day' || $player_access) { // Don't link to DotD records
-            $row['description'] = l($row['description'],
-                                    $catalog_domain . 'catalog/record/' . $matches[1],
-                                    array('html' => TRUE));
+            $row['description'] = '<a href="/catalog/record/' . $matches[1] .  '">' .$row['description'] . '</a>';
           }
         }
         // Translate material code to catalog material type
@@ -456,7 +455,7 @@ class PlayerController extends ControllerBase {
           }
           else {
             // Check if there is a hint for this game code
-            $hint_row = db_fetch_object(db_query("SELECT hint FROM sg_game_codes WHERE text = '%s'", $matches[1]));
+            $hint_row = $db->query("SELECT hint FROM sg_game_codes WHERE text = :text", [ ':text' => $matches[1]])->fetch();
             if ($hint_row->hint) {
               $row['description'] = $hint_row->hint;
             }
@@ -466,47 +465,53 @@ class PlayerController extends ControllerBase {
         if (preg_match('/nid:([\d]+)/', $row['metadata'], $matches)) {
           if ($row['type'] != 'Download of the Day' || $player_access) { // Don't link to DotD records
             $node = node_load($matches[1]);
-            $row['description'] .= ': ' . l($node->title, 'node/' . $node->nid);
+            $node_title = $node->get('title')->value;
+            $nid = $node->get('nid')->value;
+            $row['description'] .= ": <a href=\"/node/$nid\">$node_title</a>";
             // and link to comment
             if (preg_match('/cid:([\d]+)/', $row['metadata'], $matches)) {
-              $row['description'] .= ' (' .
-                                     l('See comment', 'node/' . $node->nid,
-                                       array('fragment' => 'comment-' . $matches[1])) .
-                                     ')';
+              $comment = $matches[1];
+              $row['description'] .= " (<a href=\"/node/$nid#comment-$comment\">See comment</a>)";
             }
           }
         }
 
-        $table_row = array(
-          'Date' => date('F j, Y, g:i a', $row['timestamp']),
-          'Type' => $row['type'],
-          'Description' => ($player['show_titles'] || $player_access ? $row['description'] : ''),
-          'Points' => array('data' => $row['points'], 'class' => 'digits'),
-        );
+        $table_row = [
+          'date' => date('F j, Y, g:i a', $row['timestamp']),
+          'type' => $row['type'],
+          'description' => ($player['show_titles'] || $player_access ? $row['description'] : ''),
+          'points' => $row['points']
+        ];
         if ($player_access) {
           if (strpos($row['metadata'], 'delete:no') === 0) {
-            // No delete link for protected points
-            $table_row['Remove?'] = '';
+            $table_row['remove'] = '';
           }
           else {
-            $table_row['Remove?'] = l('DELETE', 'summergame/player/deletescore/' . $player['pid'] . '/' . $row['lid']);
+            $table_row['remove'] = 'hmmm';
+            $table_row['remove'] = '<a href="summergame/player/deletescore/' . $player['pid'] . '/' . $row['lid'] . '">DELETE</a>';
           }
         }
         $score_table[] = $table_row;
       }
 
       if (count($score_table)) {
-        $content .= '<h2 class="title">' .
-                  'Player Points: ' .
-                  '</h2>';
-        $pager = theme('pager', NULL, $rows_per_page, 0);
-        $content .= $pager .  theme('table', array_keys($score_table[0]), $score_table) . $pager;
+        $ledger = $score_table;
       }
       else {
-        $content .= '<p>No Scores Found</p>';
+        $ledger = NULL;
       }
     }
-
-    return $content;
+    kint($score_table);
+    return [
+      '#cache' => [
+        'max-age' => 0, // Don't cache, always get fresh data
+      ],
+      '#theme' => 'summergame_player_ledger',
+      '#ledger' => $ledger,
+      '#pager' => [
+        '#type' => 'pager',
+        '#quantity' => 5
+      ]
+    ];
   }
 }
