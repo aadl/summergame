@@ -299,7 +299,8 @@ function summergame_theme() {
     ],
     'summergame_player_ledger' => [
       'variables' => [
-        'ledger' => NULL
+        'ledger' => NULL,
+        'pager' => NULL
       ]
     ],
   ];
