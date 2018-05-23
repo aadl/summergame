@@ -20,40 +20,18 @@
     <div id="player-info-table">
       <h2>Player Details (<a href="/summergame/player/edit/{{ player.pid }}">Edit Player Info</a>)</h2>
       <table class="account-summary not-fixed-table">
-        <tr><th>Real Name:</th><td>{{ player.name }}</td></tr>
         <tr><th>Nickname:</th><td>{{ player.nickname }}</td></tr>
         <tr>
           <th>Cell Phone:</th>
           <td>
             {% if player.phone %}
-              {{ player.phone }}
+              Linked
             {% else %}
-              <a href="/summergame/player/gcpc/{{ player.pid }}">GENERATE CODE</a> to attach your cell phone to your player.
+              <a href="/summergame/player/gcpc/{{ player.pid }}">GENERATE CODE</a> to link your cell phone to your player
             {% endif %}
           </td>
         </tr>
-        <tr>
-          <th>Game Card:</th>
-          <td>Print to complete the Classic Reading Game: [<a href="/summergame/pdf/adult" target="_blank">Adult/Teen</a>] | [<a href="/summergame/pdf/youth" target="_blank">Youth Card</a>]</td>
-        </tr>
         <tr><th>Age Group:</th><td>{{ player.agegroup|title }}</td></tr>
-        <tr>
-          <th>Privacy Options:</th>
-          <td>
-            <ul>
-              {% if player.show_leaderboard %}
-                <li>Show Nickname & Total Score on Public Leaderboard</li>
-              {% endif %}
-              {% if player.show_myscore %}
-                <li>Show Player Page Score Card and Badges</li>
-              {% endif %}
-              {% if player.show_titles %}
-                <li>Show Titles of Books/Movies/Music in the Score Card</li>
-              {% endif %}
-            </ul>
-          </td>
-        </tr>
-        <tr><th>Completed Classic Reading Game?:</th><td>{{ completed_classic }}</td></tr>
         {% if website_user %}
           <tr><th>Website User:</th><td>{{ website_user|raw }}</td></tr>
         {% endif %}
