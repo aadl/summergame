@@ -437,7 +437,7 @@ class PlayerController extends ControllerBase {
         // Change bnum: code to a link to the bib record
         if (preg_match('/bnum:([\w-]+)/', $row['metadata'], $matches)) {
           if (preg_match('/^\d{7}$/', $matches[1])) {
-            $row['description'] = '<img src="http://cdn.aadl.com/covers/' . $matches[1] . '_100.jpg" width="50"> ' . $row['description'];
+            $row['description'] = '<img src="//cdn.aadl.com/covers/' . $matches[1] . '_100.jpg" width="50"> ' . $row['description'];
           }
           if ($row['type'] != 'Download of the Day' || $player_access) { // Don't link to DotD records
             $row['description'] = '<a href="/catalog/record/' . $matches[1] .  '">' .$row['description'] . '</a>';
@@ -501,7 +501,7 @@ class PlayerController extends ControllerBase {
         $ledger = NULL;
       }
     }
-    kint($score_table);
+
     return [
       '#cache' => [
         'max-age' => 0, // Don't cache, always get fresh data
