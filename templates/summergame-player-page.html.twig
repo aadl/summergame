@@ -4,10 +4,9 @@
  */
 #}
 
-<div id="summergame-player-page">
-  <ul id="player-tabs">
+  {# <ul id="player-tabs">
     <li id="main-player">Player: {{ playername }}</li>
-
+  </ul> #}
 {#}
 <?php if ($player_access && $other_players) { ?>
     <li><strong>Your Other Players: </strong></li>
@@ -20,53 +19,69 @@
   </ul>
 #}
 
-{% if player_access %}
-  {% include('@summergame/summergame-player-info.html.twig') %}
-{% endif %}
 
-{# Player Score #}
-{% for game_term, player_game_points in points %}
-  {% if player_game_points.total %}
-    <div class="scorecard">
-    <h2 class="title"><a name="{{ game_term }}">{{ game_term }} Scorecard</a></h2>
-
-    <div class="player-points">
-      <h3>Points</h3>
-      <table>
-        <tr><th>Type</th><th>Points</th></tr>
-        {% for type, type_points in player_game_points.types %}
-          <tr><td>{{ type }}</td><td>{{ type_points }}</td></tr>
-        {% endfor %}
-        <tr><td>TOTAL POINTS EARNED</td><td>{{ player_game_points.total }}</td></tr>
-        {% if game_term starts with 'SummerGame' %}
-          <tr><td>Current Points Balance</td><td>{{ player_game_points.balance }}</td></tr>
-        {% endif %}
-      </table>
-
-      <ul class="scorecard-buttons">
-        <li class="button">
-          <a href="/summergame/player/ledger/{{ player.pid }}?term={{ game_term }}">See Full Scorecard</a>
-        </li>
-      </ul>
-
-      <p>Points date range: <br>
-      {{ player_game_points.ledger|last.timestamp|date('F j, Y, g:i a') }} -<br>
-      {{ player_game_points.ledger|first.timestamp|date('F j, Y, g:i a') }}</p>
-    </div>
-
-    <div class="player-badges">
-      <h3>Badges</h3>
-      {% if player_game_points.badges %}
-        {% for badge in player_game_points.badges %}
-{# TODO Replicate theme_summergame_badge function in Drupal 8 #}
-          <img class="summergame-badge" title="{{ badge.title }}" src="http://play.old.aadl.org/files/sg_images/{{ badge.image }}_100.png">
-        {% endfor %}
-      {% else %}
-        <p>This player hasn't earned any {{ game_term }} badges yet.</p>
+<h1 class="t-center ruled-heading large-heading"><span>My Summer Game</span></h1>
+<div>
+  <div class="page-with-sidebar-content">
+    <div id="summergame-player-page">
+      {% if player_access %}
+        {% include('@summergame/summergame-player-info.html.twig') %}
       {% endif %}
-    </div>
-  </div><!-- .scorecard -->
-  {% endif %}
-{% endfor %}
+      {# Player Score #}
+      {% for game_term, player_game_points in points %}
+        {% if player_game_points.total %}
+          <div class="scorecard">
+            {% if loop.index0 != 1 %}
+              <div class="facets-toggle">
+                <span class="facets-toggle-icon">
+                  <span class="facets-toggle-symbol">+</span>
+                </span>
+                <h2 id="{{ game_term }}" class="l-inline-b no-margin-bottom">{{ game_term }} Scorecard</h2>
+              </div>
+            {% else %}
+              <h2 id="{{ game_term }}" class="l-inline-b no-margin-bottom">{{ game_term }} Scorecard</h2>
+            {% endif %}
+            <div {% if loop.index0 != 1 %} class="no-display" {% endif %}>
+              <div class="player-points">
+                <h3 class="no-margin-bottom">Points</h3>
+                <table>
+                  <tr><th>Type</th><th>Points</th></tr>
+                  {% for type, type_points in player_game_points.types %}
+                    <tr><td>{{ type }}</td><td>{{ type_points }}</td></tr>
+                  {% endfor %}
+                  <tr><td>TOTAL POINTS EARNED</td><td>{{ player_game_points.total }}</td></tr>
+                  {% if game_term starts with 'SummerGame' %}
+                    <tr><td>Current Points Balance</td><td>{{ player_game_points.balance }}</td></tr>
+                  {% endif %}
+                </table>
 
-</div><!-- #summergame-player-page -->
+                <div class="scorecard-buttons">
+                    <a class="button" href="/summergame/player/ledger/{{ player.pid }}?term={{ game_term }}">See Full Scorecard</a>
+                </div>
+
+                <p>Points date range: <br>
+                {{ player_game_points.ledger|last.timestamp|date('F j, Y, g:i a') }} -<br>
+                {{ player_game_points.ledger|first.timestamp|date('F j, Y, g:i a') }}</p>
+              </div>
+              {% if 'summergame' in game_term|lower or 'points-o-matic' in game_term|lower %}
+                <div class="player-badges">
+                  <h3>Badges</h3>
+                  {% if player_game_points.badges %}
+                    {% for badge in player_game_points.badges %}
+                      {# TODO Replicate theme_summergame_badge function in Drupal 8 #}
+                      <img class="summergame-badge" title="{{ badge.title }}" src="http://play.old.aadl.org/files/sg_images/{{ badge.image }}_100.png">
+                    {% endfor %}
+                  {% else %}
+                    <p>This player hasn't earned any {{ game_term }} badges yet.</p>
+                  {% endif %}
+                </div>
+              {% endif %}
+            </div>
+          </div> <!-- .scorecard -->
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+  {% include directory ~ "/templates/base/user/user-sidebar.html.twig" %}
+</div>
+  
