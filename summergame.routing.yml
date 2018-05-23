@@ -50,10 +50,11 @@ summergame.admin.badge:
   requirements:
     _permission: 'administer summergame'
 summergame.admin.players:
-  path: '/summergame/admin/players'
+  path: '/summergame/admin/players/{search_term}'
   defaults:
     _controller: '\Drupal\summergame\Controller\AdminController::players'
     _title: 'Administer Players'
+    search_term: ''
   requirements:
     _permission: 'administer summergame'
 summergame.admin.players.merge:

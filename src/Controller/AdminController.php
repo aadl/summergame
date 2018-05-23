@@ -80,6 +80,7 @@ class AdminController extends ControllerBase {
       ],
       '#theme' => 'summergame_admin_page',
       '#print_page_url' => \Drupal::config('summergame.settings')->get('summergame_print_page'),
+      '#summergame_player_search_form' => \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerSearchForm'),
       '#sg_admin' => $sg_admin,
       '#gc_rows' => $gc_rows,
       '#badge_rows' => $badge_rows,
@@ -186,48 +187,47 @@ class AdminController extends ControllerBase {
     return $content;
   }
 
-  public function delete() {
-
-  }
-
-  public function players() {
-    drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
+  public function players($search_term = '') {
 
     if ($search_term == 'new') {
-      $content .= drupal_get_form('summergame_player_form');
+      return \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerForm');
     }
     else {
+      $db = \Drupal::database();
       $search_term = strtoupper($search_term);
-      $params = array();
-      $new_player = array();
-      $sql = "SELECT sg_players.*, users.name AS username FROM sg_players LEFT JOIN users ON sg_players.uid = users.uid WHERE 1";
+      $params = [];
+      $new_player = [];
+
+      $sql = "SELECT sg_players.*, users_field_data.name AS username FROM sg_players LEFT JOIN users_field_data ON sg_players.uid = users_field_data.uid WHERE 1";
 
       if (is_numeric($search_term)) {
         // Search phone numbers
-        $sql .= " AND sg_players.phone LIKE '%%%d%%'";
-        $params[] = $search_term;
+        $sql .= " AND sg_players.phone LIKE '%:phone%'";
+        $params[':phone'] = $search_term;
         $new_player['phone'] = $search_term;
       }
       else if (preg_match('/^S?[ART]G[\d]{5}$/', $search_term)) { //SRG12345, TG12345, AG12345
-        $sql .= " AND sg_players.gamecard LIKE '%%%s%%'";
-        $params[] = $search_term;
+        $sql .= " AND sg_players.gamecard LIKE '%:gamecard%'";
+        $params[':gamecard'] = $search_term;
         $new_player['gamecard'] = $search_term;
       }
       else if ($search_term) {
-        $sql .= " AND (sg_players.name LIKE '%%%s%%' OR sg_players.nickname LIKE '%%%s%%' OR users.name LIKE '%%%s%%')";
-        $params[] = $search_term;
-        $params[] = $search_term;
-        $params[] = $search_term;
+        $sql .= " AND (sg_players.name LIKE :playername OR sg_players.nickname LIKE :nickname OR users_field_data.name LIKE :username)";
+        $params[':playername'] = "%$search_term%";
+        $params[':nickname'] = "%$search_term%";
+        $params[':username'] = "%$search_term%";
         $new_player['name'] = $search_term;
       }
 
       // Run the search
-      $res = db_query($sql, $params);
-      $count = mysqli_num_rows($res);
+      $res = $db->query($sql, $params);
+      $res->allowRowCount = TRUE;
+      $count = $res->rowCount();
 
+/*
       // Rerun query with OR on terms if no results
       if ($count == 0 && strpos($search_term, ' ') !== FALSE) {
-        $params = array();
+        $params = [];
         $sql = "SELECT sg_players.*, users.name AS username FROM sg_players LEFT JOIN users ON sg_players.uid = users.uid WHERE (0 ";
         foreach (explode(' ', $search_term) as $term) {
           $sql .= "OR sg_players.name LIKE '%%%s%%' OR sg_players.nickname LIKE '%%%s%%' OR users.name LIKE '%%%s%%'";
@@ -239,58 +239,50 @@ class AdminController extends ControllerBase {
         $res = db_query($sql, $params);
         $count = mysqli_num_rows($res);
       }
-
+*/
+/*
       $content .= '<div style="float: right">' .
                   drupal_get_form('summergame_player_search_form', $search_term) .
                   '</div>';
       $content .= "<h2>Your search returned $count match" . ($count == 1 ? '' : 'es') . "</h2>";
-
+*/
 
       if ($count == 0) {
         // No matches, create a new player
         drupal_set_message("No existing players to match your search \"$search_term\". Create a new player with that information below:");
-        $content .= drupal_get_form('summergame_player_form', $new_player);
+        return \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerForm'); // TODO Add new $new_player
       }
       else if ($count > 100) {
-        $content .= "<h2>Your search returned more than 100 matches: ($count)<h2>";
-        $content .= "<h3>Please search again</h3>";
+        return [
+          '#markup' => "<h2>Your search returned more than 100 matches: ($count)<h2><h3>Please search again</h3>"
+        ];
       }
       else {
         // Found 1-100 matches, display them in a table
-        while ($player = db_fetch_array($res)) {
-          // Prep for display
-          $player['points'] = summergame_get_player_points($player['pid']);
-
-          $show = array();
-          if ($player['leaderboard']) {
-            $show[] = 'Public Leaderboard';
-          }
-          if ($player['myscore']) {
-            $show[] = 'Player Score Page';
-          }
-          if ($player['public']) {
-            $show[] = 'Name Display';
-          }
-          $rows[] = array(
-            'Edit' => '[' . l('edit', 'summergame/player/edit/' . $player['pid']). ']',
-            'Real Name' => l($player['name'], 'summergame/player/' . $player['pid']),
-            'Player Name' => $player['nickname'],
-            'Web User' => ($player['uid'] ? l($player['username'], 'user/' . $player['uid']) : ''),
+        while ($player = $res->fetchAssoc()) {
+          $rows[] = [
+            'pid' => $player['pid'],
+            'RealName' => $player['name'],
+            'PlayerName' => $player['nickname'],
+            'WebUser' => ($player['uid'] ? '<a href="/user/' . $player['uid'] . '">' . $player['username'] . '</a>' : ''),
             'Phone' => $player['phone'] ? $player['phone'] : '',
-            'Age Group' => $player['agegroup'],
+            'AgeGroup' => $player['agegroup'],
             'Gamecard' => $player['gamecard'],
             'School' => $player['school'],
             'Grade' => $player['grade'] ? $player['grade'] : '',
-            //'Show On' => implode(', ', $show),
-            //'Point Total' => $player['points']['total'],
-          );
+          ];
         }
-        $content .= theme('table', array_keys($rows[0]), $rows, array('id' => 'summergame-player-search-results'));
-        $content .= '<ul><li class="button green">' . l("Create New Player", 'summergame/admin/players/new') . '</li></ul>';
       }
     }
 
-    return $content;
+    return [
+      '#cache' => [
+        'max-age' => 0, // Don't cache, always get fresh data
+      ],
+      '#theme' => 'summergame_admin_player_page',
+      '#summergame_player_search_form' => \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerSearchForm'),
+      '#rows' => $rows,
+    ];
   }
 
   public function players_merge() {

@@ -279,10 +279,17 @@ function summergame_theme() {
     'summergame_admin_page' => [
       'variables' => [
         'print_page_url' => NULL,
+        'summergame_player_search_form' => NULL,
         'sg_admin' => NULL,
         'gc_rows' => NULL,
         'badge_rows' => NULL,
         'limit' => NULL,
+      ],
+    ],
+    'summergame_admin_player_page' => [
+      'variables' => [
+        'summergame_player_search_form' => NULL,
+        'rows' => NULL,
       ],
     ],
     'summergame_player_page' => [
