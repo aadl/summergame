@@ -19,7 +19,7 @@
   <div class="l-overflow-clear no-margin">
     <div id="player-info-table">
       <h2>Player Details (<a href="/summergame/player/edit/{{ player.pid }}">Edit Player Info</a>)</h2>
-      <table class="account-summary">
+      <table class="account-summary not-fixed-table">
         <tr><th>Real Name:</th><td>{{ player.name }}</td></tr>
         <tr><th>Nickname:</th><td>{{ player.nickname }}</td></tr>
         <tr>
@@ -64,7 +64,7 @@
     {% set sg_balance = 0 %}
     <div id="player-points-summary">
       <h2>Points Summary</h2>
-      <table class="account-summary">
+      <table class="account-summary not-fixed-table">
         <tr><th>Game</th><th>Points</th></tr>
         {% for game_term, player_game_points in points %}
           {% if player_game_points.total %}
