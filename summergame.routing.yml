@@ -26,18 +26,12 @@ summergame.admin.badges:
     _title: 'Administer Badges'
   requirements:
     _permission: 'manage summergame'
-summergame.admin.add:
-  path: '/summergame/admin/add'
+summergame.admin.gamecode:
+  path: '/summergame/admin/gamecode/{code_id}'
   defaults:
-    _controller: '\Drupal\summergame\Controller\AdminController::add'
-    _title: 'Add new Summer Game Code'
-  requirements:
-    _permission: 'administer summergame'
-summergame.admin.edit:
-  path: '/summergame/admin/edit'
-  defaults:
-    _controller: '\Drupal\summergame\Controller\AdminController::edit'
     _title: 'Edit Summer Game Code'
+    _form: '\Drupal\summergame\Form\SummerGameGameCodeForm'
+    code_id: 0
   requirements:
     _permission: 'administer summergame'
 summergame.admin.delete:

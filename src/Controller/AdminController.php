@@ -187,14 +187,6 @@ class AdminController extends ControllerBase {
     return $content;
   }
 
-  public function add() {
-
-  }
-
-  public function edit() {
-
-  }
-
   public function delete() {
 
   }
