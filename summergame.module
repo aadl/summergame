@@ -304,6 +304,12 @@ function summergame_theme() {
         'website_user' => NULL,
       ],
     ],
+    'summergame_player_ledger' => [
+      'variables' => [
+        'ledger' => NULL,
+        'pager' => NULL
+      ]
+    ],
   ];
 }
 
