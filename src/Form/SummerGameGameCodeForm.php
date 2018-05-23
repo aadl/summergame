@@ -170,10 +170,27 @@ class SummerGameGameCodeForm extends FormBase {
       '#suffix' => $gc_bibs,
     ];
 
-    $form['submit'] = [
-      '#type' => 'submit',
-      '#value' => t('Save'),
+    $form['inline'] = [
+      '#prefix' => '<div class="container-inline">',
+      '#suffix' => '</div>',
     ];
+    $form['inline']['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Save Game Code'),
+    );
+    $form['inline']['cancel'] = [
+      '#type' => 'link',
+      '#title' => $this->t('Cancel'),
+      '#url' => \Drupal\Core\Url::fromRoute('summergame.admin'),
+    ];
+
+    if ($game_code['code_id']) {
+    $form['inline']['delete'] = [
+      '#type' => 'link',
+      '#title' => $this->t('DELETE'),
+      '#url' => \Drupal\Core\Url::fromRoute('summergame.admin.gamecode.delete', ['code_id' => $game_code['code_id']]),
+    ];
+  }
 
     return $form;
   }
