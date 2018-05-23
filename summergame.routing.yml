@@ -136,7 +136,7 @@ summergame.player.gfc:
   requirements:
     _permission: 'access summergame'
 summergame.player.ledger:
-  path: '/summergame/player/ledger'
+  path: '/summergame/player/ledger/{pid}'
   defaults:
     _controller: '\Drupal\summergame\Controller\PlayerController::ledger'
     _title: 'Summer Game Player Ledger Page'
