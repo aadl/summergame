@@ -1,0 +1,30 @@
+{% spaceless %}
+<h1 class="t-center ruled-heading large-heading"><span>My Summer Game Ledger</span></h1>
+<div>
+  {{ pager }}
+  <table class="not-fixed-table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Points</th>
+        <th>Remove?</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in ledger %}
+        <tr>
+          <td>{{ row.date }}</td>
+          <td>{{ row.type }}</td>
+          <td>{{ row.description|raw }}</td>
+          <td>{{ row.points }}</td>
+          <td>{{ row.remove|raw }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {{ pager }}
+</div>
+{% endspaceless %}
+  
