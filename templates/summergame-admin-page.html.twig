@@ -37,7 +37,7 @@
     </tr>
     {% for gc_row in gc_rows %}
       <tr>
-        <td><a href="/summergame/edit/{{ gc_row.id }}">{{ gc_row.Text }}</a></td>
+        <td><a href="/summergame/edit/{{ gc_row.id }}">{{ gc_row.Text }} <i class="fa fa-pencil-square-o"></i></a></td>
         <td>{{ gc_row.Description|raw|slice(0, 70) }}</td>
         <td>{{ gc_row.Hint }}</td>
         <td>{{ gc_row.Points }}</td>
