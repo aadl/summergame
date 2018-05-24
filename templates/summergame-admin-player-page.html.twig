@@ -1,0 +1,36 @@
+{#
+/**
+ * Summer Game Admin Player Page
+ */
+#}
+
+{{ summergame_player_search_form }}
+
+<table>
+  <tr>
+    <th>Edit</th>
+    <th>Real Name</th>
+    <th>Player Name</th>
+    <th>Web User</th>
+    <th>Phone</th>
+    <th>Age Group</th>
+    <th>Gamecard</th>
+    <th>School</th>
+    <th>Grade</th>
+  </tr>
+  {% for row in rows %}
+    <tr>
+      <td>[ <a href="/summergame/player/edit/{{ row.pid }}">edit</a> ]</td>
+      <td><a href="/summergame/player/{{ row.pid }}">{{ row.RealName }}</a></td>
+      <td>{{ row.PlayerName }}</td>
+      <td>{{ row.WebUser|raw }}</td>
+      <td>{{ row.Phone }}</td>
+      <td>{{ row.AgeGroup }}</td>
+      <td>{{ row.Gamecard }}</td>
+      <td>{{ row.School }}</td>
+      <td>{{ row.Grade }}</td>
+    </tr>
+  {% endfor %}
+</table>
+
+<a href="/summergame/admin/player/new" class="button">Create New Player</a>
