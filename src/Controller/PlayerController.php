@@ -59,7 +59,7 @@ class PlayerController extends ControllerBase {
         // Check if player's score card is private and we don't have access
         if (!$player['show_myscore'] && !$player_access) {
           drupal_set_message("Player #$pid's Score Card is private", 'error');
-          drupal_goto('<front>');
+          $this->redirect('<front>');
         }
 /*
         // Update checkout history for logged in user
@@ -422,13 +422,13 @@ class PlayerController extends ControllerBase {
         [':pid' => $pid, ':term' => $_GET['term']])->fetch();
         $total = $total->total;
         $result = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND game_term = :term ORDER BY timestamp DESC LIMIT $offset, $per_page",
-        [':pid' => $pid, ':term' => $_GET['term']])->fetchAll();
+        [':pid' => $pid, ':term' => $_GET['term']]);
       } else {
         $total = $db->query("SELECT COUNT(lid) as total FROM sg_ledger WHERE pid = :pid", 
           [':pid' => $pid])->fetch();
         $total = $total->total;
         $result = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid ORDER BY timestamp DESC LIMIT $offset, $per_page", 
-          [':pid' => $pid])->fetchAll();
+          [':pid' => $pid]);
       }
 
       $pager = pager_default_initialize($total, $per_page);
