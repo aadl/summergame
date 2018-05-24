@@ -408,7 +408,7 @@ class PlayerController extends ControllerBase {
 
       if (!$player['show_myscore'] && !$player_access) {
         drupal_set_message("Player #$pid's Score Card is private", 'error');
-        return new RedirectResponse(\Drupal::url('<front>'));
+        return $this->redirect('<front>');
       }
 
       // build the pager
@@ -421,17 +421,17 @@ class PlayerController extends ControllerBase {
         $total = $db->query("SELECT COUNT(lid) as total FROM sg_ledger WHERE pid = :pid AND game_term = :term",
         [':pid' => $pid, ':term' => $_GET['term']])->fetch();
         $total = $total->total;
-        $pager = pager_default_initialize($total, $per_page);
         $result = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND game_term = :term ORDER BY timestamp DESC LIMIT $offset, $per_page",
         [':pid' => $pid, ':term' => $_GET['term']])->fetchAll();
       } else {
         $total = $db->query("SELECT COUNT(lid) as total FROM sg_ledger WHERE pid = :pid", 
           [':pid' => $pid])->fetch();
         $total = $total->total;
-        $pager = pager_default_initialize($total, $per_page);
         $result = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid ORDER BY timestamp DESC LIMIT $offset, $per_page", 
-          [':pid' => $pid]);
+          [':pid' => $pid])->fetchAll();
       }
+
+      $pager = pager_default_initialize($total, $per_page);
       
       while ($row = $result->fetchAssoc()) {
         // Change bnum: code to a link to the bib record
