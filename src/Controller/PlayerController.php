@@ -210,7 +210,25 @@ class PlayerController extends ControllerBase {
   }
 
   public function redeem() {
+    $user = \Drupal::currentUser();
+    if ($user->isAuthenticated()) {
+      $player = summergame_player_load($user->id());
+      $pid = $player['pid'];
+      if ($pid && summergame_player_access($pid)) {
+        $redeem_form = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerRedeemForm', $pid);
+      } else {
+        drupal_set_message("Invalid ID or no access for player #$pid", 'error');
+        return new RedirectResponse('/summergame/player');
+      } 
+    } else {
+      drupal_set_message('You must be logged in to redeem a Summer Game code.');
+      return new RedirectResponse('/user/login?destination=/summergame/player/gamecode');
+    }
 
+    return [
+      '#theme' => 'summergame_player_redeem',
+      '#redeem_form' => $redeem_form
+    ];
   }
 
   public function friends() {
