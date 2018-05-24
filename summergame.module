@@ -303,6 +303,11 @@ function summergame_theme() {
         'pager' => NULL
       ]
     ],
+    'summergame_player_redeem' => [
+      'variables' => [
+        'redeem_form' => NULL
+      ]
+    ],
   ];
 }
 
