@@ -35,11 +35,11 @@ class PlayerController extends ControllerBase {
                            "player to have a separate website identity for these online activites, please log " .
                            "out and create a new website account before signing up for the Summer Game.");
         $new_player = array('uid' => $user->id());
-        $content = drupal_get_form('summergame_player_form', $new_player);
+        $content = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerForm', $pid);
       }
       else {
         // If no player has signed up yet, redirect to the player page
-        drupal_goto('summergame/player');
+        return new RedirectResponse('/summergame/player');
       }
     }
     else {
@@ -59,7 +59,7 @@ class PlayerController extends ControllerBase {
         // Check if player's score card is private and we don't have access
         if (!$player['show_myscore'] && !$player_access) {
           drupal_set_message("Player #$pid's Score Card is private", 'error');
-          drupal_goto('<front>');
+          $this->redirect('<front>');
         }
 /*
         // Update checkout history for logged in user
@@ -193,14 +193,14 @@ class PlayerController extends ControllerBase {
         else {
           if ($user->id()) {
             $new_player = array('uid' => $user->uid);
-            $content = drupal_get_form('summergame_player_form', $new_player);
+            $content = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerForm', $pid);
           }
           else {
             if ($catalog_domain = variable_get('summergame_catalog_domain', '')) {
               $catalog_domain = 'https://' . $catalog_domain . '/';
             }
             drupal_set_message('You must log into a website account in order to access your Player page');
-            drupal_goto($catalog_domain . 'login', array('destination' => 'summergame/player'));
+            return new RedirectResponse('/login?destination=summergame/player');
           }
         }
       }
@@ -210,7 +210,25 @@ class PlayerController extends ControllerBase {
   }
 
   public function redeem() {
+    $user = \Drupal::currentUser();
+    if ($user->isAuthenticated()) {
+      $player = summergame_player_load($user->id());
+      $pid = $player['pid'];
+      if ($pid && summergame_player_access($pid)) {
+        $redeem_form = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerRedeemForm', $pid);
+      } else {
+        drupal_set_message("Invalid ID or no access for player #$pid", 'error');
+        return new RedirectResponse('/summergame/player');
+      } 
+    } else {
+      drupal_set_message('You must be logged in to redeem a Summer Game code.');
+      return new RedirectResponse('/user/login?destination=/summergame/player/gamecode');
+    }
 
+    return [
+      '#theme' => 'summergame_player_redeem',
+      '#redeem_form' => $redeem_form
+    ];
   }
 
   public function friends() {
@@ -334,13 +352,13 @@ class PlayerController extends ControllerBase {
   }
 
   public function gcpc() {
-    if ($player = summergame_player_load(array('pid' => $pid))) {
+    if ($player = summergame_player_load(['pid' => $pid])) {
       if (!$player['phone']) {
         // Generate a new cell phone code
         $code = 0;
         while ($code == 0) {
           $code = rand(100000, 999999);
-          $collision = db_fetch_object(db_query("SELECT pid FROM sg_players WHERE phone = %d", $code));
+          $collision = $db->query("SELECT pid FROM sg_players WHERE phone = :code", [':code' => $code])->fetch();
           if ($collision->pid) {
             $code = 0;
           }
@@ -350,22 +368,22 @@ class PlayerController extends ControllerBase {
         $char = chr(($player['pid'] % 26) + 65);
         drupal_set_message('TEXT ' . $char. $code . ' to 4AADL (42235) to connect your phone');
       }
-      drupal_goto('summergame/player/' . $player['pid']);
+      return new RedirectResponse('summergame/player/' . $player['pid']);
     }
-    drupal_goto('summergame/player');
+    return new RedirectResponse('summergame/player');
   }
 
   public function gfc() {
-    if ($player = summergame_player_load(array('pid' => $pid))) {
+    if ($player = summergame_player_load(['pid' => $pid])) {
       // Check to see if player already has a code
       if ($player['friend_code']) {
         // Check if anyone has redeemed it already
-        $res = db_query("SELECT COUNT(*) AS fcount FROM sg_ledger WHERE pid = %d AND metadata LIKE '%%fc_follower:%%'", $pid);
-        $fcount = db_fetch_object($res);
+        $res = $db->query("SELECT COUNT(*) AS fcount FROM sg_ledger WHERE pid = :pid AND metadata LIKE '%fc_follower:%'", [':pid' => $pid]);
+        $fcount = $res->fetch();
         if ($fcount->fcount) {
           $followers = $fcount->fcount . ' follower' . ($fcount->fcount == 1 ? '' : 's');
           drupal_set_message("Cannot regenerate Friend Code once it has been redeemed ($followers)", 'error');
-          drupal_goto('summergame/player/' . $player['pid']);
+          return new RedirectResponse('summergame/player/' . $player['pid']);
         }
       }
 
@@ -382,7 +400,7 @@ class PlayerController extends ControllerBase {
           for ($i = 0; $i < 3; $i++) {
             $code .= $nums[mt_rand(0, $num_max_idx)];
           }
-          $collision = db_fetch_object(db_query("SELECT pid FROM sg_players WHERE friend_code = '%s'", $code));
+          $collision = $db->query("SELECT pid FROM sg_players WHERE friend_code = :code", [':code' => $code])->fetch();
           if ($collision->pid) {
             $code = '';
           }
@@ -391,9 +409,9 @@ class PlayerController extends ControllerBase {
       $player['friend_code'] = $code;
       summergame_player_save($player);
       drupal_set_message("Your play.aadl.org Friend Code is $code. Earn bonus points when a friend enters that code as a Game Code.");
-      drupal_goto('summergame/player/' . $player['pid']);
+      return new RedirectResponse('summergame/player/' . $player['pid']);
     }
-    drupal_goto('summergame/player');
+    return new RedirectResponse('summergame/player');
   }
 
   public function ledger($pid) {
@@ -408,7 +426,7 @@ class PlayerController extends ControllerBase {
 
       if (!$player['show_myscore'] && !$player_access) {
         drupal_set_message("Player #$pid's Score Card is private", 'error');
-        return new RedirectResponse(\Drupal::url('<front>'));
+        return $this->redirect('<front>');
       }
 
       // build the pager
@@ -421,17 +439,17 @@ class PlayerController extends ControllerBase {
         $total = $db->query("SELECT COUNT(lid) as total FROM sg_ledger WHERE pid = :pid AND game_term = :term",
         [':pid' => $pid, ':term' => $_GET['term']])->fetch();
         $total = $total->total;
-        $pager = pager_default_initialize($total, $per_page);
         $result = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND game_term = :term ORDER BY timestamp DESC LIMIT $offset, $per_page",
-        [':pid' => $pid, ':term' => $_GET['term']])->fetchAll();
+        [':pid' => $pid, ':term' => $_GET['term']]);
       } else {
         $total = $db->query("SELECT COUNT(lid) as total FROM sg_ledger WHERE pid = :pid", 
           [':pid' => $pid])->fetch();
         $total = $total->total;
-        $pager = pager_default_initialize($total, $per_page);
         $result = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid ORDER BY timestamp DESC LIMIT $offset, $per_page", 
           [':pid' => $pid]);
       }
+
+      $pager = pager_default_initialize($total, $per_page);
       
       while ($row = $result->fetchAssoc()) {
         // Change bnum: code to a link to the bib record
