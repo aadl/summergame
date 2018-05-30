@@ -81,6 +81,7 @@ class AdminController extends ControllerBase {
       '#theme' => 'summergame_admin_page',
       '#print_page_url' => \Drupal::config('summergame.settings')->get('summergame_print_page'),
       '#summergame_player_search_form' => \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerSearchForm'),
+      '#summergame_gamecode_search_form' => \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGameGameCodeSearchForm'),
       '#sg_admin' => $sg_admin,
       '#gc_rows' => $gc_rows,
       '#badge_rows' => $badge_rows,
@@ -90,66 +91,73 @@ class AdminController extends ControllerBase {
     return $render;
   }
 
-  public function gamecodes() {
-    $admin_users = user_access('administer users');
-    drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
-    $content .= '<div id="summergame-admin-page">';
+  public function gamecodes($search_term = '') {
+    $sg_admin = \Drupal::currentUser()->hasPermission('administer summergame');
+    $admin_users = \Drupal::currentUser()->hasPermission('administer users');
+    $db = \Drupal::database();
 
     // Game Codes
-    $content .= '<ul class="create-new-code"><li class="button green">' . l("Create New Game Code", 'summergame/admin/add') . '</li></ul>';
-    $content .= '<h2 class="title game-codes">Game Codes</h2>';
-    $content .= drupal_get_form('summergame_admin_gamecode_search_form', $search_term);
-
     $rows = array();
     $creators = array();
     if ($search_term) {
-      $res = db_query("SELECT * FROM sg_game_codes " .
-                      "WHERE text LIKE '%%%s%%' " .
-                      "OR description LIKE '%%%s%%' " .
-                      "OR hint LIKE '%%%s%%' " .
-                      "OR game_term LIKE '%%%s%%' " .
-                      "OR game_term_override LIKE '%%%s%%' " .
-                      "ORDER BY created DESC",
-                      $search_term, $search_term, $search_term, $search_term, $search_term);
+      $wild_term = "%$search_term%";
+      $res = $db->query("SELECT * FROM sg_game_codes " .
+                        "WHERE text LIKE :text " .
+                        "OR description LIKE :description " .
+                        "OR hint LIKE :hint " .
+                        "OR game_term LIKE :game_term " .
+                        "OR game_term_override LIKE :game_term_override " .
+                        "ORDER BY created DESC",
+                        [':text' => $wild_term,
+                         ':description' => $wild_term,
+                         ':hint' => $wild_term,
+                         ':game_term' => $wild_term,
+                         ':game_term_override' => $wild_term]);
     }
     else {
       $res = db_query("SELECT * FROM sg_game_codes ORDER BY created DESC");
     }
-    while ($game_code = db_fetch_array($res)) {
+    while ($game_code = $res->fetchAssoc()) {
       // Load creator info
       $creator_uid = $game_code['creator_uid'];
-      if (!$creators[$creator_uid]) {
-        $creators[$creator_uid] = user_load($creator_uid);
+      if (!isset($creator_names[$creator_uid])) {
+        if ($account = \Drupal\user\Entity\User::load($creator_uid)) {
+          $creator_names[$creator_uid] = $account->get('name')->value;
+        }
+        else {
+          $creator_names[$creator_uid] = 'UNKNOWN';
+        }
       }
-      $creator = $creators[$creator_uid];
+      $creator_name = $creator_names[$creator_uid];
 
       $game_code['text'] = (strlen($game_code['text']) > 25 ? substr($game_code['text'], 0, 25) . '...' : $game_code['text']);
       $valid_start = $game_code['valid_start'] ? date('n/d/Y H:i:s', $game_code['valid_start']) : 'Now';
       $valid_end = date('n/d/Y H:i:s', $game_code['valid_end']);
       $rows[] = array(
-        'Text' => user_access('administer summergame') ? $game_code['text'] : preg_replace('/\B\w/', '*', $game_code['text']),
+        'id' => $game_code['code_id'],
+        'Text' => $sg_admin ? $game_code['text'] : preg_replace('/\B\w/', '*', $game_code['text']),
         'Description' => $game_code['description'],
         'Hint' => $game_code['hint'],
         'Points' => $game_code['points'] . ($game_code['diminishing'] ? ' (diminishing)' : ''),
         'Created' => date('n/d/Y', $game_code['created']),
-        'Created By' => ($admin_users ? l($creator->name, 'user/' . $creator->uid) : $creator->name),
-        'Valid Dates' => $valid_start . '-<br />' . $valid_end,
-        'Game Term' => $game_code['game_term'],
+        'CreatedBy' => ($admin_users ? '<a href="/user/' . $creator_uid . '">' . $creator_name . '</a>' : $creator_name),
+        'ValidDates' => $valid_start . '-<br>' . $valid_end,
+        'GameTerm' => $game_code['game_term'],
         'Redemptions' => $game_code['num_redemptions'] . ' of ' . $game_code['max_redemptions'],
-        'Print Sign' => l('print', 'summergame/pdf/gamecode/' . $game_code['code_id']),
-        'Edit' => l('edit', 'summergame/admin/edit/' . $game_code['code_id']),
       );
     }
-    if (count($rows)) {
-      $content .= theme('table', array_keys($rows[0]), $rows);
-    }
-    else {
-      $content .= '<p>Sorry, no gamecodes to display.</p>';
-    }
 
-    $content .= '</div>';
+    $render[] = [
+      '#cache' => [
+        'max-age' => 0, // Don't cache, always get fresh data
+      ],
+      '#theme' => 'summergame_admin_gamecodes_page',
+      '#summergame_gamecode_search_form' => \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGameGameCodeSearchForm', ['search_term' => $search_term]),
+      '#sg_admin' => $sg_admin,
+      '#rows' => $rows,
+    ];
 
-    return $content;
+    return $render;
   }
 
   public function badges() {
@@ -280,7 +288,7 @@ class AdminController extends ControllerBase {
         'max-age' => 0, // Don't cache, always get fresh data
       ],
       '#theme' => 'summergame_admin_player_page',
-      '#summergame_player_search_form' => \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerSearchForm'),
+      '#summergame_player_search_form' => \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerSearchForm', $search_term),
       '#rows' => $rows,
     ];
   }

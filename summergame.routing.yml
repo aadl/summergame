@@ -13,10 +13,11 @@ summergame.admin:
   requirements:
     _permission: 'manage summergame'
 summergame.admin.gamecodes:
-  path: '/summergame/admin/gamecodes'
+  path: '/summergame/admin/gamecodes/{search_term}'
   defaults:
     _controller: '\Drupal\summergame\Controller\AdminController::gamecodes'
     _title: 'Administer Game Codes'
+    search_term: ''
   requirements:
     _permission: 'manage summergame'
 summergame.admin.badges:
@@ -172,10 +173,12 @@ summergame.badge:
   requirements:
     _permission: 'access summergame'
 summergame.pdf:
-  path: '/summergame/pdf'
+  path: '/summergame/pdf/{type}/{code_id}'
   defaults:
     _controller: '\Drupal\summergame\Controller\DefaultController::pdf'
     _title: 'Summer Game PDF'
+    type: 'adult'
+    code_id: 0
   requirements:
     _permission: 'access summergame'
 summergame.admin.trivia:

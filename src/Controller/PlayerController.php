@@ -16,13 +16,6 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 class PlayerController extends ControllerBase {
 
   public function index($pid) {
-/*
-    // Redirect to the right domain
-    if ($sg_did = variable_get('summergame_default_domain_id', FALSE)) {
-      $summergame_domain = domain_load($sg_did);
-      domain_goto($summergame_domain);
-    }
-*/
     $user = \Drupal::currentUser();
 
     if ($user->id() && $pid === 'extra') {
@@ -219,7 +212,7 @@ class PlayerController extends ControllerBase {
       } else {
         drupal_set_message("Invalid ID or no access for player #$pid", 'error');
         return new RedirectResponse('/summergame/player');
-      } 
+      }
     } else {
       drupal_set_message('You must be logged in to redeem a Summer Game code.');
       return new RedirectResponse('/user/login?destination=/summergame/player/gamecode');
@@ -442,15 +435,15 @@ class PlayerController extends ControllerBase {
         $result = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND game_term = :term ORDER BY timestamp DESC LIMIT $offset, $per_page",
         [':pid' => $pid, ':term' => $_GET['term']]);
       } else {
-        $total = $db->query("SELECT COUNT(lid) as total FROM sg_ledger WHERE pid = :pid", 
+        $total = $db->query("SELECT COUNT(lid) as total FROM sg_ledger WHERE pid = :pid",
           [':pid' => $pid])->fetch();
         $total = $total->total;
-        $result = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid ORDER BY timestamp DESC LIMIT $offset, $per_page", 
+        $result = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid ORDER BY timestamp DESC LIMIT $offset, $per_page",
           [':pid' => $pid]);
       }
 
       $pager = pager_default_initialize($total, $per_page);
-      
+
       while ($row = $result->fetchAssoc()) {
         // Change bnum: code to a link to the bib record
         if (preg_match('/bnum:([\w-]+)/', $row['metadata'], $matches)) {
