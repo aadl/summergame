@@ -15,15 +15,19 @@
       <h2 class="title">Players</h2>
       {{ summergame_player_search_form }}
     </div>
-    <a class="button" href="/summergame/admin/gamecode">Create New Game Code</a>
   {% endif %}
 
   <h2 class="title game-codes">Game Codes</h2>
+  {% if sg_admin %}
+    <a class="button" href="/summergame/admin/gamecode">Create New Game Code</a>
+  {% endif %}
   {{ summergame_gamecode_search_form }}
   <table class="not-fixed-table smaller-font">
     <tr>
       <th>Text</th>
       <th>Description</th>
+      <th>Clue</th>
+      <th>Clue Trigger</th>
       <th>Hint</th>
       <th>Points</th>
       <th>Created</th>
@@ -37,6 +41,8 @@
       <tr>
         <td><a href="/summergame/admin/gamecode/{{ gc_row.id }}">{{ gc_row.Text }} <i class="fa fa-pencil-square-o"></i></a></td>
         <td>{{ gc_row.Description|raw|slice(0, 70) }}</td>
+        <td>{{ gc_row.Clue }}</td>
+        <td>{{ gc_row.ClueTrigger }}</td>
         <td>{{ gc_row.Hint }}</td>
         <td>{{ gc_row.Points }}</td>
         <td>{{ gc_row.Created }}</td>

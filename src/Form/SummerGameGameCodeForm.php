@@ -82,6 +82,20 @@ class SummerGameGameCodeForm extends FormBase {
       '#description' => t('Description of the game code award (e.g. Attended Apple Peeling Event)'),
       '#required' => TRUE,
     ];
+    $form['clue'] = [
+      '#type' => 'textarea',
+      '#title' => t('Clue'),
+      '#default_value' => $game_code['clue'],
+      '#description' => t('Clue leading to THIS game code. Will be revealed when Clue Trigger code is entered'),
+    ];
+    $form['clue_trigger'] = [
+      '#type' => 'textfield',
+      '#title' => t('Clue Trigger'),
+      '#default_value' => $game_code['clue_trigger'],
+      '#size' => 32,
+      '#maxlength' => 255,
+      '#description' => t('Game code text to trigger this clue (e.g. APPLES)'),
+    ];
     $form['hint'] = [
       '#type' => 'textarea',
       '#title' => t('Hint'),
@@ -229,9 +243,11 @@ class SummerGameGameCodeForm extends FormBase {
 
     // Set up fields
     $fields = [
-      'text' => strtoupper(str_replace(["\r", "\n"], '', $form_state->getValue('text'))),
+      'text' => strtoupper(str_replace(["\r", "\n", ' '], '', $form_state->getValue('text'))),
       'description' => str_replace(["\r", "\n"], '', $form_state->getValue('description')),
       'hint' => str_replace(["\r", "\n"], '', trim($form_state->getValue('hint'))),
+      'clue' => str_replace(["\r", "\n"], '', $form_state->getValue('clue')),
+      'clue_trigger' => strtoupper(str_replace(["\r", "\n", ' '], '', $form_state->getValue('clue_trigger'))),
       'points' => $form_state->getValue('points'),
       'diminishing' => $form_state->getValue('diminishing'),
       'max_redemptions' => $form_state->getValue('max_redemptions'),

@@ -47,6 +47,8 @@ class AdminController extends ControllerBase {
         'id' => $game_code['code_id'],
         'Text' => strlen($game_code['text']) > 25 ? substr($game_code['text'], 0, 25) . '...' : $game_code['text'],
         'Description' => $game_code['description'],
+        'Clue' => $game_code['clue'],
+        'ClueTrigger' => $game_code['clue_trigger'],
         'Hint' => $game_code['hint'],
         'Points' => $game_code['points'] . ($game_code['diminishing'] ? ' (diminishing)' : ''),
         'Created' => date('n/d/Y', $game_code['created']),
