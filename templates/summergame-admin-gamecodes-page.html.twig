@@ -11,6 +11,8 @@
     <tr>
       <th>Text</th>
       <th>Description</th>
+      <th>Clue</th>
+      <th>Clue Trigger</th>
       <th>Hint</th>
       <th>Points</th>
       <th>Created</th>
@@ -24,6 +26,8 @@
       <tr>
         <td><a href="/summergame/admin/gamecode/{{ row.id }}">{{ row.Text }} <i class="fa fa-pencil-square-o"></i></a></td>
         <td>{{ row.Description|raw|slice(0, 70) }}</td>
+        <td>{{ row.Clue }}</td>
+        <td>{{ row.ClueTrigger }}</td>
         <td>{{ row.Hint }}</td>
         <td>{{ row.Points }}</td>
         <td>{{ row.Created }}</td>

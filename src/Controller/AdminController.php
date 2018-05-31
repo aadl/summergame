@@ -106,12 +106,16 @@ class AdminController extends ControllerBase {
       $res = $db->query("SELECT * FROM sg_game_codes " .
                         "WHERE text LIKE :text " .
                         "OR description LIKE :description " .
+                        "OR clue LIKE :clue " .
+                        "OR clue_trigger LIKE :clue_trigger " .
                         "OR hint LIKE :hint " .
                         "OR game_term LIKE :game_term " .
                         "OR game_term_override LIKE :game_term_override " .
                         "ORDER BY created DESC",
                         [':text' => $wild_term,
                          ':description' => $wild_term,
+                         ':clue' => $wild_term,
+                         ':clue_trigger' => $wild_term,
                          ':hint' => $wild_term,
                          ':game_term' => $wild_term,
                          ':game_term_override' => $wild_term]);
@@ -139,6 +143,8 @@ class AdminController extends ControllerBase {
         'id' => $game_code['code_id'],
         'Text' => $sg_admin ? $game_code['text'] : preg_replace('/\B\w/', '*', $game_code['text']),
         'Description' => $game_code['description'],
+        'Clue' => $game_code['clue'],
+        'ClueTrigger' => $game_code['clue_trigger'],
         'Hint' => $game_code['hint'],
         'Points' => $game_code['points'] . ($game_code['diminishing'] ? ' (diminishing)' : ''),
         'Created' => date('n/d/Y', $game_code['created']),
