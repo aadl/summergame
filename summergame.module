@@ -299,6 +299,13 @@ function summergame_theme() {
         'rows' => NULL,
       ],
     ],
+    'summergame_admin_players_merge_page' => [
+      'variables' => [
+        'pid1' => NULL,
+        'pid2' => NULL,
+        'rows' => NULL,
+      ],
+    ],
     'summergame_player_page' => [
       'variables' => [
         'summergame_points_enabled' => NULL,

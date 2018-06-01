@@ -223,7 +223,7 @@ class PlayerController extends ControllerBase {
       '#redeem_form' => $redeem_form
     ];
   }
-
+/*
   public function friends() {
     global $user;
     drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
@@ -331,7 +331,7 @@ class PlayerController extends ControllerBase {
 
     return $content;
   }
-
+*/
   public function consume() {
 
   }

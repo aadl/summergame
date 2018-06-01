@@ -5,11 +5,12 @@
 #}
 
 <div id="summergame-admin-page">
+{#
   <div class="print-game-cards">
     <h2 class="title">Print Game Cards</h2>
     <a class="button" href="{{ print_page_url }}">Batch Print Game Cards</a>
   </div>
-
+#}
   {% if sg_admin %}
     <div class="admin-page-player-search">
       <h2 class="title">Players</h2>
@@ -73,7 +74,11 @@
       <tr>
         <td>{{ badge_row.BadgeID|raw }}</td>
         <td>
-          <img class="summergame-badge" title="{{ badge_row.Title }}" src="http://play.old.aadl.org/files/sg_images/{{ badge_row.Image }}_100.png">
+          {% if badge_row.Image starts with 'public' %}
+            <img class="summergame-badge" title="{{ badge_row.Title }}" src="{{ file_url(badge_row.Image) }}">
+          {% else %}
+            <img class="summergame-badge" title="{{ badge_row.Title }}" src="http://play.old.aadl.org/files/sg_images/{{ badge_row.Image }}_100.png">
+          {% endif %}
         </td>
         <td>{{ badge_row.Title }}</td>
         <td>{{ badge_row.Level }}</td>

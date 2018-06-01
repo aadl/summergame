@@ -119,7 +119,7 @@ class DefaultController extends ControllerBase {
 
     return $render;
   }
-
+/*
   public function badge() {
     // Redirect to the right domain
     if ($sg_did = variable_get('summergame_default_domain_id', FALSE)) {
@@ -374,14 +374,8 @@ FBL;
 
     return $content;
   }
-
+*/
   public function pdf($type = 'adult', $code_id = 0) {
-    /*
-    $libphp_path = variable_get('summergame_libphp_path', '');
-    require_once($libphp_path . 'contrib/fpdf/fpdf.php');
-    require_once($libphp_path . 'contrib/fpdi/fpdi.php');
-    require_once($libphp_path . 'contrib/redisent/redisent.php');
-    */
     $file_path = drupal_get_path('module', 'summergame') . '/pdf/';
     $redis = new Client(\Drupal::config('summergame.settings')->get('summergame_redis_conn'));
 
