@@ -63,7 +63,7 @@ class AdminController extends ControllerBase {
     $badge_rows = [];
     $badge_ids = \Drupal::entityQuery('node')
                  ->condition('type','sg_badge')
-                 //->sort('id', 'DESC')
+                 ->sort('nid', 'DESC')
                  ->range(0, 25)
                  ->execute();
     $badges = \Drupal\node\Entity\Node::loadMultiple($badge_ids);
