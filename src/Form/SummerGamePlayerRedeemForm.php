@@ -30,6 +30,10 @@ class SummerGamePlayerRedeemForm extends FormBase {
       '#type' => 'value',
       '#value' => $player['pid'],
     ];
+    $form['explaination'] = [
+      '#markup' => '<p>You can find game codes for attending events, or by finding them around the library.</p>' .
+      '<h3>Redeem a code for ' . ($player['nickname'] ? $player['nickname'] : $player['name']) . '</h3>'
+    ];
     $form['code_text'] = [
       '#type' => 'textfield',
       '#title' => t('Code Text'),
@@ -110,7 +114,7 @@ class SummerGamePlayerRedeemForm extends FormBase {
       }
     }
     $form_state->setRedirect('summergame.player');
-    
+
     return;
   }
 }
