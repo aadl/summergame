@@ -114,13 +114,13 @@ class SummerGameAdminForm extends ConfigFormBase {
       '#maxlength' => 32,
       '#description' => t("Links to catalog pages will be directed to this domain. Leave blank for same domain. (No http:// or trailing slash)"),
     ];
-    $form['summergame_libphp_path'] = [
+    $form['summergame_redis_conn'] = [
       '#type' => 'textfield',
-      '#title' => t("LibPHP path"),
-      '#default_value' => $summergame_settings->get('summergame_libphp_path'),
-      '#size' => 32,
-      '#maxlength' => 32,
-      '#description' => t('Path to PHP libraries. Needs "contrib/fpdf", "contrib/fpdi", and "contrib/redisent" directories'),
+      '#title' => t('Redis Connection String'),
+      '#default_value' => \Drupal::config('summergame.settings')->get('summergame_redis_conn'),
+      '#size' => 64,
+      '#maxlength' => 128,
+      '#description' => t('Connection information for the redis server (e.g. tcp://127.0.0.1:6379?database=15)'),
     ];
     $user_roles = ['' => 'NONE'];
     foreach (user_roles(TRUE) as $user_role) {

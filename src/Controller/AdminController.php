@@ -47,6 +47,8 @@ class AdminController extends ControllerBase {
         'id' => $game_code['code_id'],
         'Text' => strlen($game_code['text']) > 25 ? substr($game_code['text'], 0, 25) . '...' : $game_code['text'],
         'Description' => $game_code['description'],
+        'Clue' => $game_code['clue'],
+        'ClueTrigger' => $game_code['clue_trigger'],
         'Hint' => $game_code['hint'],
         'Points' => $game_code['points'] . ($game_code['diminishing'] ? ' (diminishing)' : ''),
         'Created' => date('n/d/Y', $game_code['created']),
@@ -59,21 +61,43 @@ class AdminController extends ControllerBase {
 
     // Badges
     $badge_rows = [];
-    $res = $db->query("SELECT * FROM sg_badges ORDER BY bid DESC LIMIT $limit");
-    while ($badge = $res->fetchAssoc()) {
+    $badge_ids = \Drupal::entityQuery('node')
+                 ->condition('type','sg_badge')
+                 ->sort('nid', 'DESC')
+                 ->range(0, 25)
+                 ->execute();
+    $badges = \Drupal\node\Entity\Node::loadMultiple($badge_ids);
+    foreach ($badges as $badge) {
+      $formula = $badge->get('field_badge_formula')->value;
       if (!$sg_admin) {
-        $badge['formula'] = preg_replace('/\B\w/', '*', $badge['formula']);
+        $formula = preg_replace('/\B\w/', '*', $formula);
       }
       $badge_rows[] = [
-        'BadgeID' => ($sg_admin ? '<a href="/summergame/admin/badge/' . $badge['bid'] . '">' . $badge['bid'] . '</a>' : $badge['bid']),
-        'Image' => $badge['image'],
-        'Title' => $badge['title'],
-        'Level' => $badge['level'],
-        'Description' => $badge['description'],
-        'Formula' => strlen($badge['formula']) > 25 ? substr($badge['formula'], 0, 25) . '...' : $badge['formula'],
+        'BadgeID' => '<a href="/node/' . $badge->id() . '">' . $badge->id() . '</a>',
+        'Image' => $badge->field_badge_image->entity->getFileUri(),
+        'Title' => $badge->get('title')->value,
+        'Level' => '',
+        'Description' => $badge->get('body')->value,
+        'Formula' => strlen($formula) > 25 ? substr($formula, 0, 25) . '...' : $formula,
       ];
     }
 
+    if (count($badges) < 25) {
+      $res = $db->query('SELECT * FROM sg_badges ORDER BY bid DESC LIMIT ' . (25 - count($badges)));
+      while ($badge = $res->fetchAssoc()) {
+        if (!$sg_admin) {
+          $badge['formula'] = preg_replace('/\B\w/', '*', $badge['formula']);
+        }
+        $badge_rows[] = [
+          'BadgeID' => ($sg_admin ? '<a href="/summergame/admin/badge/' . $badge['bid'] . '">' . $badge['bid'] . '</a>' : $badge['bid']),
+          'Image' => $badge['image'],
+          'Title' => $badge['title'],
+          'Level' => $badge['level'],
+          'Description' => $badge['description'],
+          'Formula' => strlen($badge['formula']) > 25 ? substr($badge['formula'], 0, 25) . '...' : $badge['formula'],
+        ];
+      }
+    }
     $render[] = [
       '#cache' => [
         'max-age' => 0, // Don't cache, always get fresh data
@@ -81,6 +105,7 @@ class AdminController extends ControllerBase {
       '#theme' => 'summergame_admin_page',
       '#print_page_url' => \Drupal::config('summergame.settings')->get('summergame_print_page'),
       '#summergame_player_search_form' => \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerSearchForm'),
+      '#summergame_gamecode_search_form' => \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGameGameCodeSearchForm'),
       '#sg_admin' => $sg_admin,
       '#gc_rows' => $gc_rows,
       '#badge_rows' => $badge_rows,
@@ -90,68 +115,81 @@ class AdminController extends ControllerBase {
     return $render;
   }
 
-  public function gamecodes() {
-    $admin_users = user_access('administer users');
-    drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
-    $content .= '<div id="summergame-admin-page">';
+  public function gamecodes($search_term = '') {
+    $sg_admin = \Drupal::currentUser()->hasPermission('administer summergame');
+    $admin_users = \Drupal::currentUser()->hasPermission('administer users');
+    $db = \Drupal::database();
 
     // Game Codes
-    $content .= '<ul class="create-new-code"><li class="button green">' . l("Create New Game Code", 'summergame/admin/add') . '</li></ul>';
-    $content .= '<h2 class="title game-codes">Game Codes</h2>';
-    $content .= drupal_get_form('summergame_admin_gamecode_search_form', $search_term);
-
     $rows = array();
     $creators = array();
     if ($search_term) {
-      $res = db_query("SELECT * FROM sg_game_codes " .
-                      "WHERE text LIKE '%%%s%%' " .
-                      "OR description LIKE '%%%s%%' " .
-                      "OR hint LIKE '%%%s%%' " .
-                      "OR game_term LIKE '%%%s%%' " .
-                      "OR game_term_override LIKE '%%%s%%' " .
-                      "ORDER BY created DESC",
-                      $search_term, $search_term, $search_term, $search_term, $search_term);
+      $wild_term = "%$search_term%";
+      $res = $db->query("SELECT * FROM sg_game_codes " .
+                        "WHERE text LIKE :text " .
+                        "OR description LIKE :description " .
+                        "OR clue LIKE :clue " .
+                        "OR clue_trigger LIKE :clue_trigger " .
+                        "OR hint LIKE :hint " .
+                        "OR game_term LIKE :game_term " .
+                        "OR game_term_override LIKE :game_term_override " .
+                        "ORDER BY created DESC",
+                        [':text' => $wild_term,
+                         ':description' => $wild_term,
+                         ':clue' => $wild_term,
+                         ':clue_trigger' => $wild_term,
+                         ':hint' => $wild_term,
+                         ':game_term' => $wild_term,
+                         ':game_term_override' => $wild_term]);
     }
     else {
       $res = db_query("SELECT * FROM sg_game_codes ORDER BY created DESC");
     }
-    while ($game_code = db_fetch_array($res)) {
+    while ($game_code = $res->fetchAssoc()) {
       // Load creator info
       $creator_uid = $game_code['creator_uid'];
-      if (!$creators[$creator_uid]) {
-        $creators[$creator_uid] = user_load($creator_uid);
+      if (!isset($creator_names[$creator_uid])) {
+        if ($account = \Drupal\user\Entity\User::load($creator_uid)) {
+          $creator_names[$creator_uid] = $account->get('name')->value;
+        }
+        else {
+          $creator_names[$creator_uid] = 'UNKNOWN';
+        }
       }
-      $creator = $creators[$creator_uid];
+      $creator_name = $creator_names[$creator_uid];
 
       $game_code['text'] = (strlen($game_code['text']) > 25 ? substr($game_code['text'], 0, 25) . '...' : $game_code['text']);
       $valid_start = $game_code['valid_start'] ? date('n/d/Y H:i:s', $game_code['valid_start']) : 'Now';
       $valid_end = date('n/d/Y H:i:s', $game_code['valid_end']);
       $rows[] = array(
-        'Text' => user_access('administer summergame') ? $game_code['text'] : preg_replace('/\B\w/', '*', $game_code['text']),
+        'id' => $game_code['code_id'],
+        'Text' => $sg_admin ? $game_code['text'] : preg_replace('/\B\w/', '*', $game_code['text']),
         'Description' => $game_code['description'],
+        'Clue' => $game_code['clue'],
+        'ClueTrigger' => $game_code['clue_trigger'],
         'Hint' => $game_code['hint'],
         'Points' => $game_code['points'] . ($game_code['diminishing'] ? ' (diminishing)' : ''),
         'Created' => date('n/d/Y', $game_code['created']),
-        'Created By' => ($admin_users ? l($creator->name, 'user/' . $creator->uid) : $creator->name),
-        'Valid Dates' => $valid_start . '-<br />' . $valid_end,
-        'Game Term' => $game_code['game_term'],
+        'CreatedBy' => ($admin_users ? '<a href="/user/' . $creator_uid . '">' . $creator_name . '</a>' : $creator_name),
+        'ValidDates' => $valid_start . '-<br>' . $valid_end,
+        'GameTerm' => $game_code['game_term'],
         'Redemptions' => $game_code['num_redemptions'] . ' of ' . $game_code['max_redemptions'],
-        'Print Sign' => l('print', 'summergame/pdf/gamecode/' . $game_code['code_id']),
-        'Edit' => l('edit', 'summergame/admin/edit/' . $game_code['code_id']),
       );
     }
-    if (count($rows)) {
-      $content .= theme('table', array_keys($rows[0]), $rows);
-    }
-    else {
-      $content .= '<p>Sorry, no gamecodes to display.</p>';
-    }
 
-    $content .= '</div>';
+    $render[] = [
+      '#cache' => [
+        'max-age' => 0, // Don't cache, always get fresh data
+      ],
+      '#theme' => 'summergame_admin_gamecodes_page',
+      '#summergame_gamecode_search_form' => \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGameGameCodeSearchForm', ['search_term' => $search_term]),
+      '#sg_admin' => $sg_admin,
+      '#rows' => $rows,
+    ];
 
-    return $content;
+    return $render;
   }
-
+/*
   public function badges() {
     drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
     $sg_admin = user_access('administer summergame');
@@ -186,7 +224,7 @@ class AdminController extends ControllerBase {
 
     return $content;
   }
-
+*/
   public function players($search_term = '') {
 
     if ($search_term == 'new') {
@@ -280,51 +318,52 @@ class AdminController extends ControllerBase {
         'max-age' => 0, // Don't cache, always get fresh data
       ],
       '#theme' => 'summergame_admin_player_page',
-      '#summergame_player_search_form' => \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerSearchForm'),
+      '#summergame_player_search_form' => \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerSearchForm', $search_term),
       '#rows' => $rows,
     ];
   }
 
-  public function players_merge() {
+  public function players_merge($pid1 = 0, $pid2 = 0, $confirm = FALSE) {
     if ($confirm) {
       summergame_players_merge($pid1, $pid2);
       drupal_set_message("Player #$pid2 merged into Player #$pid1");
-      drupal_goto("summergame/player/$pid1");
+      return $this->redirect('summergame.player', ['pid' => $pid1]);
     }
 
-    $p1 = summergame_player_load(array('pid' => $pid1));
-    $p2 = summergame_player_load(array('pid' => $pid2));
+    $p1 = summergame_player_load(['pid' => $pid1]);
+    $p2 = summergame_player_load(['pid' => $pid2]);
 
     if ($p1['pid'] && $p2['pid']) {
       $p1_points = summergame_get_player_points($pid1);
-      $p1['balance'] = $p1_points['balance'];
-      $p1['total'] = $p1_points['total'];
-
+      $p1['total'] = $p1_points['career'];
+dpm($p1);
       $p2_points = summergame_get_player_points($pid2);
-      $p2['balance'] = $p2_points['balance'];
-      $p2['total'] = $p2_points['total'];
+      $p2['total'] = $p2_points['career'];
 
-      $merge_table = array();
+      $merge_table = [];
       foreach ($p2 as $field => $p2_data) {
-        $arrows = (!empty($p2_data) && empty($p1[$field]) ? '<strong>>>></strong>' : '');
-        $merge_table[] = array("<strong>$field</strong>", $p2_data, $arrows, $p1[$field]);
+        $arrows = (!empty($p2_data) && empty($p1[$field]) ? '>>>' : '');
+        $merge_table[] = [
+          'field' => $field,
+          'p2data' => $p2_data,
+          'arrows' => $arrows,
+          'p1data' => $p1[$field],
+        ];
       }
 
-      $content .= "<h1>Merge These Player Records?</h1>";
-      $content .= '<p style="color: red">Warning: Player record #' . $p2['pid'] . ' will be deleted as a result of this merge</p>';
-
-      $content .= theme('table', array('', 'Player 2', '>>>', 'Player 1'), $merge_table);
-
-      $content .= '<ul>';
-      $content .= '<li class="button green">' . l('MERGE', $_GET['q'] . '/1') . '</li>';
-      $content .= '<li class="button red">' .l('Cancel', 'summergame/admin') . '</li>';
-      $content .= '</ul>';
-
-      return $content;
+      return [
+        '#cache' => [
+          'max-age' => 0, // Don't cache, always get fresh data
+        ],
+        '#theme' => 'summergame_admin_players_merge_page',
+        '#pid1' => $pid1,
+        '#pid2' => $pid2,
+        '#rows' => $merge_table,
+      ];
     }
     else {
       drupal_set_message('Invalid Player IDs', 'error');
-      drupal_goto('summergame/admin');
+      return $this->redirect('summergame.admin');
     }
   }
 }

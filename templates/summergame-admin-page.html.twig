@@ -5,27 +5,30 @@
 #}
 
 <div id="summergame-admin-page">
-  <h1>Summer Game Admin Page</h1>
-
+{#
   <div class="print-game-cards">
     <h2 class="title">Print Game Cards</h2>
     <a class="button" href="{{ print_page_url }}">Batch Print Game Cards</a>
   </div>
-
+#}
   {% if sg_admin %}
     <div class="admin-page-player-search">
       <h2 class="title">Players</h2>
       {{ summergame_player_search_form }}
     </div>
-    <a class="button" href="/summergame/admin/gamecode">Create New Game Code</a>
   {% endif %}
 
   <h2 class="title game-codes">Game Codes</h2>
-  {{ summergame_admin_gamecode_search_form }}
+  {% if sg_admin %}
+    <a class="button" href="/summergame/admin/gamecode">Create New Game Code</a>
+  {% endif %}
+  {{ summergame_gamecode_search_form }}
   <table class="not-fixed-table smaller-font">
     <tr>
       <th>Text</th>
       <th>Description</th>
+      <th>Clue</th>
+      <th>Clue Trigger</th>
       <th>Hint</th>
       <th>Points</th>
       <th>Created</th>
@@ -39,6 +42,8 @@
       <tr>
         <td><a href="/summergame/admin/gamecode/{{ gc_row.id }}">{{ gc_row.Text }} <i class="fa fa-pencil-square-o"></i></a></td>
         <td>{{ gc_row.Description|raw|slice(0, 70) }}</td>
+        <td>{{ gc_row.Clue }}</td>
+        <td>{{ gc_row.ClueTrigger }}</td>
         <td>{{ gc_row.Hint }}</td>
         <td>{{ gc_row.Points }}</td>
         <td>{{ gc_row.Created }}</td>
@@ -69,7 +74,11 @@
       <tr>
         <td>{{ badge_row.BadgeID|raw }}</td>
         <td>
-          <img class="summergame-badge" title="{{ badge_row.Title }}" src="http://play.old.aadl.org/files/sg_images/{{ badge_row.Image }}_100.png">
+          {% if badge_row.Image starts with 'public' %}
+            <img class="summergame-badge" title="{{ badge_row.Title }}" src="{{ file_url(badge_row.Image) }}">
+          {% else %}
+            <img class="summergame-badge" title="{{ badge_row.Title }}" src="http://play.old.aadl.org/files/sg_images/{{ badge_row.Image }}_100.png">
+          {% endif %}
         </td>
         <td>{{ badge_row.Title }}</td>
         <td>{{ badge_row.Level }}</td>

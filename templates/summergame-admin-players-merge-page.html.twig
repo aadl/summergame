@@ -1,0 +1,30 @@
+{#
+/**
+ * Summer Game Admin Players Merge Page
+ */
+#}
+
+<div id="summergame-admin-page">
+
+  <h1>Merge These Player Records?</h1>
+  <p style="color: red">Warning: Player record #{{ pid2 }} will be deleted as a result of this merge</p>
+  <table class="not-fixed-table smaller-font">
+    <tr>
+      <th>&nbsp;</th>
+      <th>Player 2</th>
+      <th>>>></th>
+      <th>Player 1</th>
+    </tr>
+    {% for row in rows %}
+      <tr>
+        <td>{{ row.field }}</td>
+        <td>{{ row.p2data }}</td>
+        <td>{{ row.arrows }}</td>
+        <td>{{ row.p1data }}</td>
+      </tr>
+    {% endfor %}
+  </table>
+
+  <a class="button" href="/summergame/admin/players/merge/{{ pid1 }}/{{ pid2}}/1">MERGE</a>
+  <a class="button" href="/summergame/admin">Cancel</a>
+</div>

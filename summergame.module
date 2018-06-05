@@ -280,6 +280,7 @@ function summergame_theme() {
       'variables' => [
         'print_page_url' => NULL,
         'summergame_player_search_form' => NULL,
+        'summergame_gamecode_search_form' => NULL,
         'sg_admin' => NULL,
         'gc_rows' => NULL,
         'badge_rows' => NULL,
@@ -289,6 +290,19 @@ function summergame_theme() {
     'summergame_admin_player_page' => [
       'variables' => [
         'summergame_player_search_form' => NULL,
+        'rows' => NULL,
+      ],
+    ],
+    'summergame_admin_gamecodes_page' => [
+      'variables' => [
+        'summergame_gamecode_search_form' => NULL,
+        'rows' => NULL,
+      ],
+    ],
+    'summergame_admin_players_merge_page' => [
+      'variables' => [
+        'pid1' => NULL,
+        'pid2' => NULL,
         'rows' => NULL,
       ],
     ],
@@ -3964,8 +3978,11 @@ function summergame_player_check_badges($pid, $game_term) {
     $player_bids[] = $player_badge->bid;
   }
 
-  $res = $db->query("SELECT * FROM sg_badges WHERE game_term = :game_term " .
-                    "AND active = 1 AND formula != '' ORDER BY bid ASC", [':game_term' => $game_term]);
+  $res = $db->query("SELECT gt.entity_id AS bid, f.field_badge_formula_value AS formula " .
+                    "FROM node__field_badge_game_term gt, node__field_badge_formula f " .
+                    "WHERE gt.field_badge_game_term_value = :game_term " .
+                    "AND f.field_badge_formula_value != '' " .
+                    "ORDER BY bid ASC", [':game_term' => $game_term]);
   while ($badge = $res->fetchObject()) {
     if (!in_array($badge->bid, $player_bids)) {
       $awarded = FALSE;
@@ -3987,7 +4004,7 @@ function summergame_player_check_badges($pid, $game_term) {
         list($count_limit, $text_pattern) = explode('::', $badge->formula);
         $lid_count = $db->query("SELECT COUNT(lid) AS lid_count FROM sg_ledger WHERE pid = $pid " .
                                 "AND (type LIKE :text_pattern OR metadata LIKE :gamecode_pattern) AND game_term = :game_term",
-                                [':text_pattern' => $text_pattern, ':gamecode_pattern' => "gamecode:$text_pattern%", ':game_term' => $badge->game_term]);
+                                [':text_pattern' => $text_pattern, ':gamecode_pattern' => "gamecode:$text_pattern%", ':game_term' => $game_term]);
         if ($lid_count->lid_count >= $count_limit) {
           $awarded = summergame_player_award_badge($pid, $badge->bid);
         }
@@ -3996,21 +4013,23 @@ function summergame_player_check_badges($pid, $game_term) {
         // Collection Badge
         $eligible = TRUE;
         foreach (explode(',', $badge->formula) as $text_pattern) {
-          $query = "SELECT lid FROM sg_ledger WHERE pid = $pid AND (";
-          $args = array($pid);
+          $query = "SELECT lid FROM sg_ledger WHERE pid = :pid AND (";
+          $args = [
+          ':pid' => $pid
+          ];
 
           $text_patterns = explode('|', $text_pattern);
-          foreach ($text_patterns as &$pattern) {
-            $args[] = $pattern;
-            $args[] = $pattern;
-            $pattern = "(type LIKE '%s' OR metadata LIKE 'gamecode:%s')";
+          foreach ($text_patterns as $i => &$pattern) {
+            $args['type_' . $i] = $pattern;
+            $args['metadata_' . $i] = 'gamecode:' . $pattern;
+            $pattern = "(type LIKE type_$i OR metadata LIKE metadata_$i)";
           }
           $query .= implode(' OR ', $text_patterns);
 
-          $query .= ") AND game_term = '%s' LIMIT 1";
-          $args[] = $badge->game_term;
+          $query .= ") AND game_term = :game_term LIMIT 1";
+          $args[':game_term'] = $game_term;
 
-          $ledger = db_fetch_object(db_query($query, $args));
+          $ledger = $db->query($query, $args)->fetchObject();
 
           if (!$ledger->lid) {
             $eligible = FALSE;
@@ -4023,45 +4042,44 @@ function summergame_player_check_badges($pid, $game_term) {
       }
 
       if ($awarded) {
+        $badge_node = \Drupal::entityTypeManager()->getStorage('node')->load($badge->bid);
+        $badge_title = $badge_node->get('title')->value;
+/*
         $badge_detail_link = l('Badge Detail Page', 'summergame/badge/' . $badge->bid,
                                array('html' => TRUE,
                                      'query' => array('lightbox' => 1),
                                      'attributes' => array('rel' => 'lightframe'),
                                     )
                               );
-        $messages[] = "Earned the $badge->title Badge! Share your accomplishment on Twitter or Facebook on the $badge_detail_link";
+*/
+
+        $messages[] = "Earned the $badge_title Badge! Share your accomplishment on Twitter or Facebook on the " . $badge_detail_link;
         $player_bids[] = $badge->bid;
         // check if a bonus should be applied
-        if ($badge->points) {
+        if ($points = $badge_node->get('points')->value) {
           // check for points override
-          if ($badge->points_override) {
-            $badge->points = $badge->points_override;
+          if ($badge_node->get('points_override')->value) {
+            $points = $badge_node->get('points_override')->value;
           }
-          if ($badge->game_term_override) {
-            $badge->game_term = $badge->game_term_override;
-          }
-          else if (empty($badge->game_term)) {
-            $badge->game_term = variable_get('summergame_current_game_term', '');
+          if ($badge_node->get('game_term_override')->value) {
+            $game_term = $badge_node->get('game_term_override')->value;
           }
 
-          // Handle multiple bonuses
-          $points_values = explode(',', $badge->points);
-          $game_terms = explode(',', $badge->game_term);
-          $points = 0;
+          $db->insert('sg_ledger')->fields([
+            'pid' => $pid,
+            'points' => $points,
+            'type' => 'Badge Bonus',
+            'metadata' => '',
+            'description' => "Earned the $badge_title Badge",
+            'game_term' => $game_term,
+            'timestamp' => time(),
+          ])->execute();
 
-          foreach ($game_terms as $i => $game_term) {
-            if ($points_values[$i]) {
-              $points = $points_values[$i];
-            }
-            db_query("INSERT INTO sg_ledger (pid, points, type, metadata, description, game_term, timestamp) " .
-                     "VALUES (%d, %d, '%s', '%s', '%s', '%s', %d)",
-                     $pid, $points, 'Badge Bonus', $metadata, "Earned the $badge->title Badge",
-                     $game_term, time());
-            $messages[] = "Received $points bonus $game_term points for earning the $badge->title Badge";
-          }
+          $messages[] = "Received $points bonus $game_term points for earning the $badge_title Badge";
         }
+/*
         // check if an email should be sent to awardee
-        if ($badge->email_message) {
+        if ($email_message = $badge->get('email_message')->value) {
           // Find email address attached to user account
           $u = db_fetch_object(db_query("SELECT users.mail AS mail FROM users, sg_players WHERE users.uid = sg_players.uid AND sg_players.pid = %d", $pid));
           if ($u->mail) {
@@ -4079,6 +4097,7 @@ function summergame_player_check_badges($pid, $game_term) {
             $messages[] = "NOTE: This Badge includes a special email message, but we could not find an email address for you";
           }
         }
+*/
       }
     }
   }

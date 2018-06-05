@@ -13,19 +13,20 @@ summergame.admin:
   requirements:
     _permission: 'manage summergame'
 summergame.admin.gamecodes:
-  path: '/summergame/admin/gamecodes'
+  path: '/summergame/admin/gamecodes/{search_term}'
   defaults:
     _controller: '\Drupal\summergame\Controller\AdminController::gamecodes'
     _title: 'Administer Game Codes'
+    search_term: ''
   requirements:
     _permission: 'manage summergame'
-summergame.admin.badges:
-  path: '/summergame/admin/badges'
-  defaults:
-    _controller: '\Drupal\summergame\Controller\AdminController::badges'
-    _title: 'Administer Badges'
-  requirements:
-    _permission: 'manage summergame'
+# summergame.admin.badges:
+#   path: '/summergame/admin/badges'
+#   defaults:
+#     _controller: '\Drupal\summergame\Controller\AdminController::badges'
+#     _title: 'Administer Badges'
+#   requirements:
+#     _permission: 'manage summergame'
 summergame.admin.gamecode:
   path: '/summergame/admin/gamecode/{code_id}'
   defaults:
@@ -42,13 +43,13 @@ summergame.admin.gamecode.delete:
     code_id: 0
   requirements:
     _permission: 'administer summergame'
-summergame.admin.badge:
-  path: '/summergame/admin/badge'
-  defaults:
-    _title: 'Edit Summer Game Badge'
-    _form: '\Drupal\summergame\Form\SummerGameBadgeForm'
-  requirements:
-    _permission: 'administer summergame'
+# summergame.admin.badge:
+#   path: '/summergame/admin/badge'
+#   defaults:
+#     _title: 'Edit Summer Game Badge'
+#     _form: '\Drupal\summergame\Form\SummerGameBadgeForm'
+#   requirements:
+#     _permission: 'administer summergame'
 summergame.admin.players:
   path: '/summergame/admin/players/{search_term}'
   defaults:
@@ -58,10 +59,13 @@ summergame.admin.players:
   requirements:
     _permission: 'administer summergame'
 summergame.admin.players.merge:
-  path: '/summergame/admin/players/merge'
+  path: '/summergame/admin/players/merge/{pid1}/{pid2}/{confirm}'
   defaults:
     _controller: '\Drupal\summergame\Controller\AdminController::players_merge'
     _title: 'Merge Players'
+    pid1: 0
+    pid2: 0
+    confirm: FALSE
   requirements:
     _permission: 'administer summergame'
 summergame.admin.intervention:
@@ -93,13 +97,13 @@ summergame.player.gamecode:
     _title: 'Redeem a Summer Game Code'
   requirements:
     _permission: 'access summergame'
-summergame.player.friends:
-  path: '/summergame/player/friends'
-  defaults:
-    _controller: '\Drupal\summergame\Controller\PlayerController::friends'
-    _title: 'Summer Game Player Friends'
-  requirements:
-    _permission: 'access summergame'
+# summergame.player.friends:
+#   path: '/summergame/player/friends'
+#   defaults:
+#     _controller: '\Drupal\summergame\Controller\PlayerController::friends'
+#     _title: 'Summer Game Player Friends'
+#   requirements:
+#     _permission: 'access summergame'
 summergame.player.consume:
   path: '/summergame/player/consume'
   defaults:
@@ -164,18 +168,20 @@ summergame.leaderboard:
     _title: 'Summer Game Leaderboard'
   requirements:
     _permission: 'access summergame'
-summergame.badge:
-  path: '/summergame/badge'
-  defaults:
-    _controller: '\Drupal\summergame\Controller\DefaultController::badge'
-    _title: 'Summer Game Badge Detail'
-  requirements:
-    _permission: 'access summergame'
+# summergame.badge:
+#   path: '/summergame/badge'
+#   defaults:
+#     _controller: '\Drupal\summergame\Controller\DefaultController::badge'
+#     _title: 'Summer Game Badge Detail'
+#   requirements:
+#     _permission: 'access summergame'
 summergame.pdf:
-  path: '/summergame/pdf'
+  path: '/summergame/pdf/{type}/{code_id}'
   defaults:
     _controller: '\Drupal\summergame\Controller\DefaultController::pdf'
     _title: 'Summer Game PDF'
+    type: 'adult'
+    code_id: 0
   requirements:
     _permission: 'access summergame'
 summergame.admin.trivia:

@@ -6,6 +6,10 @@
 namespace Drupal\summergame\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
+use Predis\Client;
+use setasign\Fpdi;
+
+
 //use Drupal\Core\Database\Database;
 //use Drupal\Core\Url;
 
@@ -115,7 +119,7 @@ class DefaultController extends ControllerBase {
 
     return $render;
   }
-
+/*
   public function badge() {
     // Redirect to the right domain
     if ($sg_did = variable_get('summergame_default_domain_id', FALSE)) {
@@ -370,33 +374,30 @@ FBL;
 
     return $content;
   }
-
-  public function pdf() {
-    $libphp_path = variable_get('summergame_libphp_path', '');
-    require_once($libphp_path . 'contrib/fpdf/fpdf.php');
-    require_once($libphp_path . 'contrib/fpdi/fpdi.php');
-    require_once($libphp_path . 'contrib/redisent/redisent.php');
+*/
+  public function pdf($type = 'adult', $code_id = 0) {
     $file_path = drupal_get_path('module', 'summergame') . '/pdf/';
-    $redis = new Redisent('multivac');
+    $redis = new Client(\Drupal::config('summergame.settings')->get('summergame_redis_conn'));
 
     if ($type == 'gamecode') {
-      $gamecode = db_fetch_object(db_query("SELECT * FROM sg_game_codes WHERE code_id = %d", $code_id));
+      $code_id = (int) $code_id;
+      $db = \Drupal::database();
+      $gamecode = $db->query("SELECT * FROM sg_game_codes WHERE code_id = $code_id")->fetchObject();
 
       $event_code = strtoupper($gamecode->text); // Code for the event, Need to be in all CAPS
       $event_points = $gamecode->points . ' POINTS'; // Points for the event
       $description = $gamecode->description; // Description of Code
       $description = array_reverse(explode("\n", wordwrap($description, 100)));
 
-      $code_link = url('summergame/player/gamecode',
-                       array('absolute' => TRUE,
-                             'query' => array('text' => $event_code),
-                             )
-                      );
+      $code_link = \Drupal\Core\Url::fromRoute('summergame.player.gamecode',
+                                               ['text' => $event_code],
+                                               ['absolute' => TRUE])->toString();
+
       $qrcode = 'http://qrickit.com/api/qr?d=' . //'http://api.qrserver.com/v1/create-qr-code/?data=' .
                 urlencode($code_link);
 
       // initiate FPDI
-      //$pdf =& new FPDI('L', 'mm', 'Letter');
+      $pdf = new Fpdi\Fpdi('L', 'mm', 'Letter');
       $pdf->SetAutoPageBreak(FALSE);
       $pdf->AddPage();
 
@@ -404,8 +405,11 @@ FBL;
       $pdf->setSourceFile($file_path . 'code_template.pdf');
       $tplidx = $pdf->importPage(1);
       $pdf->useTemplate($tplidx);
-      $pdf->SetMargins(20, 17);
-      $page_width = $pdf->w - $pdf->lMargin - $pdf->rMargin;
+
+      $lrMargin = 20;
+      $tMargin = 17;
+      $pdf->SetMargins($lrMargin, $tMargin);
+      $page_width = $pdf->GetPageWidth() - $lrMargin - $lrMargin;
 
       // now write some text
       $pdf->AddFont('Quicksand-Bold', '', 'Quicksand-Bold.php');
@@ -415,11 +419,11 @@ FBL;
         $font_size -= 5;
         $pdf->SetFont('Quicksand-Bold', '', $font_size);
       }
-      $pdf->SetXY($pdf->lMargin, 53);
+      $pdf->SetXY($lrMargin, 53);
       $pdf->Cell(0, 10, $event_code, 0, 1, 'C');
 
-      $pdf->SetFont('Quicksand-Bold', '', 95);
-      $pdf->SetXY($pdf->lMargin, 125);
+      //$pdf->SetFont('Quicksand-Bold', '', 95);
+      $pdf->SetXY($lrMargin, 125);
       $pdf->Cell(0, 10, $event_points, 0, 1, 'C');
 
     /*
@@ -447,5 +451,7 @@ FBL;
       $redis->incr('agpdfcounter');
       drupal_goto($file_path . 'SG_Adult_Teen_2017.pdf');
     }
+
+    return $this->redirect('summergame.admin');
   }
 }
