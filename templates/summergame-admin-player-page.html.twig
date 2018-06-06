@@ -20,7 +20,7 @@
   </tr>
   {% for row in rows %}
     <tr>
-      <td>[ <a href="/summergame/player/edit/{{ row.pid }}">edit</a> ]</td>
+      <td>[ <a href="/summergame/player/{{ row.pid }}/edit">edit</a> ]</td>
       <td><a href="/summergame/player/{{ row.pid }}">{{ row.RealName }}</a></td>
       <td>{{ row.PlayerName }}</td>
       <td>{{ row.WebUser|raw }}</td>

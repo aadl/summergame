@@ -36,11 +36,10 @@ summergame.admin.gamecode:
   requirements:
     _permission: 'administer summergame'
 summergame.admin.gamecode.delete:
-  path: '/summergame/admin/gamecode/delete/{code_id}'
+  path: '/summergame/admin/gamecode/{code_id}/delete'
   defaults:
     _title: 'Delete Summer Game Code'
     _form: '\Drupal\summergame\Form\SummerGameGameCodeDeleteForm'
-    code_id: 0
   requirements:
     _permission: 'administer summergame'
 # summergame.admin.badge:
@@ -63,8 +62,6 @@ summergame.admin.players.merge:
   defaults:
     _controller: '\Drupal\summergame\Controller\AdminController::players_merge'
     _title: 'Merge Players'
-    pid1: 0
-    pid2: 0
     confirm: FALSE
   requirements:
     _permission: 'administer summergame'
@@ -91,11 +88,10 @@ summergame.player:
   requirements:
     _permission: 'access summergame'
 summergame.player.gamecode:
-  path: '/summergame/player/gamecode/{pid}'
+  path: '/summergame/player/{pid}/gamecode'
   defaults:
     _controller: '\Drupal\summergame\Controller\PlayerController::redeem'
     _title: 'Redeem a Summer Game Code'
-    pid: 0
   requirements:
     _permission: 'access summergame'
 # summergame.player.friends:
@@ -106,18 +102,17 @@ summergame.player.gamecode:
 #   requirements:
 #     _permission: 'access summergame'
 summergame.player.consume:
-  path: '/summergame/player/consume'
+  path: '/summergame/player/{pid}/consume'
   defaults:
     _controller: '\Drupal\summergame\Controller\PlayerController::consume'
     _title: 'I Read/Listened/Watched Something'
   requirements:
     _permission: 'access summergame'
 summergame.player.edit:
-  path: '/summergame/player/edit/{pid}'
+  path: '/summergame/player/{pid}/edit'
   defaults:
     _form: '\Drupal\summergame\Form\SummerGamePlayerForm'
     _title: 'Summer Game Player Edit'
-    pid: 0
   requirements:
     _permission: 'access summergame'
 summergame.player.setactive:
@@ -128,35 +123,35 @@ summergame.player.setactive:
   requirements:
     _permission: 'access summergame'
 summergame.player.gcpc:
-  path: '/summergame/player/gcpc'
+  path: '/summergame/player/{pid}/gcpc'
   defaults:
     _controller: '\Drupal\summergame\Controller\PlayerController::gcpc'
     _title: 'Summer Game Player Generate Cell Phone Code'
   requirements:
     _permission: 'access summergame'
-summergame.player.gfc:
-  path: '/summergame/player/gfc'
-  defaults:
-    _controller: '\Drupal\summergame\Controller\PlayerController::gfc'
-    _title: 'Summer Game Player Generate Friend Code'
-  requirements:
-    _permission: 'access summergame'
+# summergame.player.gfc:
+#   path: '/summergame/player/gfc'
+#   defaults:
+#     _controller: '\Drupal\summergame\Controller\PlayerController::gfc'
+#     _title: 'Summer Game Player Generate Friend Code'
+#   requirements:
+#     _permission: 'access summergame'
 summergame.player.ledger:
-  path: '/summergame/player/ledger/{pid}'
+  path: '/summergame/player/{pid}/ledger'
   defaults:
     _controller: '\Drupal\summergame\Controller\PlayerController::ledger'
     _title: 'Summer Game Player Ledger Page'
   requirements:
     _permission: 'access summergame'
 summergame.player.deletescore:
-  path: '/summergame/player/deletescore'
+  path: '/summergame/player/{pid}/ledger/{lid}/deletescore'
   defaults:
     _title: 'Delete Player Score'
     _form: '\Drupal\summergame\Form\SummerGameDeleteScoreForm'
   requirements:
     _permission: 'access summergame'
 summergame.player.delete:
-  path: '/summergame/player/delete'
+  path: '/summergame/player/{pid}/delete'
   defaults:
     _title: 'Delete Player'
     _form: '\Drupal\summergame\Form\SummerGameDeletePlayerForm'
@@ -181,7 +176,6 @@ summergame.pdf:
   defaults:
     _controller: '\Drupal\summergame\Controller\DefaultController::pdf'
     _title: 'Summer Game PDF'
-    type: 'adult'
     code_id: 0
   requirements:
     _permission: 'access summergame'

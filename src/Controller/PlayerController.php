@@ -215,7 +215,7 @@ class PlayerController extends ControllerBase {
       }
     } else {
       drupal_set_message('You must be logged in to redeem a Summer Game code.');
-      return new RedirectResponse('/user/login?destination=/summergame/player/gamecode');
+      return new RedirectResponse('/user/login?destination=/summergame/player/0/gamecode');
     }
 
     return [
@@ -499,7 +499,7 @@ class PlayerController extends ControllerBase {
           }
           else {
             $table_row['remove'] = 'hmmm';
-            $table_row['remove'] = '<a href="summergame/player/deletescore/' . $player['pid'] . '/' . $row['lid'] . '">DELETE</a>';
+            $table_row['remove'] = '<a href="summergame/player/' . $player['pid'] . '/ledger/' . $row['lid'] . '/deletescore">DELETE</a>';
           }
         }
         $score_table[] = $table_row;
