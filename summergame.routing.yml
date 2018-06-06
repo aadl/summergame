@@ -91,10 +91,11 @@ summergame.player:
   requirements:
     _permission: 'access summergame'
 summergame.player.gamecode:
-  path: '/summergame/player/gamecode'
+  path: '/summergame/player/gamecode/{pid}'
   defaults:
     _controller: '\Drupal\summergame\Controller\PlayerController::redeem'
     _title: 'Redeem a Summer Game Code'
+    pid: 0
   requirements:
     _permission: 'access summergame'
 # summergame.player.friends:

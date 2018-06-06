@@ -202,10 +202,10 @@ class PlayerController extends ControllerBase {
     return $render;
   }
 
-  public function redeem() {
+  public function redeem($pid = 0) {
     $user = \Drupal::currentUser();
     if ($user->isAuthenticated()) {
-      $player = summergame_player_load($user->id());
+      $player = summergame_player_load($pid);
       $pid = $player['pid'];
       if ($pid && summergame_player_access($pid)) {
         $redeem_form = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerRedeemForm', $pid);

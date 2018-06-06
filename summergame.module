@@ -3767,93 +3767,57 @@ function summergame_redeem_code($pid, $code_text) {
   // Remove non-alphanumerics from Game Code text and convert to upper case
   $code_text = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $code_text));
 
-  // Check for Friend Code
-  if ($fc_player = summergame_player_load(['friend_code' => $code_text])) {
-    // Player Found
-    if ($fc_player['pid'] == $pid) {
-      return ['error' => "Player #$pid cannot redeem own Friend Code"];
+  // Check for Game Code
+  $code = $db->query("SELECT * FROM sg_game_codes WHERE text = :text", [':text' => $code_text])->fetchObject();
+  if ($code->code_id) {
+    // Existing code
+    $now = time();
+    if ($now < $code->valid_start) {
+      $start_date = date('F j, Y, g:i a', $code->valid_start);
+      return ['error' => "Code \"$code->text\" is not yet valid. It will activate on $start_date"];
     }
-    // Check if player has already redeemed this code
+    else if ($now > $code->valid_end) {
+      $end_date = date('F j, Y, g:i a', $code->valid_end);
+      return ['error' => "Code \"$code->text\" is no longer valid. It expired on $end_date"];
+    }
+    else if ($code->max_redemptions && ($code->num_redemptions >= $code->max_redemptions)) {
+      return ['error' => "Code \"$code->text\" has reached maximum number of redemptions"];
+    }
     else {
-      $res = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND metadata LIKE :fcp", [':pid' => $pid, ':fcp' => 'fc_player:' . $fc_player['pid']]);
-      if ($existing = db_fetch_object($res)) {
+      // check if player has already redeemed this code
+      $existing = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND metadata LIKE :metadata",
+                            [':pid' => $pid, ':metadata' => 'gamecode:' . $code->text])->fetchObject();
+      if ($existing->lid) {
         $existing_date = date('F j, Y, g:i a', $existing->timestamp);
-        return ['error' => "Friend Code for Player #" . $fc_player['pid'] . " already redeemed on $existing_date"];
+        return ['error' => "Code \"$code->text\" already redeemed on $existing_date"];
       }
     }
-    if ($config->get('summergame_points_enabled')) {
-      // Award points to Friend Code owner and to current player
-      $fc_points = 100;
-      summergame_player_points($fc_player['pid'], $fc_points, 'Friend Code', 'Player #' . $pid . ' followed you!', 'fc_follower:' . $pid);
-      $points = summergame_player_points($pid, $fc_points, 'Friend Code', 'You followed Player #' . $fc_player['pid'] . '!', 'fc_player:' . $fc_player['pid']);
-      $message = "You redeemed Player #" . $fc_player['pid'] . "'s Friend Code for $points points!";
-      // Check if reciprocal; award bonus if friends
-      $ledger = $db->query("SELECT lid FROM sg_ledger WHERE pid = :pid AND metadata LIKE :fcp LIMIT 1",
-        [':pid' => $pid, ':fcp' => 'fc_player:' . $fc_player['pid']])->fetch();
-      if ($ledger->lid) {
-        $bonus_points = 50;
-        summergame_player_points($fc_player['pid'], $bonus_points, 'Friend Code', 'You and Player #' . $pid . ' are now friends!', 'fc_friend:' . $pid);
-        $points = summergame_player_points($pid, $bonus_points, 'Friend Code', 'You and Player #' . $fc_player['pid'] . ' are now friends!', 'fc_friend:' . $fc_player['pid']);
-        $message .= '. You and Player #' . $fc_player['pid'] . ' are now friends; you both get a ' . $bonus_points . ' point bonus!';
-      }
-      return ['success' => $message];
+    // Go ahead and redeem
+    $db->update('sg_game_codes')
+      ->condition('code_id', $code->code_id, '=')
+      ->expression('num_redemptions', 'num_redemptions + 1')
+      ->execute();
+
+    if ($code->points_override) {
+      $code->points = $code->points_override;
     }
-    else {
-      return ['warning' => "Friend Codes can only be entered during Summer Game"];
+    else if ($code->diminishing) {
+      // Adjust points if diminishing
+      $code->points -= $code->num_redemptions;
     }
+    if ($code->game_term_override) {
+      $code->game_term = $code->game_term_override;
+    }
+
+    $points = summergame_player_points($pid, $code->points, 'Game Code', $code->description, 'gamecode:' . $code->text, $code->game_term);
+    $message = "Redeemed code \"$code->text\" for $points $code->game_term points";
+    if ($code->description) {
+      $message .= ': ' . $code->description;
+    }
+    return ['success' => $message];
   }
   else {
-    // Check for Game Code
-    $code = $db->query("SELECT * FROM sg_game_codes WHERE text = :text", [':text' => $code_text])->fetch();
-    if ($code->code_id) {
-      // Existing code
-      $now = time();
-      if ($now < $code->valid_start) {
-        $start_date = date('F j, Y, g:i a', $code->valid_start);
-        return ['error' => "Code \"$code->text\" is not yet valid. It will activate on $start_date"];
-      }
-      else if ($now > $code->valid_end) {
-        $end_date = date('F j, Y, g:i a', $code->valid_end);
-        return ['error' => "Code \"$code->text\" is no longer valid. It expired on $end_date"];
-      }
-      else if ($code->max_redemptions && ($code->num_redemptions >= $code->max_redemptions)) {
-        return ['error' => "Code \"$code->text\" has reached maximum number of redemptions"];
-      }
-      else {
-        // check if player has already redeemed this code
-        $res = $db->query("SELECT * FROM sg_ledger WHERE pid = %d AND metadata LIKE 'gamecode:%s'", $pid, $code->text);
-        if ($existing = $res->fetch()) {
-          $existing_date = date('F j, Y, g:i a', $existing->timestamp);
-          return ['error' => "Code \"$code->text\" already redeemed on $existing_date"];
-        }
-      }
-      // Go ahead and redeem
-      $db->update('sg_game_code')
-        ->condition('code_id', $code->code_id, '=')
-        ->expression('num_redemptions', 'num_redemptions + 1')
-        ->execute();
-
-      if ($code->points_override) {
-        $code->points = $code->points_override;
-      }
-      else if ($code->diminishing) {
-        // Adjust points if diminishing
-        $code->points -= $code->num_redemptions;
-      }
-      if ($code->game_term_override) {
-        $code->game_term = $code->game_term_override;
-      }
-
-      $points = summergame_player_points($pid, $code->points, 'Game Code', $code->description, 'gamecode:' . $code->text, $code->game_term);
-      $message = "Redeemed code \"$code->text\" for $points $code->game_term points";
-      if ($code->description) {
-        $message .= ': ' . $code->description;
-      }
-      return ['success' => $message];
-    }
-    else {
-      return ['warning' => "Code is not recognized"];
-    }
+    return ['warning' => "Code is not recognized"];
   }
 }
 
@@ -4020,9 +3984,9 @@ function summergame_player_check_badges($pid, $game_term) {
 
           $text_patterns = explode('|', $text_pattern);
           foreach ($text_patterns as $i => &$pattern) {
-            $args['type_' . $i] = $pattern;
-            $args['metadata_' . $i] = 'gamecode:' . $pattern;
-            $pattern = "(type LIKE type_$i OR metadata LIKE metadata_$i)";
+            $args[':type_' . $i] = $pattern;
+            $args[':metadata_' . $i] = 'gamecode:' . $pattern;
+            $pattern = "(type LIKE :type_$i OR metadata LIKE :metadata_$i)";
           }
           $query .= implode(' OR ', $text_patterns);
 
@@ -4040,7 +4004,6 @@ function summergame_player_check_badges($pid, $game_term) {
           $awarded = summergame_player_award_badge($pid, $badge->bid);
         }
       }
-
       if ($awarded) {
         $badge_node = \Drupal::entityTypeManager()->getStorage('node')->load($badge->bid);
         $badge_title = $badge_node->get('title')->value;
@@ -4052,18 +4015,19 @@ function summergame_player_check_badges($pid, $game_term) {
                                     )
                               );
 */
-
         $messages[] = "Earned the $badge_title Badge! Share your accomplishment on Twitter or Facebook on the " . $badge_detail_link;
         $player_bids[] = $badge->bid;
         // check if a bonus should be applied
-        if ($points = $badge_node->get('points')->value) {
-          // check for points override
-          if ($badge_node->get('points_override')->value) {
+        if ($points = $badge_node->get('field_badge_points')->value) {
+
+          /* check for overrides
+          if ($badge_node->get('field_badge_points_override')->value) {
             $points = $badge_node->get('points_override')->value;
           }
-          if ($badge_node->get('game_term_override')->value) {
+          if ($badge_node->get('field_badge_game_term_override')->value) {
             $game_term = $badge_node->get('game_term_override')->value;
           }
+          */
 
           $db->insert('sg_ledger')->fields([
             'pid' => $pid,
@@ -4110,12 +4074,9 @@ function summergame_player_check_badges($pid, $game_term) {
  */
 function summergame_player_award_badge($pid, $bid) {
   $db = \Drupal::database();
-  $res = $db->insert('sg_players_badges')->fields([
-    'pid' => $pid,
-    'bid' => $bid,
-    'timestamp' => time(),
-  ])->execute();
-
+  $res = $db->query('INSERT IGNORE INTO `sg_players_badges` (`pid`, `bid`, `timestamp`) VALUES (:pid, :bid, :timestamp)',
+                    [':pid' => $pid, ':bid' => $bid, ':timestamp' => time()]);
+  $res->allowRowCount = TRUE;
   return $res->rowCount();
 }
 
