@@ -213,7 +213,7 @@ class PlayerController extends ControllerBase {
       $player = summergame_player_load($pid);
       $pid = $player['pid'];
       if ($pid && summergame_player_access($pid)) {
-        if ($type = 'gamecode') {
+        if ($type == 'gamecode') {
           return $redeem_form = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerRedeemForm', $pid);
         } else {
           return $redeem_form = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerConsumeForm', $pid);
