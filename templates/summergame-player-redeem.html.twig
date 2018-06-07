@@ -1,7 +1,17 @@
-<h1 class="t-center ruled-heading large-heading"><span>Redeem a Game Code</span></h1>
+{% spaceless %}
+<h1 class="t-center ruled-heading large-heading">
+  <span>
+    {% if type == 'gamecode' %}
+      Redeem a Game Code
+    {% else %}
+      Log A Book, Movie, Or Music Album
+    {% endif %}
+  </span>
+</h1>
 <div>
   <div class="page-with-sidebar-content">
     {{ redeem_form }}
   </div>
   {% include directory ~ "/templates/base/user/user-sidebar.html.twig" %}
 </div>
+{% endspaceless %}
