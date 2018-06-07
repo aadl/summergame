@@ -28,7 +28,7 @@ class PlayerController extends ControllerBase {
                            "player to have a separate website identity for these online activites, please log " .
                            "out and create a new website account before signing up for the Summer Game.");
         $new_player = array('uid' => $user->id());
-        $content = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerForm', $pid);
+        $render = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerForm', $pid);
       }
       else {
         // If no player has signed up yet, redirect to the player page
