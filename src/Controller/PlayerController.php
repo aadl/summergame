@@ -17,7 +17,7 @@ class PlayerController extends ControllerBase {
 
   public function index($pid) {
     $user = \Drupal::currentUser();
-
+/*
     if ($user->id() && $pid === 'extra') {
       if ($user->player['pid']) {
         drupal_set_message("Use the form below to add an extra player to your website account for another person in your household. " .
@@ -36,168 +36,160 @@ class PlayerController extends ControllerBase {
       }
     }
     else {
-      $pid = (int) $pid;
-
-      if ($pid) {
-        $player = summergame_player_load(['pid' => $pid]);
-      }
-      else {
-        // Default to the active player if none specified
-        $player = summergame_player_load(['uid' => $user->id()]);
-      }
-
-      if ($player) {
-        $summergame_settings = \Drupal::config('summergame.settings');
-        $player_access = summergame_player_access($player['pid']);
-        // Check if player's score card is private and we don't have access
-        if (!$player['show_myscore'] && !$player_access) {
-          drupal_set_message("Player #$pid's Score Card is private", 'error');
-          $this->redirect('<front>');
-        }
-/*
-        // Update checkout history for logged in user
-        if ($user->uid && $player['uid'] == $user->uid && $user->profile_cohist) {
-          $ch_list = db_fetch_array(db_query("SELECT * FROM sopac_lists WHERE uid = %d AND title = 'Checkout History' LIMIT 1", $user->uid));
-          if ($ch_list['list_id']) {
-            include_once(drupal_get_path('module', 'sopac') . '/sopac_user.php');
-            sopac_update_history($ch_list);
-          }
-        }
 */
-        $other_players = array();
-        if ($player_access && $player['uid']) {
-          $all_players = summergame_player_load_all($player['uid']);
+    $pid = (int) $pid;
 
-          if (count($all_players) > 1) {
-            foreach ($all_players as $extra_player) {
-              if ($extra_player['pid'] != $player['pid']) {
-                $other_players[] = $extra_player;
-              }
+    if ($pid) {
+      $player = summergame_player_load(['pid' => $pid]);
+    }
+    else {
+      // Default to the active player if none specified
+      $player = summergame_player_load(['uid' => $user->id()]);
+      if ($player) {
+        return new RedirectResponse('/summergame/player/' . $player['pid']);
+      }
+    }
+
+    if ($player) {
+      $summergame_settings = \Drupal::config('summergame.settings');
+      $player_access = summergame_player_access($player['pid']);
+
+      // Check if player's score card is private and we don't have access
+      if (!$player['show_myscore'] && !$player_access) {
+        drupal_set_message("Player #$pid's Score Card is private", 'error');
+        $this->redirect('<front>');
+      }
+
+      $other_players = array();
+      if ($player_access && $player['uid']) {
+        $all_players = summergame_player_load_all($player['uid']);
+
+        if (count($all_players) > 1) {
+          foreach ($all_players as $extra_player) {
+            if ($extra_player['pid'] != $player['pid']) {
+              $other_players[] = $extra_player;
+            }
+          }
+        }
+      }
+
+      // Prepare links to Other Players
+/*
+      if ($other_players) {
+        $active_pid = 0;
+        if ($player['uid'] != $user->uid) {
+          $account = user_load($player['uid']);
+          if ($account->sg_active_pid) {
+            $active_pid = $account->sg_active_pid;
+          }
+        }
+        else if ($user->sg_active_pid) {
+          $active_pid = $user->sg_active_pid;
+        }
+
+        if (!$active_pid) {
+          // Active PID is the lowest PID connected to account
+          $active_pid = $player['pid'];
+          foreach ($other_players as $other_player) {
+            if ($other_player['pid'] < $active_pid) {
+              $active_pid = $other_player['pid'];
             }
           }
         }
 
-        // Prepare links to Other Players
-/*
-        if ($other_players) {
-          $active_pid = 0;
-          if ($player['uid'] != $user->uid) {
-            $account = user_load($player['uid']);
-            if ($account->sg_active_pid) {
-              $active_pid = $account->sg_active_pid;
-            }
-          }
-          else if ($user->sg_active_pid) {
-            $active_pid = $user->sg_active_pid;
-          }
-
-          if (!$active_pid) {
-            // Active PID is the lowest PID connected to account
-            $active_pid = $player['pid'];
-            foreach ($other_players as $other_player) {
-              if ($other_player['pid'] < $active_pid) {
-                $active_pid = $other_player['pid'];
-              }
-            }
-          }
-
-          $others_links = array();
-          foreach ($other_players as $other_player) {
-            $other_playername = $other_player['nickname'] ? $other_player['nickname'] : $other_player['name'];
-            $l_options = array('html' => TRUE);
-            $make_active = '';
-            if ($other_player['pid'] == $active_pid) {
-              $other_playername = '<span class="active-player hint--bottom" data-hint="This is your ACTIVE Player">' . $other_playername . ' &#x2713;</span>';
-            }
-            else {
-              $options = array('html' => TRUE, 'attributes' => array('class' => 'hint--bottom',
-                                                                     'data-hint' => 'Set this Player as your ACTIVE Player',
-                                                                     'style' => 'font-size: 1.5em'));
-              $make_active = ' :: ' . l('&#x25A1;', 'summergame/player/' . $other_player['pid'] . '/setactive', $options);
-            }
-            $link = l($other_playername, 'summergame/player/' . $other_player['pid'], $l_options) . $make_active;
-
-            $others_links[] = '<li class="other-player">' . $link . '</li>';
-          }
-
-          // highlight active player
-          if ($player['pid'] == $active_pid) {
-            $playername = '<span class="active-player hint--bottom" data-hint="This is your ACTIVE Player">' . $playername . ' &#x2713;</span>';
+        $others_links = array();
+        foreach ($other_players as $other_player) {
+          $other_playername = $other_player['nickname'] ? $other_player['nickname'] : $other_player['name'];
+          $l_options = array('html' => TRUE);
+          $make_active = '';
+          if ($other_player['pid'] == $active_pid) {
+            $other_playername = '<span class="active-player hint--bottom" data-hint="This is your ACTIVE Player">' . $other_playername . ' &#x2713;</span>';
           }
           else {
             $options = array('html' => TRUE, 'attributes' => array('class' => 'hint--bottom',
                                                                    'data-hint' => 'Set this Player as your ACTIVE Player',
                                                                    'style' => 'font-size: 1.5em'));
-            $playername .= ' :: ' . l('&#x25A1;', 'summergame/player/' . $player['pid'] . '/setactive', $options);
+            $make_active = ' :: ' . l('&#x25A1;', 'summergame/player/' . $other_player['pid'] . '/setactive', $options);
           }
+          $link = l($other_playername, 'summergame/player/' . $other_player['pid'], $l_options) . $make_active;
+
+          $others_links[] = '<li class="other-player">' . $link . '</li>';
         }
-*/
-        // Determine Classic Reading Game status
-        $completion_gamecode = $summergame_settings->get('summergame_completion_gamecode');
-        $db = \Drupal::database();
-        $row = $db->query("SELECT * FROM sg_ledger WHERE pid = " . $player['pid'] .
-                          " AND metadata LIKE '%gamecode:$completion_gamecode%'")->fetchObject();
-        if ($row->lid) {
-          $completed_classic = 'Yes, completed on ' . date('F j, Y', $row->timestamp);
+
+        // highlight active player
+        if ($player['pid'] == $active_pid) {
+          $playername = '<span class="active-player hint--bottom" data-hint="This is your ACTIVE Player">' . $playername . ' &#x2713;</span>';
         }
         else {
-         $completed_classic = false;
+          $options = array('html' => TRUE, 'attributes' => array('class' => 'hint--bottom',
+                                                                 'data-hint' => 'Set this Player as your ACTIVE Player',
+                                                                 'style' => 'font-size: 1.5em'));
+          $playername .= ' :: ' . l('&#x25A1;', 'summergame/player/' . $player['pid'] . '/setactive', $options);
         }
-
-        // Check for cell phone attachment code
-        if (preg_match('/^[\d]{6}$/', $player['phone'])) {
-          $char = chr(($player['pid'] % 26) + 65);
-          $player['phone'] = 'TEXT ' . $char . $player['phone'] . ' to 4AADL (42235) to connect your phone';
-        }
-
-        // Lookup drupal user if admin
-        $website_user = '';
-        if ($user->hasPermission('administer summergame')) {
-          if ($account = \Drupal\user\Entity\User::load($player['uid'])) {
-            $website_user = $account->get('name')->value;
-            if ($user->hasPermission('administer users')) {
-              $website_user = '<a href="/user/' . $account->id() . '">' . $website_user . '</a>';
-            }
-          }
-        }
-
-        // Prepare Scorecards
-        $render[] = [
-          '#cache' => [
-            'max-age' => 0, // Don't cache, always get fresh data
-          ],
-          '#theme' => 'summergame_player_page',
-          '#summergame_points_enabled' => $summergame_settings->get('summergame_points_enabled'),
-          '#playername' => ($player['nickname'] ? $player['nickname'] : $player['name']),
-          '#player' => $player,
-          '#player_access' => $player_access,
-          '#other_players' => $other_players,
-          '#points' => summergame_get_player_points($player['pid']),
-          '#completed_classic' => $completed_classic,
-          '#website_user' => $website_user,
-        ];
+      }
+*/
+      // Determine Classic Reading Game status
+      $completion_gamecode = $summergame_settings->get('summergame_completion_gamecode');
+      $db = \Drupal::database();
+      $row = $db->query("SELECT * FROM sg_ledger WHERE pid = " . $player['pid'] .
+                        " AND metadata LIKE '%gamecode:$completion_gamecode%'")->fetchObject();
+      if ($row->lid) {
+        $completed_classic = 'Yes, completed on ' . date('F j, Y', $row->timestamp);
       }
       else {
-        // invalid PID or not authorized
-        if ($pid) {
-          drupal_set_message('Invalid Player ID: ' . $pid, 'error');
-          return $this->redirect('<front>');
+       $completed_classic = false;
+      }
+
+      // Check for cell phone attachment code
+      if (preg_match('/^[\d]{6}$/', $player['phone'])) {
+        $char = chr(($player['pid'] % 26) + 65);
+        $player['phone'] = 'TEXT ' . $char . $player['phone'] . ' to 4AADL (42235) to connect your phone';
+      }
+
+      // Lookup drupal user if admin
+      $website_user = '';
+      if ($user->hasPermission('administer summergame')) {
+        if ($account = \Drupal\user\Entity\User::load($player['uid'])) {
+          $website_user = $account->get('name')->value;
+          if ($user->hasPermission('administer users')) {
+            $website_user = '<a href="/user/' . $account->id() . '">' . $website_user . '</a>';
+          }
+        }
+      }
+
+      // Prepare Scorecards
+      $render[] = [
+        '#cache' => [
+          'max-age' => 0, // Don't cache, always get fresh data
+        ],
+        '#theme' => 'summergame_player_page',
+        '#summergame_points_enabled' => $summergame_settings->get('summergame_points_enabled'),
+        '#playername' => ($player['nickname'] ? $player['nickname'] : $player['name']),
+        '#player' => $player,
+        '#player_access' => $player_access,
+        '#other_players' => $other_players,
+        '#points' => summergame_get_player_points($player['pid']),
+        '#completed_classic' => $completed_classic,
+        '#website_user' => $website_user,
+      ];
+    }
+    else {
+      // invalid PID or not authorized
+      if ($pid) {
+        drupal_set_message('Invalid Player ID: ' . $pid, 'error');
+        return $this->redirect('<front>');
+      }
+      else {
+        if ($user->id()) {
+          return $this->redirect('summergame.player.new');
         }
         else {
-          if ($user->id()) {
-            $new_player = array('uid' => $user->uid);
-            $render = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerForm', $pid);
-          }
-          else {
-            if ($catalog_domain = variable_get('summergame_catalog_domain', '')) {
-              $catalog_domain = 'https://' . $catalog_domain . '/';
-            }
-            drupal_set_message('You must log into a website account in order to access your Player page');
-            return new RedirectResponse('/login?destination=summergame/player');
-          }
+          drupal_set_message('You must log into a website account in order to access your Player page');
+          return new RedirectResponse('/user/login?destination=summergame/player');
         }
       }
     }
+    // }
 
     return $render;
   }
@@ -333,10 +325,6 @@ class PlayerController extends ControllerBase {
   }
 */
   public function consume() {
-
-  }
-
-  public function edit() {
 
   }
 
