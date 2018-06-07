@@ -205,6 +205,11 @@ class PlayerController extends ControllerBase {
   public function redeem($pid = 0) {
     $user = \Drupal::currentUser();
     if ($user->isAuthenticated()) {
+      if (!$pid) {
+        $player = summergame_player_load(['uid' => $user->id()]);
+        $pid = $player['pid'];
+        return new RedirectResponse("/user/login?destination=/summergame/player/$pid/gamecode");
+      }
       $player = summergame_player_load($pid);
       $pid = $player['pid'];
       if ($pid && summergame_player_access($pid)) {
