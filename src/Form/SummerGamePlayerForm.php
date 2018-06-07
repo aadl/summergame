@@ -23,10 +23,31 @@ class SummerGamePlayerForm extends FormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state, $pid = 0) {
+    $route = \Drupal::routeMatch()->getRouteName();
     $db = \Drupal::database();
-    $player = summergame_player_load($pid);
     $summergame_settings = \Drupal::config('summergame.settings');
     $user = \Drupal::currentUser();
+
+    if ($route == 'summergame.player.new') {
+      // Check if user logged in
+      if ($uid = $user->id()) {
+        // Check if existing player
+        if ($player = summergame_player_load(['uid' => $uid])) {
+          return $this->redirect('summergame.player', ['pid' => $player['pid']])->send();
+        }
+        else {
+          // Website user, no player, set up empty player record
+          $player = ['uid' => $uid];
+        }
+      }
+      else {
+        drupal_set_message('You need to log in to the website before you can sign up a player');
+        return $this->redirect('<front>')->send();
+      }
+    }
+    else {
+      $player = summergame_player_load($pid);
+    }
 
     $form = [];
     if ($player['pid']) {
@@ -242,7 +263,6 @@ class SummerGamePlayerForm extends FormBase {
       ],
       '#description' => t('Please let us know your upcoming grade if you\'re a student'),
     ];
-
     if ($user->hasPermission('administer users')) {
       if ($summergame_user_search_path = $summergame_settings->get('summergame_user_search_path')) {
         $search_link = ' (<a href="/' . $summergame_user_search_path . '">Search for user accounts if needed</a>)';

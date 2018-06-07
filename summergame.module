@@ -3561,9 +3561,9 @@ function summergame_player_access($pid) {
     $access = TRUE;
   }
   else {
-    if ($user->uid) {
+    if ($uid = $user->id()) {
       $player = summergame_player_load($pid);
-      if ($user->uid == $player['uid']) {
+      if ($uid == $player['uid']) {
         $access = TRUE;
       }
     }
