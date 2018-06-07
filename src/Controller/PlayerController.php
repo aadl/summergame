@@ -202,30 +202,43 @@ class PlayerController extends ControllerBase {
     return $render;
   }
 
-  public function redeem($pid = 0) {
+  private function auth_redemptions($pid, $type) {
     $user = \Drupal::currentUser();
     if ($user->isAuthenticated()) {
       if (!$pid) {
         $player = summergame_player_load(['uid' => $user->id()]);
         $pid = $player['pid'];
-        return new RedirectResponse("/user/login?destination=/summergame/player/$pid/gamecode");
+        return new RedirectResponse("/user/login?destination=/summergame/player/$pid/$type");
       }
       $player = summergame_player_load($pid);
       $pid = $player['pid'];
       if ($pid && summergame_player_access($pid)) {
-        $redeem_form = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerRedeemForm', $pid);
+        if ($type = 'gamecode') {
+          return $redeem_form = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerRedeemForm', $pid);
+        } else {
+          return $redeem_form = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerConsumeForm', $pid);
+        }
       } else {
         drupal_set_message("Invalid ID or no access for player #$pid", 'error');
         return new RedirectResponse('/summergame/player');
       }
     } else {
       drupal_set_message('You must be logged in to redeem a Summer Game code.');
-      return new RedirectResponse('/user/login?destination=/summergame/player/0/gamecode');
+      return new RedirectResponse("/user/login?destination=/summergame/player/0/$type");
+    }
+  }
+
+  public function redeem($pid = 0) {
+    $response = $this->auth_redemptions($pid, 'gamecode');
+
+    if ($response instanceof RedirectResponse) {
+      return $response;
     }
 
     return [
       '#theme' => 'summergame_player_redeem',
-      '#redeem_form' => $redeem_form
+      '#redeem_form' => $response,
+      '#type' => 'gamecode'
     ];
   }
 /*
@@ -337,8 +350,18 @@ class PlayerController extends ControllerBase {
     return $content;
   }
 */
-  public function consume() {
+  public function consume($pid = 0) {
+    $response = $this->auth_redemptions($pid, 'consume');
 
+    if ($response instanceof RedirectResponse) {
+      return $response;
+    }
+
+    return [
+      '#theme' => 'summergame_player_redeem',
+      '#redeem_form' => $response,
+      '#type' => 'consume'
+    ];
   }
 
   public function edit() {
