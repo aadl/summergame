@@ -56,7 +56,7 @@
                 </table>
 
                 <div class="scorecard-buttons">
-                    <a class="button" href="/summergame/player/ledger/{{ player.pid }}?term={{ game_term }}">See Full Scorecard</a>
+                    <a class="button" href="/summergame/player/{{ player.pid }}/ledger?term={{ game_term }}">See Full Scorecard</a>
                 </div>
 
                 <p>Points date range: <br>
@@ -84,4 +84,3 @@
   </div>
   {% include directory ~ "/templates/base/user/user-sidebar.html.twig" %}
 </div>
-  

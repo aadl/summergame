@@ -10,12 +10,12 @@
   <div id="player-earn-links">
     <h2>Earn Game Points</h2>
     <div class="no-padding-left">
-      <a class="button" href="/summergame/player/gamecode/{{ player.pid }}">I have a Game Code!</a>
+      <a class="button" href="/summergame/player/{{ player.pid }}/gamecode">I have a Game Code!</a>
       {% if summergame_points_enabled %}
-        <a clas="button" href="/summergame/player/consume/{{ player.pid }}">I Read, Listened to, or Watched something!</a>
+        <a clas="button" href="/summergame/player/{{ player.pid }}/consume">I Read, Listened to, or Watched something!</a>
       {% endif %}
     </div>
-  </div> 
+  </div>
   <div class="l-overflow-clear no-margin">
     {# Points Summary #}
     {% set sg_balance = 0 %}
@@ -35,7 +35,7 @@
       </table>
     </div>
     <div id="player-info-table">
-      <h2>Player Details (<a href="/summergame/player/edit/{{ player.pid }}">Edit Player Info</a>)</h2>
+      <h2>Player Details (<a href="/summergame/player/{{ player.pid }}/edit">Edit Player Info</a>)</h2>
       <table class="account-summary not-fixed-table">
         <tr><th>Nickname:</th><td>{{ player.nickname }}</td></tr>
         <tr>
@@ -44,7 +44,7 @@
             {% if player.phone %}
               Linked
             {% else %}
-              <a href="/summergame/player/gcpc/{{ player.pid }}">GENERATE CODE</a> to link your cell phone to your player
+              <a href="/summergame/player/{{ player.pid }}/gcpc">GENERATE CODE</a> to link your cell phone to your player
             {% endif %}
           </td>
         </tr>
