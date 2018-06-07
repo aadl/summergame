@@ -36,11 +36,13 @@
       <th>Valid Dates</th>
       <th>Game Term</th>
       <th>Redemptions</th>
-      <th>Print Sign</th>
     </tr>
     {% for gc_row in gc_rows %}
       <tr>
-        <td><a href="/summergame/admin/gamecode/{{ gc_row.id }}">{{ gc_row.Text }} <i class="fa fa-pencil-square-o"></i></a></td>
+        <td>
+          <a href="/summergame/admin/gamecode/{{ gc_row.id }}">{{ gc_row.Text }} <i class="fa fa-pencil-square-o"></i></a><br><br>
+          <a href="/summergame/pdf/gamecode/{{ gc_row.id }}">Print Sign</a>
+        </td>
         <td>{{ gc_row.Description|raw|slice(0, 70) }}</td>
         <td>{{ gc_row.Clue }}</td>
         <td>{{ gc_row.ClueTrigger }}</td>
@@ -51,7 +53,6 @@
         <td>{{ gc_row.ValidDates|raw }}</td>
         <td>{{ gc_row.GameTerm }}</td>
         <td>{{ gc_row.Redemptions }}</td>
-        <td><a href="/summergame/pdf/gamecode/{{ gc_row.id }}">Print</a></td>
       </tr>
     {% endfor %}
   </table>
