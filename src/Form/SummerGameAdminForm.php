@@ -135,13 +135,21 @@ class SummerGameAdminForm extends ConfigFormBase {
       '#default_value' => $summergame_settings->get('summergame_staff_role_id'),
       '#description' => t('Select the role that separates staff from regular players on the leaderboard'),
     ];
-    $form['summergame_tagger_uid'] = [
+    $form['summergame_couch_dsn'] = [
       '#type' => 'textfield',
-      '#title' => t("Tagger User ID"),
-      '#default_value' => $summergame_settings->get('summergame_tagger_uid'),
+      '#title' => t("Couch DSN"),
+      '#default_value' => $summergame_settings->get('summergame_couch_dsn'),
+      '#size' => 64,
+      '#maxlength' => 128,
+      '#description' => t("DSN of the Couch database server to place Gamecodes in Bib Records"),
+    ];
+    $form['summergame_couch_db'] = [
+      '#type' => 'textfield',
+      '#title' => t("Couch DB"),
+      '#default_value' => $summergame_settings->get('summergame_couch_db'),
       '#size' => 32,
       '#maxlength' => 32,
-      '#description' => t("User ID to own automatically created Game Code tags in the catalog"),
+      '#description' => t("Name of the Couch Database to place Gamecodes in Bib Records"),
     ];
 
 

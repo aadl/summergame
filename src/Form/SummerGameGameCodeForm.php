@@ -180,7 +180,7 @@ class SummerGameGameCodeForm extends FormBase {
       '#type' => 'textfield',
       '#title' => t('Tag Bib Number'),
       '#size' => 32,
-      '#description' => t('Enter a Bib Number/Text to automatically add this game code as a tag to that Bib record in the catalog'),
+      '#description' => t('Enter a Bib Number/ID to automatically add this game code as a tag to that Bib record in the catalog'),
       '#suffix' => $gc_bibs,
     ];
 
@@ -277,18 +277,18 @@ class SummerGameGameCodeForm extends FormBase {
       $db->insert('sg_game_codes')->fields($fields)->execute();
       drupal_set_message('Game Code ' . $fields['text'] . ' Created');
     }
-/*
+
     // Add tag to catalog if selected
-    if ($form_state->getValue('tag_bib')) {
-      if ($tagger_uid = variable_get('summergame_tagger_uid', '')) {
-        $bib_num = $values['tag_bib'];
-        $machine_tag = 'sg:code=' . strtolower(trim($values['text']));
-        $insurge = sopac_get_insurge();
-        $insurge->submit_tags($tagger_uid, $bib_num, $machine_tag);
-        drupal_set_message('Game Code Tag added to Bib Number ' . l($bib_num, 'catalog/record/' . $bib_num));
+    if ($tag_bib = $form_state->getValue('tag_bib')) {
+      $tag_bib = trim($tag_bib);
+      $result = summergame_tag_bib($tag_bib, $fields['text'], $fields['game_term']);
+      if (isset($result['error'])) {
+        drupal_set_message('Game Code Tag ERROR ' . $result['error']);
+      } else {
+        drupal_set_message('Added Game Code Tag to Catalog for ' . $result['success']->title);
       }
     }
-*/
+
     $form_state->setRedirect('summergame.admin');
 
     return;
