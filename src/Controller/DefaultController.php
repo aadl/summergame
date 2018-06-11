@@ -390,7 +390,7 @@ FBL;
       $description = array_reverse(explode("\n", wordwrap($description, 100)));
 
       $code_link = \Drupal\Core\Url::fromRoute('summergame.player.gamecode',
-                                               ['text' => $event_code],
+                                               ['pid' => 0, 'text' => $event_code],
                                                ['absolute' => TRUE])->toString();
 
       $qrcode = 'http://qrickit.com/api/qr?d=' . //'http://api.qrserver.com/v1/create-qr-code/?data=' .
@@ -419,7 +419,7 @@ FBL;
         $font_size -= 5;
         $pdf->SetFont('Quicksand-Bold', '', $font_size);
       }
-      $pdf->SetXY($lrMargin, 53);
+      $pdf->SetXY($lrMargin, 50);
       $pdf->Cell(0, 10, $event_code, 0, 1, 'C');
 
       //$pdf->SetFont('Quicksand-Bold', '', 95);

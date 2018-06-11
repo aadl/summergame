@@ -3562,9 +3562,9 @@ function summergame_player_access($pid) {
     $access = TRUE;
   }
   else {
-    if ($user->uid) {
+    if ($uid = $user->id()) {
       $player = summergame_player_load($pid);
-      if ($user->uid == $player['uid']) {
+      if ($uid == $player['uid']) {
         $access = TRUE;
       }
     }
@@ -3815,6 +3815,14 @@ function summergame_redeem_code($pid, $code_text) {
     if ($code->description) {
       $message .= ': ' . $code->description;
     }
+
+    // Look for Clue trigger
+    $gc = $db->query('SELECT * FROM sg_game_codes WHERE clue_trigger = :code_text',
+                     [':code_text' => $code->text])->fetchObject();
+    if (isset($gc->code_id)) {
+      $message .= "\nNEW CLUE: $gc->clue";
+    }
+
     return ['success' => $message];
   }
   else {

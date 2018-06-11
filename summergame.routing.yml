@@ -87,6 +87,13 @@ summergame.player:
     pid: 0
   requirements:
     _permission: 'access summergame'
+summergame.player.new:
+  path: '/summergame/player/new'
+  defaults:
+    _form: '\Drupal\summergame\Form\SummerGamePlayerForm'
+    _title: 'Summer Game Player Signup'
+  requirements:
+    _permission: 'access summergame'
 summergame.player.gamecode:
   path: '/summergame/player/{pid}/gamecode'
   defaults:
