@@ -24,20 +24,27 @@ class SummerGamePlayerConsumeForm extends FormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state, $pid = 0, $bnum = 0) {
     $player = summergame_player_load($pid);
+    $guzzle = \Drupal::httpClient();
+    $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+    
+    if ($bnum) {
+      // Get Bib Record from API
+      $json = json_decode($guzzle->get("$api_url/record/$bnum/harvest")->getBody()->getContents());
+      $bib = $json->bib;
+      if ($bib) {
+        $form['bib'] = [
+          '#type' => 'value',
+          '#value' => $bib,
+        ];
+        $title = title_case($bib['title']);
+        if ($bib['title_medium']) {
+          $title .= ' ' . title_case($bib['title_medium']);
+        }
+      }
+    }
 
-    // if ($bnum) {
-    //   if ($bib = $locum->get_bib_item($bnum)) {
-    //     $form['bib'] = [
-    //       '#type' => 'value',
-    //       '#value' => $bib,
-    //     ];
-    //     $title = title_case($bib['title']);
-    //     if ($bib['title_medium']) {
-    //       $title .= ' ' . title_case($bib['title_medium']);
-    //     }
-    //     $finished_default = 1;
-    //   }
-    // }
+    $mat_types = $guzzle->get("$api_url/mat-names")->getBody()->getContents();
+    $mat_names = json_decode($mat_types);
 
     $form['pid'] = [
       '#type' => 'value',
@@ -46,8 +53,8 @@ class SummerGamePlayerConsumeForm extends FormBase {
     $form['mat_code'] = [
       '#type' => 'select',
       '#title' => t("I've been enjoying this"),
-      // '#default_value' => $bib['mat_code'],
-      // '#options' => $locum->locum_config['formats'],
+      '#default_value' => $bib['mat_code'],
+      '#options' => $mat_names,
       '#prefix' => "<div class=\"container-inline\">",
       '#suffix' => "</div>",
     ];
