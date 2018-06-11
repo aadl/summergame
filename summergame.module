@@ -326,7 +326,8 @@ function summergame_theme() {
     ],
     'summergame_player_redeem' => [
       'variables' => [
-        'redeem_form' => NULL
+        'redeem_form' => NULL,
+        'type' => Null
       ]
     ],
   ];
