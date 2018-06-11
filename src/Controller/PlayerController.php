@@ -197,13 +197,29 @@ class PlayerController extends ControllerBase {
   public function redeem($pid = 0) {
     $user = \Drupal::currentUser();
     if ($user->isAuthenticated()) {
-      $player = summergame_player_load($pid);
-      $pid = $player['pid'];
-      if ($pid && summergame_player_access($pid)) {
-        $redeem_form = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerRedeemForm', $pid);
+      $pid = (int) $pid;
+      if ($pid) {
+        $player = summergame_player_load($pid);
+        $pid = $player['pid'];
+        if ($pid && summergame_player_access($pid)) {
+          $redeem_form = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerRedeemForm', $pid);
+        } else {
+          drupal_set_message("Invalid ID or no access for player #$pid", 'error');
+          return new RedirectResponse('/summergame/player');
+        }
       } else {
-        drupal_set_message("Invalid ID or no access for player #$pid", 'error');
-        return new RedirectResponse('/summergame/player');
+        // pid = 0, try to load default player record and redirect
+        if ($player = summergame_player_load(['uid' => $user->id()])) {
+          $redirect_uri = '/summergame/player/' . $player['pid'] . '/gamecode';
+          if ($_GET['text']) {
+            $redirect_uri .= '?text=' . $_GET['text'];
+          }
+          return new RedirectResponse($redirect_uri);
+        } else {
+          drupal_set_message('Add a player to your account to play the Summer Game');
+          return new RedirectResponse('/summergame/player/new');
+        }
+
       }
     } else {
       drupal_set_message('You must be logged in to redeem a Summer Game code.');
