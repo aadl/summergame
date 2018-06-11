@@ -1,4 +1,7 @@
 <?php
+
+use PHPOnCouch\CouchClient;
+
 /**
 * Display help and module information
 * @param path which path of the site we're displaying help
@@ -4599,4 +4602,35 @@ function summergame_email_attachment($to, $subject, $message, $from, $fileatt, $
 
   // send mail
   return mail($to, $subject, $message, $headers);
+}
+
+function summergame_tag_bib($bib_id, $game_code, $game_term = '') {
+  // Set a new connector to the CouchDB server
+  $summergame_settings = \Drupal::config('summergame.settings');
+  $dsn = $summergame_settings->get('summergame_couch_dsn');
+  $db = $summergame_settings->get('summergame_couch_db');
+  $client = new CouchClient($dsn, $db);
+
+  try {
+    $doc = $client->getDoc($bib_id);
+  } catch (Exception $e) {
+    return ['error' => "Couch Document not found: " . $e->getMessage()];
+  }
+
+  if (empty($game_term)) {
+    $game_term = $summergame_settings->get('summergame_current_game_term');
+  }
+
+  if (!in_array($game_code, $doc->gamecodes->{$game_term})) {
+    $doc->gamecodes->{$game_term}[] = $game_code;
+  }
+
+  // update bib record
+  try {
+    $client->storeDoc($doc);
+  } catch (Exception $e) {
+    return ['error' => "Couch Document storage failed: " . $e->getMessage()];
+  }
+
+  return ['success' => $doc];
 }
