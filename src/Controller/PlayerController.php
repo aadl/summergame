@@ -206,6 +206,7 @@ class PlayerController extends ControllerBase {
             return $redeem_form = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerRedeemForm', $pid);
           } else {
             return $redeem_form = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerConsumeForm', $pid);
+          }
         } else {
           drupal_set_message("Invalid ID or no access for player #$pid", 'error');
           return new RedirectResponse('/summergame/player');
