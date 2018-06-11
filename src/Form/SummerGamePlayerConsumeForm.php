@@ -26,7 +26,7 @@ class SummerGamePlayerConsumeForm extends FormBase {
     $player = summergame_player_load($pid);
     $guzzle = \Drupal::httpClient();
     $api_url = \Drupal::config('arborcat.settings')->get('api_url');
-    
+
     if ($bnum) {
       // Get Bib Record from API
       $json = json_decode($guzzle->get("$api_url/record/$bnum/harvest")->getBody()->getContents());
@@ -61,25 +61,12 @@ class SummerGamePlayerConsumeForm extends FormBase {
     $form['title'] = [
       '#type' => 'textfield',
       '#title' => t('Titled'),
-      // '#default_value' => $title,
+      '#default_value' => ($title ?? ''),
       '#size' => 64,
       '#maxlength' => 128,
       '#description' => t('Title of the Book/Movie/Music that you are reporting'),
       '#required' => TRUE,
     ];
-    // $form['duration'] = [
-    //   '#type' => 'textfield',
-    //   '#title' => t('for this many minutes or pages (optional)'),
-    //   '#size' => 16,
-    //   '#maxlength' => 16,
-    //   '#description' => t('Enter the # of pages OR the length in minutes for 1 point per page or minute! (Maximum 500 points)'),
-    // ];
-    // $form['finished'] = [
-    //   '#type' => 'checkbox',
-    //   '#title' => 'and I finished it!',
-    //   // '#default_value' => $finished_default,
-    //   '#description' => 'check this box to receive a 100 point bonus for finishing this item (optional)',
-    // ];
     $form['submit'] = [
       '#type' => 'submit',
       '#value' => t('Score!'),
