@@ -3194,19 +3194,20 @@ function theme_summergame_badge() {
  * HOOK: Receive and respond to text messages
  */
 function summergame_twilio_respond($incoming) {
+  $db = \Drupal::database();
   // Prep generic response array
-  $response_template = array('uid' => twilio_lookup_user($incoming['phone']),
-                             'phone' => $incoming['phone'],
-                             'incoming' => 0);
-  $responses = array();
+  $response_template = ['uid' => twilio_lookup_user($incoming['phone']),
+                        'phone' => $incoming['phone'],
+                        'incoming' => 0];
+  $responses = [];
 
   // Try to load existing player
-  $player = summergame_player_load(array('phone' => $incoming['phone']));
+  $player = summergame_player_load(['phone' => $incoming['phone']]);
 
   // Determine if text is a SummerGame text
   if (preg_match('/^[A-Za-z]([\d]{6})$/', $incoming['text'], $matches)) {
     // Cell phone merge
-    if ($web_player = summergame_player_load(array('phone' => $matches[1]))) {
+    if ($web_player = summergame_player_load(['phone' => $matches[1]])) {
       // set the phone number on the web player and merge the two
       $web_player['phone'] = $incoming['phone'];
       summergame_player_save($web_player);
@@ -3249,9 +3250,9 @@ function summergame_twilio_respond($incoming) {
   else {
     // check if it's a game code OR friend code
     $text = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $incoming['text']));
-    $gc = db_fetch_object(db_query("SELECT * FROM sg_game_codes WHERE text = '%s'", $text));
-    $fc_player = summergame_player_load(array('friend_code' => $text));
-    if ($gc->code_id || $fc_player['pid']) {
+    $gc = $db->query("SELECT * FROM sg_game_codes WHERE text = :text", [':text' => $text])->fetchObject;
+    // $fc_player = summergame_player_load(array('friend_code' => $text));
+    if ($gc->code_id) { // } || $fc_player['pid']) {
       $game_code_text = TRUE;
       if (!$player['pid']) {
         $new_player_needed = TRUE;
@@ -3276,8 +3277,8 @@ function summergame_twilio_respond($incoming) {
 
   if ($game_card_text || $game_code_text) {
     // Process results for ALL Player records with this number
-    $res = db_query('SELECT pid FROM sg_players WHERE phone = %d', $incoming['phone']);
-    while ($player_info = db_fetch_object($res)) {
+    $res = $db->query('SELECT pid FROM sg_players WHERE phone = :phone', [':phone' => $incoming['phone']]);
+    while ($player_info = $res->fetchObject()) {
       $player = summergame_player_load(array('pid' => $player_info->pid));
       // Associate a gamecard with the player if a game card ID
       if ($game_card_text) {
@@ -3296,6 +3297,7 @@ function summergame_twilio_respond($incoming) {
           $response['text'] .= $status['success'] . $status['error'];
           $responses[] = $response;
         }
+/* No Do or Diag mode for now
         if (variable_get('summergame_dod_enabled', FALSE)) {
           if ($status['success']) {
             // Check how many DoD game codes they have received
@@ -3317,6 +3319,7 @@ function summergame_twilio_respond($incoming) {
             }
           }
         }
+*/
         // If not recognized, no response to allow other handlers to respond
       }
     }
@@ -3330,6 +3333,7 @@ function summergame_twilio_respond($incoming) {
     $response['text'] .= 'Your Player nickname has been set to ' . $player['nickname'];
     $responses[] = $response;
   }
+/*
   // Lego Contest
   else if (variable_get('summergame_lego_enabled', FALSE)) {
     $text = strtoupper($incoming['text']);
@@ -3343,6 +3347,8 @@ function summergame_twilio_respond($incoming) {
       $responses[] = $response;
     }
   }
+*/
+/*
   // Do Or Diag
   else if (variable_get('summergame_dod_enabled', FALSE)) {
     $text = strtoupper($incoming['text']);
@@ -3386,7 +3392,8 @@ function summergame_twilio_respond($incoming) {
       }
     }
   }
-
+*/
+/*
   // Check if Trivia is active
   if (variable_get('summergame_trivia_active', FALSE) && !count($responses) && $player['pid']) {
     $guess = $incoming['text'];
@@ -3412,11 +3419,9 @@ function summergame_twilio_respond($incoming) {
         $response = $response_template;
         $response['text'] = "Duplicate answer \"$guess\" received.";
       }
-/*
-      if ($place == 1) {
-        $response['text'] .= ' Please see a staff member to claim your prize';
-      }
-*/
+//      if ($place == 1) {
+//        $response['text'] .= ' Please see a staff member to claim your prize';
+//      }
       $responses[] = $response;
     }
     else {
@@ -3425,6 +3430,7 @@ function summergame_twilio_respond($incoming) {
       $responses[] = $response;
     }
   }
+*/
 
   if (count($responses)) {
     return $responses;
