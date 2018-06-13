@@ -3752,19 +3752,20 @@ function summergame_player_save($player) {
  */
 function summergame_player_delete($player_info) {
   if ($player = summergame_player_load($player_info)) {
+    $db = \Drupal::database();
     // Delete points
-    db_query("DELETE FROM sg_ledger WHERE pid = %d", $player['pid']);
+    $db->query("DELETE FROM sg_ledger WHERE pid = :pid", [':pid' => $player['pid']]);
     // Delete badges
-    db_query("DELETE FROM sg_players_badges WHERE pid = %d", $player['pid']);
+    $db->query("DELETE FROM sg_players_badges WHERE pid = :pid", [':pid' => $player['pid']]);
     // Delete team memberships
-    db_query("DELETE FROM sg_players_teams WHERE pid = %d", $player['pid']);
+    $db->query("DELETE FROM sg_players_teams WHERE pid = :pid", [':pid' => $player['pid']]);
     // Delete player info
-    db_query("DELETE FROM sg_players WHERE pid = %d", $player['pid']);
+    $db->query("DELETE FROM sg_players WHERE pid = :pid", [':pid' => $player['pid']]);
     // Check if active player, reset if so
-    if ($player->uid) {
-      $account = user_load($player->uid);
-      if ($account->sg_active_pid == $player->pid) {
-        user_save($account, array('sg_active_pid' => NULL));
+    if ($player['uid']) {
+      $userData = \Drupal::service('user.data');
+      if ($player['pid'] == $userData->get('summergame', $player['uid'], 'sg_active_pid')) {
+        $userData->delete('summergame', $player['uid'], 'sg_active_pid');
       }
     }
   }

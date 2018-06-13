@@ -367,8 +367,29 @@ class PlayerController extends ControllerBase {
     ];
   }
 
-  public function set_active() {
-
+  public function set_active($pid = 0) {
+    if ($player = summergame_player_load($pid)) {
+      if ($player['uid']) {
+        $account = \Drupal\user\Entity\User::load($player['uid']);
+        if (isset($account)) {
+          // Use the user data service to store active Player ID
+          \Drupal::service('user.data')->set('summergame', $account->id(), 'sg_active_pid', $pid);
+          drupal_set_message('Player #' . $pid . ' (' . $player['nickname'] . ') is now the active player for the website account <em>' .
+                             $account->get('name')->value . '</em>. Online activities that earn points (comments, ratings, reviews, etc.) will now be awarded ' .
+                             'to this player.');
+        }
+        else {
+          drupal_set_message('Cannot load the website account associated with Player #' . $pid, 'warning');
+        }
+      }
+      else {
+        drupal_set_message('No website user associated with Player #' . $pid, 'warning');
+      }
+    }
+    else {
+      drupal_set_message('No player found with Player #' . $pid);
+    }
+    return new RedirectResponse('/summergame/player/' . $pid);
   }
 
   public function gcpc($pid = 0) {

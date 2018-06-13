@@ -54,6 +54,15 @@
         {% endif %}
       </table>
     </div>
+    <div id="player-other-players">
+      <h2>Extra Players</h2>
+      <ul>
+        {% for other_player in other_players %}
+          <li><a href="/summergame/player/{{ other_player.pid }}">{{ other_player.nickname }}</a> - <a href="/summergame/player/{{ other_player.pid }}/setactive">set active</a></li>
+        {% endfor %}
+        <li><a href="/summergame/player/extra">Sign up an extra player</a></li>
+      </ul>
+    </div>
   </div>
 
 {#
