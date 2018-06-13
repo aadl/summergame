@@ -94,6 +94,13 @@ summergame.player.new:
     _title: 'Summer Game Player Signup'
   requirements:
     _permission: 'access summergame'
+summergame.player.extra:
+  path: '/summergame/player/extra'
+  defaults:
+    _form: '\Drupal\summergame\Form\SummerGamePlayerForm'
+    _title: 'Summer Game Add Extra Player'
+  requirements:
+    _permission: 'access summergame'
 summergame.player.gamecode:
   path: '/summergame/player/{pid}/gamecode'
   defaults:
