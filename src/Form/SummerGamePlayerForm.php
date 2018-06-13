@@ -45,6 +45,31 @@ class SummerGamePlayerForm extends FormBase {
         return $this->redirect('<front>')->send();
       }
     }
+    else if ($route == 'summergame.player.extra') {
+      // Check if user logged in
+      if ($uid = $user->id()) {
+        // Check if existing player
+        if (summergame_player_load(['uid' => $uid])) {
+          // Website user, existing player, set up empty player record
+          drupal_set_message("Use the form below to add an extra player to your website account for another person in your household. " .
+                             "You will be able to enter game codes and report reading / listening / " .
+                             "watching activities for points. You will be able to switch the active player on your " .
+                             "website account to specify which player receives points for online activities such as " .
+                             "commenting, tagging, or writing reviews. If you wish this " .
+                             "player to have a separate website identity for these online activites, please log " .
+                             "out and create a new website account before signing up for the Summer Game.");
+          $player = ['uid' => $uid];
+        }
+        else {
+          // Website user, no player, redirect to new player form
+          return $this->redirect('summergame.player.new')->send();
+        }
+      }
+      else {
+        drupal_set_message('You need to log in to the website before you can sign up a player');
+        return $this->redirect('<front>')->send();
+      }
+    }
     else {
       $player = summergame_player_load($pid);
     }
