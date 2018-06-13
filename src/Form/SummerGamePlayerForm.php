@@ -301,7 +301,7 @@ class SummerGamePlayerForm extends FormBase {
     // Check for merge ID
     if ($form_state->getValue('pid') && $form_state->getValue('merge_id')) {
       $form_state->setRedirect('summergame.admin.players.merge',
-                              ['merge_id' => $form_state->getValue('merge_id'), 'pid' => $form_state->getValue('pid')]);
+                              ['pid1' => $form_state->getValue('merge_id'), 'pid2' => $form_state->getValue('pid')]);
     }
     else {
       $player_info = [
