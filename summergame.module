@@ -3203,11 +3203,13 @@ function summergame_twilio_respond($incoming) {
 
   // Try to load existing player
   $player = summergame_player_load(['phone' => $incoming['phone']]);
+  unset($player['bids']);
 
   // Determine if text is a SummerGame text
   if (preg_match('/^[A-Za-z]([\d]{6})$/', $incoming['text'], $matches)) {
     // Cell phone merge
     if ($web_player = summergame_player_load(['phone' => $matches[1]])) {
+      unset($web_player['bids']);
       // set the phone number on the web player and merge the two
       $web_player['phone'] = $incoming['phone'];
       summergame_player_save($web_player);
@@ -3250,7 +3252,7 @@ function summergame_twilio_respond($incoming) {
   else {
     // check if it's a game code OR friend code
     $text = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $incoming['text']));
-    $gc = $db->query("SELECT * FROM sg_game_codes WHERE text = :text", [':text' => $text])->fetchObject;
+    $gc = $db->query("SELECT * FROM sg_game_codes WHERE text = :text", [':text' => $text])->fetchObject();
     // $fc_player = summergame_player_load(array('friend_code' => $text));
     if ($gc->code_id) { // } || $fc_player['pid']) {
       $game_code_text = TRUE;
@@ -4250,8 +4252,12 @@ function summergame_admin_players_merge($pid1, $pid2, $confirm = '') {
  * Additional info from player 2 is added to player 1
  */
 function summergame_players_merge($pid1, $pid2) {
-  $p1 = summergame_player_load(array('pid' => $pid1));
-  $p2 = summergame_player_load(array('pid' => $pid2));
+  $db = \Drupal::database();
+  $p1 = summergame_player_load(['pid' => $pid1]);
+  $p2 = summergame_player_load(['pid' => $pid2]);
+
+  // Don't check or try to update Badge IDs
+  unset($p1['bids'], $p2['bids']);
 
   // Update Player Data Fields
   foreach ($p2 as $field => $data) {
@@ -4262,99 +4268,100 @@ function summergame_players_merge($pid1, $pid2) {
   summergame_player_save($p1);
 
   // Check for duplicate Game Codes and remove from old player
-  $duplicate_codes = array();
-  $res = db_query("SELECT * FROM sg_ledger WHERE pid = %d AND metadata LIKE '%%gamecode:%%'", $pid1);
-  while ($row = db_fetch_array($res)) {
+  $duplicate_codes = [];
+  $res = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND metadata LIKE '%gamecode:%'", [':pid' => $pid1]);
+  while ($row = $res->fetchAssoc()) {
     if (preg_match('/gamecode:([\w]+)/', $row['metadata'], $matches)) {
       $duplicate_codes[] = $matches[1];
     }
   }
   if (count($duplicate_codes)) {
     foreach ($duplicate_codes as $duplicate) {
-      db_query("DELETE FROM sg_ledger WHERE pid = %d AND metadata like '%%gamecode:%s%%'", $pid2, $duplicate);
+      $metadata = "%gamecode:$duplicate%";
+      $db->query("DELETE FROM sg_ledger WHERE pid = :pid AND metadata like :metadata", [':pid' => $pid2, ':metadata' => $metadata]);
     }
   }
 
   // Remove duplicate Signup and Completed bonuses
-  $res = db_query("SELECT COUNT(lid) AS count FROM sg_ledger WHERE type = 'Signup' AND (pid = %d OR pid = %d)", $pid1, $pid2);
-  $ledger = db_fetch_object($res);
+  $res = $db->query("SELECT COUNT(lid) AS count FROM sg_ledger WHERE type = 'Signup' AND (pid = :pid1 OR pid = :pid2)", [':pid1' => $pid1, ':pid2' => $pid2]);
+  $ledger = $res->fetchObject();
   if ($ledger->count > 1) {
-    db_query("DELETE FROM sg_ledger WHERE pid = %d AND type = 'Signup'", $pid2);
+    $db->query("DELETE FROM sg_ledger WHERE pid = :pid AND type = 'Signup'", [':pid' => $pid2]);
   }
-  $res = db_query("SELECT COUNT(lid) AS count FROM sg_ledger WHERE type = 'Completed' AND (pid = %d OR pid = %d)", $pid1, $pid2);
-  $ledger = db_fetch_object($res);
+  $res = $db->query("SELECT COUNT(lid) AS count FROM sg_ledger WHERE type = 'Completed' AND (pid = :pid1 OR pid = :pid2)", [':pid1' => $pid1, ':pid2' => $pid2]);
+  $ledger = $res->fetchObject();
   if ($ledger->count > 1) {
-    db_query("DELETE FROM sg_ledger WHERE pid = %d AND type = 'Completed'", $pid2);
+    $db->query("DELETE FROM sg_ledger WHERE pid = :pid AND type = 'Completed'", [':pid' => $pid2]);
   }
 
   // Remove duplicate badges and bonuses
-  $badges = array();
-  $res = db_query("SELECT * FROM sg_badges, sg_players_badges WHERE sg_badges.bid = sg_players_badges.bid AND sg_players_badges.pid = %d", $pid1);
-  while ($badge = db_fetch_object($res)) {
+  $badges = [];
+  $res = $db->query("SELECT * FROM sg_badges, sg_players_badges WHERE sg_badges.bid = sg_players_badges.bid AND sg_players_badges.pid = :pid", [':pid' => $pid1]);
+  while ($badge = $res->fetchObject()) {
     $badges[] = $badge;
   }
-  foreach($badges as $badge) {
-    db_query("DELETE FROM sg_players_badges WHERE pid = %d and bid = %d", $pid2, $badge->bid);
+  foreach ($badges as $badge) {
+    $db->query("DELETE FROM sg_players_badges WHERE pid = :pid and bid = :bid", [':pid' => $pid2, ':bid' => $badge->bid]);
     $badge_description = "Earned the $badge->title Badge";
-    db_query("DELETE FROM sg_ledger WHERE pid = %d AND metadata = 'Badge Bonus' AND description = '%s'", $pid2, $badge_description);
+    $db->query("DELETE FROM sg_ledger WHERE pid = :pid AND metadata = 'Badge Bonus' AND description = :description", [':pid' => $pid2, ':description' => $badge_description]);
   }
 
   // FRIEND CODE CLEANUP ///////////////////////////////////////////////////////
   // Remove friend codes if new and old entered each other's codes
-  db_query("DELETE FROM sg_ledger WHERE pid = %d and metadata LIKE 'fc_player:%d'", $pid1, $pid2);
-  db_query("DELETE FROM sg_ledger WHERE pid = %d AND metadata LIKE 'fc_follower:%d'", $pid1, $pid2);
-  db_query("DELETE FROM sg_ledger WHERE pid = %d AND metadata LIKE 'fc_friend:%d'", $pid1, $pid2);
-  db_query("DELETE FROM sg_ledger WHERE pid = %d and metadata LIKE 'fc_player:%d'", $pid2, $pid1);
-  db_query("DELETE FROM sg_ledger WHERE pid = %d AND metadata LIKE 'fc_follower:%d'", $pid2, $pid1);
-  db_query("DELETE FROM sg_ledger WHERE pid = %d AND metadata LIKE 'fc_friend:%d'", $pid2, $pid1);
+  $db->query("DELETE FROM sg_ledger WHERE pid = :pid and metadata LIKE :metadata", [':pid' => $pid1, ':metadata' => 'fc_player:' . $pid2]);
+  $db->query("DELETE FROM sg_ledger WHERE pid = :pid AND metadata LIKE :metadata", [':pid' => $pid1, ':metadata' => 'fc_follower:' . $pid2]);
+  $db->query("DELETE FROM sg_ledger WHERE pid = :pid AND metadata LIKE :metadata", [':pid' => $pid1, ':metadata' => 'fc_friend:' . $pid2]);
+  $db->query("DELETE FROM sg_ledger WHERE pid = :pid and metadata LIKE :metadata", [':pid' => $pid2, ':metadata' => 'fc_player:' . $pid1]);
+  $db->query("DELETE FROM sg_ledger WHERE pid = :pid AND metadata LIKE :metadata", [':pid' => $pid2, ':metadata' => 'fc_follower:' . $pid1]);
+  $db->query("DELETE FROM sg_ledger WHERE pid = :pid AND metadata LIKE :metadata", [':pid' => $pid2, ':metadata' => 'fc_friend:' . $pid1]);
 
   // Remove duplicate Friend Codes from old player
-  $duplicate_fcs = array();
-  $res = db_query("SELECT * FROM sg_ledger WHERE pid = %d AND metadata LIKE 'fc_player:%%'", $pid1);
-  while ($row = db_fetch_array($res)) {
+  $duplicate_fcs = [];
+  $res = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND metadata LIKE 'fc_player:%'", [':pid' => $pid1]);
+  while ($row = $res->fetchAssoc()) {
     if (preg_match('/fc_player:([\d]+)/', $row['metadata'], $matches)) {
       $duplicate_fcs[] = $matches[1];
     }
   }
   if (count($duplicate_fcs)) {
     foreach ($duplicate_fcs as $duplicate) {
-      db_query("DELETE FROM sg_ledger WHERE pid = %d AND metadata LIKE 'fc_player:%d'", $pid2, $duplicate);
+      $db->query("DELETE FROM sg_ledger WHERE pid = :pid AND metadata LIKE :metadata", [':pid' => $pid2, ':metadata' => 'fc_player:' . $duplicate]);
     }
   }
 
   // Remove duplicate Friend Bonuses from old player
-  $duplicate_fbs = array();
-  $res = db_query("SELECT * FROM sg_ledger WHERE pid = %d AND metadata LIKE 'fc_friend:%%'", $pid1);
-  while ($row = db_fetch_array($res)) {
+  $duplicate_fbs = [];
+  $res = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND metadata LIKE 'fc_friend:%'", [':pid' => $pid1]);
+  while ($row = $res->fetchAssoc()) {
     if (preg_match('/fc_friend:([\d]+)/', $row['metadata'], $matches)) {
       $duplicate_fbs[] = $matches[1];
     }
   }
   if (count($duplicate_fbs)) {
     foreach ($duplicate_fbs as $duplicate) {
-      db_query("DELETE FROM sg_ledger WHERE pid = %d AND metadata LIKE 'fc_friend:%d'", $pid2, $duplicate);
+      $db->query("DELETE FROM sg_ledger WHERE pid = :pid AND metadata LIKE :metadata", [':pid' => $pid2, ':metadata' => 'fc_friend:' . $duplicate]);
     }
   }
 
   // Delete old player Friend Codes from any player who also entered new player Friend Code
-  $res = db_query("SELECT * FROM sg_ledger WHERE metadata LIKE 'fc_player:%d'", $pid1);
-  while ($row = db_fetch_object($res)) {
-    db_query("DELETE FROM sg_ledger WHERE pid = %d AND metadata LIKE 'fc_player:%d'", $row->pid, $pid2);
+  $res = $db->query("SELECT * FROM sg_ledger WHERE metadata LIKE :metadata", [':metadata' => 'fc_player:' . $pid1]);
+  while ($row = $res->fetchObject()) {
+    $db->query('DELETE FROM sg_ledger WHERE pid = :pid AND metadata LIKE :metadata', [':pid' => $row->pid, ':metadata' => 'fc_player:' . $pid2]);
   }
 
   // Delete old player Friend Bonuses from any player who also has Friend Bonus from new player
-  $res = db_query("SELECT * FROM sg_ledger WHERE metadata LIKE 'fc_friend:%d'", $pid1);
-  while ($row = db_fetch_object($res)) {
-    db_queryd("DELETE FROM sg_ledger WHERE pid = %d AND metadata LIKE 'fc_friend:%d'", $row->pid, $pid2);
+  $res = $db->query("SELECT * FROM sg_ledger WHERE metadata LIKE :metadata", [':metadata' => 'fc_friend:' . $pid1]);
+  while ($row = $res->fetchObject()) {
+    $db->query('DELETE FROM sg_ledger WHERE pid = :pid AND metadata LIKE :metadata', [':pid' => $row->pid, ':metadata' => 'fc_friend:' . $pid2]);
   }
 
   // Update Friend Codes from old player to point to new player
-  db_query("UPDATE sg_ledger SET metadata = 'fc_player:%d' WHERE metadata = 'fc_player:%d'", $pid1, $pid2);
+  $db->query('UPDATE sg_ledger SET metadata = :metadata1 WHERE metadata = :metadata2', [':metadata1' => 'fc_player:' . $pid1, ':metadata2' => 'fc_player:' . $pid2]);
 
   // Award new Friend Bonuses to new player and any player who are now reciprocal friends but do not have bonus
-  $following_pids = array();
-  $res = db_query("SELECT * FROM sg_ledger WHERE pid = %d AND metadata LIKE 'fc_player:%%'", $pid1);
-  while ($row = db_fetch_array($res)) {
+  $following_pids = [];
+  $res = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND metadata LIKE 'fc_player:%'", [':pid' => $pid1]);
+  while ($row = $res->fetchAssoc()) {
     if (preg_match('/fc_player:([\d]+)/', $row['metadata'], $matches)) {
       $following_pids[] = $matches[1];
     }
@@ -4362,15 +4369,15 @@ function summergame_players_merge($pid1, $pid2) {
   if (count($following_pids)) {
     foreach ($following_pids as $following_pid) {
       // Check if they are a friend
-      $row = db_fetch_object(db_query("SELECT * FROM sg_ledger WHERE pid = %d AND metadata LIKE 'fc_player:%d'", $following_pid, $pid1));
+      $row = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND metadata LIKE :metadata", [':pid' => $following_pid, ':metadata' =>' fc_player:' . $pid1])->fetchObject();
       if ($row->lid) {
         // Friends! Check for bonuses
-        $pf_row = db_fetch_object("SELECT * FROM sg_ledger WHERE pid = %d AND metadata LIKE 'fc_friend:%d'", $pid1, $following_pid);
+        $pf_row = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND metadata LIKE :metadata", [':pid' => $pid1, ':metadata' => 'fc_friend:'. $following_pid])->fetchObject();
         if (!$pf_row->lid) {
           // give player friend bonus
           summergame_player_points($pid1, 50, 'Friend Code', 'You and Player #' . $following_pid . ' are now friends!', 'fc_friend:' . $following_pid);
         }
-        $of_row = db_fetch_object("SELECT * FROM sg_ledger WHERE pid = %d AND metadata LIKE 'fc_friend:%d'", $following_pid, $pid1);
+        $of_row = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND metadata LIKE :metadata", [':pid' => $following_pid, ':metadata' => 'fc_friend:' . $pid1])->fetchObject();
         if (!$of_row->lid) {
           // give other friend bonus
           summergame_player_points($following_pid, 50, 'Friend Code', 'You and Player #' . $pid1 . ' are now friends!', 'fc_friend:' . $pid1);
@@ -4380,9 +4387,9 @@ function summergame_players_merge($pid1, $pid2) {
   }
 
   // Update remaing player2 data to point at player1 and delete player 2
-  db_query("UPDATE sg_ledger SET pid = %d WHERE pid = %d", $pid1, $pid2);
-  db_query("UPDATE sg_players_badges SET pid = %d WHERE pid = %d", $pid1, $pid2);
-  db_query("DELETE FROM sg_players WHERE pid = %d", $pid2);
+  $db->query("UPDATE sg_ledger SET pid = :pid1 WHERE pid = :pid2", [':pid1' => $pid1, ':pid2' => $pid2]);
+  $db->query("UPDATE sg_players_badges SET pid = :pid1 WHERE pid = :pid2", [':pid1' => $pid1, ':pid2' => $pid2]);
+  $db->query("DELETE FROM sg_players WHERE pid = :pid", [':pid' => $pid2]);
 }
 
 function summergame_intervention_form(&$form_state) {
@@ -4529,14 +4536,15 @@ function summergame_badgeifier_form_submit($form, &$form_state) {
  * are attached to a single website account.
  */
 function summergame_move_player_id($old_pid, $new_pid) {
+  $db = \Drupal::database();
   // Update ledger
-  db_query("UPDATE sg_ledger SET pid = %d WHERE pid = %d", $new_pid, $old_pid);
+  $db->query("UPDATE sg_ledger SET pid = :new_pid WHERE pid = :old_pid", [':new_pid' => $new_pid, ':old_pid' => $old_pid]);
   // Update player table
-  db_query("UPDATE sg_players SET pid = %d WHERE pid = %d", $new_pid, $old_pid);
+  $db->query("UPDATE sg_players SET pid = :new_pid WHERE pid = :old_pid", [':new_pid' => $new_pid, ':old_pid' => $old_pid]);
   // Update players badges
-  db_query("UPDATE sg_players_badges SET pid = %d WHERE pid = %d", $new_pid, $old_pid);
+  $db->query("UPDATE sg_players_badges SET pid = :new_pid WHERE pid = :old_pid", [':new_pid' => $new_pid, ':old_pid' => $old_pid]);
   // Update players teams
-  db_query("UPDATE sg_players_teams SET pid = %d WHERE pid = %d", $new_pid, $old_pid);
+  $db->query("UPDATE sg_players_teams SET pid = :new_pid WHERE pid = :old_pid", [':new_pid' => $new_pid, ':old_pid' => $old_pid]);
 }
 
 /**

@@ -371,9 +371,11 @@ class PlayerController extends ControllerBase {
 
   }
 
-  public function gcpc() {
+  public function gcpc($pid = 0) {
     if ($player = summergame_player_load(['pid' => $pid])) {
       if (!$player['phone']) {
+        $db = \Drupal::database();
+        unset($player['bids']);
         // Generate a new cell phone code
         $code = 0;
         while ($code == 0) {
@@ -388,9 +390,9 @@ class PlayerController extends ControllerBase {
         $char = chr(($player['pid'] % 26) + 65);
         drupal_set_message('TEXT ' . $char. $code . ' to 4AADL (42235) to connect your phone');
       }
-      return new RedirectResponse('summergame/player/' . $player['pid']);
+      return new RedirectResponse('/summergame/player/' . $player['pid']);
     }
-    return new RedirectResponse('summergame/player');
+    return new RedirectResponse('/summergame/player');
   }
 
   public function gfc() {

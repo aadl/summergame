@@ -333,10 +333,13 @@ class AdminController extends ControllerBase {
     $p1 = summergame_player_load(['pid' => $pid1]);
     $p2 = summergame_player_load(['pid' => $pid2]);
 
+    // Don't worry about Badge IDs
+    unset($p1['bids'], $p2['bids']);
+    
     if ($p1['pid'] && $p2['pid']) {
       $p1_points = summergame_get_player_points($pid1);
       $p1['total'] = $p1_points['career'];
-dpm($p1);
+
       $p2_points = summergame_get_player_points($pid2);
       $p2['total'] = $p2_points['career'];
 
