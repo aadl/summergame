@@ -161,7 +161,7 @@ summergame.player.deletescore:
   path: '/summergame/player/{pid}/ledger/{lid}/deletescore'
   defaults:
     _title: 'Delete Player Score'
-    _form: '\Drupal\summergame\Form\SummerGameDeleteScoreForm'
+    _form: '\Drupal\summergame\Form\SummerGamePlayerDeleteScoreForm'
   requirements:
     _permission: 'access summergame'
 summergame.player.delete:
