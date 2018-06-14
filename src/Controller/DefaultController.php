@@ -488,7 +488,7 @@ FBL;
         'max-age' => 0, // Don't cache, always get fresh data
       ],
       '#theme' => 'summergame_player_badge_list',
-      '#badge_list' => $badge_list
+      '#badge_list' => $badges
     ];
   }
 
