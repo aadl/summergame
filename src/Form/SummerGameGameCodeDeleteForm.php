@@ -44,14 +44,16 @@ class SummerGameGameCodeDeleteForm extends FormBase {
         '#prefix' => '<div class="container-inline">',
         '#suffix' => '</div>',
       ];
-      $form['inline']['submit'] = array(
+      $form['inline']['submit'] = [
         '#type' => 'submit',
         '#value' => t('Delete'),
-      );
+        '#prefix' => '<div class="sg-form-actions">'
+      ];
       $form['inline']['cancel'] = [
         '#type' => 'link',
         '#title' => $this->t('Cancel'),
         '#url' => \Drupal\Core\Url::fromRoute('summergame.admin'),
+        '#suffix' => '</div>'
       ];
     }
     else {

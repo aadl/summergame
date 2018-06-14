@@ -191,6 +191,7 @@ class SummerGameGameCodeForm extends FormBase {
     $form['inline']['submit'] = array(
       '#type' => 'submit',
       '#value' => t('Save Game Code'),
+      '#prefix' => '<div class="sg-form-actions">'
     );
     $form['inline']['cancel'] = [
       '#type' => 'link',
@@ -203,6 +204,7 @@ class SummerGameGameCodeForm extends FormBase {
       '#type' => 'link',
       '#title' => $this->t('DELETE'),
       '#url' => \Drupal\Core\Url::fromRoute('summergame.admin.gamecode.delete', ['code_id' => $game_code['code_id']]),
+      '#suffix' => '</div>'
     ];
   }
 

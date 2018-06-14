@@ -59,19 +59,19 @@ class SummerGamePlayerRedeemForm extends FormBase {
         '#type' => 'checkboxes',
         '#options' => $pid_options,
         '#default_value' => $pid_defaults,
-        '#title' => 'Redeem for players',
-        '#prefix' => '<div class="l-inline-b">',
-        '#suffix' => '</div>',
+        '#title' => 'Redeem for players'
       ];
     }
     $form['submit'] = [
       '#type' => 'submit',
-      '#value' => t('Submit')
+      '#value' => t('Submit'),
+      '#prefix' => '<div class="sg-form-actions">'
     ];
     $form['cancel'] = [
       '#type' => 'link',
       '#title' => 'Cancel',
-      '#url' => \Drupal\Core\Url::fromRoute('summergame.player')
+      '#url' => \Drupal\Core\Url::fromRoute('summergame.player'),
+      '#suffix' => '</div>'
     ];
 
     return $form;

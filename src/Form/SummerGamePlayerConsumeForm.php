@@ -70,11 +70,13 @@ class SummerGamePlayerConsumeForm extends FormBase {
     $form['submit'] = [
       '#type' => 'submit',
       '#value' => t('Score!'),
+      '#prefix' => '<div class="sg-form-actions">'
     ];
     $form['cancel'] = [
       '#type' => 'link',
       '#title' => 'Cancel',
-      '#url' => \Drupal\Core\Url::fromRoute('summergame.player')
+      '#url' => \Drupal\Core\Url::fromRoute('summergame.player'),
+      '#suffix' => '</div>'
     ];
 
     return $form;
