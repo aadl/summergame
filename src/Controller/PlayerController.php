@@ -549,7 +549,7 @@ class PlayerController extends ControllerBase {
           }
           else {
             $table_row['remove'] = 'hmmm';
-            $table_row['remove'] = '<a href="summergame/player/' . $player['pid'] . '/ledger/' . $row['lid'] . '/deletescore">DELETE</a>';
+            $table_row['remove'] = '<a href="/summergame/player/' . $player['pid'] . '/ledger/' . $row['lid'] . '/deletescore">DELETE</a>';
           }
         }
         $score_table[] = $table_row;

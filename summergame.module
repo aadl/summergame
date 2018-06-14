@@ -3568,15 +3568,17 @@ function summergame_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
 function summergame_player_access($pid) {
   $access = FALSE;
 
-  $user = \Drupal::currentUser();
-  if ($user->hasPermission('administer summergame')) {
-    $access = TRUE;
-  }
-  else {
-    if ($uid = $user->id()) {
-      $player = summergame_player_load($pid);
-      if ($uid == $player['uid']) {
-        $access = TRUE;
+  if ($pid = (int) $pid) {
+    $user = \Drupal::currentUser();
+    if ($user->hasPermission('administer summergame')) {
+      $access = TRUE;
+    }
+    else {
+      if ($uid = $user->id()) {
+        $player = summergame_player_load($pid);
+        if ($uid == $player['uid']) {
+          $access = TRUE;
+        }
       }
     }
   }
