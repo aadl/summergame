@@ -56,12 +56,23 @@
     </div>
     <div id="player-other-players">
       <h2>Extra Players</h2>
-      <ul>
-        {% for other_player in other_players %}
-          <li><a href="/summergame/player/{{ other_player.pid }}">{{ other_player.nickname }}</a> - <a href="/summergame/player/{{ other_player.pid }}/setactive">set active</a></li>
-        {% endfor %}
-        <li><a href="/summergame/player/extra">Sign up an extra player</a></li>
-      </ul>
+      {% if other_players %}
+        <table class="account-summary not-fixed-table">
+          <tr>
+            <th>Player</th>
+            <th>Set Active</th>
+          </tr>
+          <tbody>
+            {% for other_player in other_players %}
+            <tr>
+              <td><a href="/summergame/player/{{ other_player.pid }}">{{ other_player.nickname }}</a></td>
+              <td><a href="/summergame/player/{{ other_player.pid }}/setactive">Set Active</a></td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+      <a href="/summergame/player/extra">Sign up an extra player</a>
     </div>
   </div>
 
