@@ -454,4 +454,42 @@ FBL;
 
     return $this->redirect('summergame.admin');
   }
+
+  public function badge_list() {
+    $vocabs = ['Summer_Game_2018']; 
+    $badges = [];
+    foreach ($vocabs as $vocab) {
+      $query = \Drupal::entityQuery('taxonomy_term')
+        ->condition('vid', $vocab)
+        ->sort('vid');
+      $tids = $query->execute();
+      $terms = \Drupal\taxonomy\Entity\Term::loadMultiple($tids);
+
+      foreach ($terms as $term) {
+        $series_info = explode("\n", strip_tags($term->get('description')->value));
+        $series = $term->get('name')->value;
+        $badges[$vocab][$series]['description'] = $series_info[0];
+        $badges[$vocab][$series]['level'] = $series_info[2];
+        $query = \Drupal::entityQuery('node')
+          ->condition('type', 'sg_badge')
+          ->condition('status', 1)
+          ->condition('field_sg_2018_badge_series', $term->id());
+        $nodes = $query->execute();
+
+        foreach ($nodes as $nid) {
+          $node = entity_load('node', $nid);
+          $badges[$vocab][$series]['nodes'][] = $node;
+        }
+      }
+    }
+
+    return [
+      '#cache' => [
+        'max-age' => 0, // Don't cache, always get fresh data
+      ],
+      '#theme' => 'summergame_player_badge_list',
+      '#badge_list' => $badge_list
+    ];
+  }
+
 }
