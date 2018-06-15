@@ -42,7 +42,7 @@
           <th>Cell Phone:</th>
           <td>
             {% if player.phone %}
-              Linked
+              {{ player.phone }}
             {% else %}
               <a href="/summergame/player/{{ player.pid }}/gcpc">GENERATE CODE</a> to link your cell phone to your player
             {% endif %}

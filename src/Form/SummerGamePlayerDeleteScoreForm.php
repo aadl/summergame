@@ -89,7 +89,7 @@ class SummerGamePlayerDeleteScoreForm extends FormBase {
     $db = \Drupal::database();
     $db->delete('sg_ledger')->condition('lid', $form_state->getValue('lid'))->execute();
 
-    drupal_set_message('Game Code has been deleted.');
+    drupal_set_message('Score has been deleted.');
 
     $form_state->setRedirect('summergame.player', ['pid' => $form_state->getValue('pid')]);
 
