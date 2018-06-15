@@ -50,6 +50,9 @@ class SummerGamePlayerConsumeForm extends FormBase {
       '#type' => 'value',
       '#value' => $pid,
     ];
+    $form['message'] = [
+      '#markup' => '<p>Earn 50 points for each day that you log something!</p>'
+    ];
     $form['mat_code'] = [
       '#type' => 'select',
       '#title' => t("I've been enjoying this"),
