@@ -33,7 +33,8 @@ class SummerGamePlayerForm extends FormBase {
       if ($uid = $user->id()) {
         // Check if existing player
         if ($player = summergame_player_load(['uid' => $uid])) {
-          return $this->redirect('summergame.player', ['pid' => $player['pid']])->send();
+          drupal_set_message('Redirecting to your existing player');
+          return $this->redirect('summergame.player', ['pid' => $player['pid']]);
         }
         else {
           // Website user, no player, set up empty player record
@@ -67,7 +68,7 @@ class SummerGamePlayerForm extends FormBase {
       }
       else {
         drupal_set_message('You need to log in to the website before you can sign up a player');
-        return $this->redirect('<front>')->send();
+        return $this->redirect('summergame.player');
       }
     }
     else {
@@ -100,10 +101,8 @@ class SummerGamePlayerForm extends FormBase {
       $submit_text = 'Save Player Changes';
     }
     else {
-      $form['title'] = [
-        '#value' => '<h1>Summer Game Player Signup</h1>',
-      ];
-      $submit_text = 'Sign Up!';
+      drupal_set_message('Unable to edit player', 'error');
+      return $this->redirect('summergame.player');
     }
 
     $form['buttons'] = [
@@ -132,8 +131,10 @@ class SummerGamePlayerForm extends FormBase {
     else {
       $cancel_path = '';
     }
-    $form['buttons']['cancel'] = [
-      '#value' => '<a href="/' . $cancel_path . '">Cancel</a>',
+    $form['buttons']['links'] = [
+      '#markup' => '<a href="/' . $cancel_path . '">Cancel</a>' .
+                   '&nbsp;&nbsp;&nbsp;&nbsp;' .
+                   '<a href="/summergame/player/' . $player['pid'] . '/delete">Delete Player</a>',
     ];
 
     if ($player['pid'] && $user->hasPermission('administer summergame')) {
