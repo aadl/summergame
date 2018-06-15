@@ -1,0 +1,34 @@
+{#
+/**
+ * Summer Game Leaderboard Page
+ */
+#}
+
+<div id="summergame-leaderboard-page">
+  <h1>{{ total|number_format }} POINTS earned from {{ player_count }} Player{% if player_count != 1 %}s{% endif %} so far today</h1>
+  <p>The new Leaderboard updates once a day. Check back tomorrow for score details.<p>
+
+  {% if leaderboard %}
+    <h1>Leaderboard for the end of day, {{ leaderboard_date }}</h1>
+    <table>
+    <tr>
+      <th>Place</th>
+      <th>Player</th>
+      <th>Total Score</th>
+    </tr>
+    {% for row in leaderboard %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>
+          {% if row.pid %}
+            <a href="/summergame/player/{{ row.pid }}">{{ row.player }}</a>
+          {% else %}
+            {{ row.player }}
+          {% endif %}
+        </td>
+        <td>{{ row.score }}</td>
+      </tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+</div>

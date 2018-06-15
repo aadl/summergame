@@ -21,11 +21,20 @@ class DefaultController extends ControllerBase {
   public function leaderboard() {
     $db = \Drupal::database();
     $cutoff = strtotime('today');
-    $res = $db->query("SELECT SUM(points) AS total FROM sg_ledger WHERE timestamp > :cutoff", [':cutoff' => $cutoff])->fetchObject();
+    $total = $db->query("SELECT SUM(points) FROM sg_ledger WHERE timestamp > :cutoff", [':cutoff' => $cutoff])->fetchField();
+    $player_count = (int) $db->query("SELECT COUNT(*) FROM sg_ledger WHERE timestamp > :cutoff GROUP BY pid", [':cutoff' => $cutoff])->fetchField();
+
+    $leaderboard = summergame_get_leaderboard();
 
     return [
-      '#markup' => "<h1>$res->total POINTS earned for ALL Players so far today</h1>" .
-        "<p>The new Leaderboard updates once a day. Check back tomorrow for score details.<p>"
+      '#cache' => [
+        'max-age' => 0, // Don't cache, always get fresh data
+      ],
+      '#theme' => 'summergame_leaderboard_page',
+      '#total' => $total,
+      '#player_count' => $player_count,
+      '#leaderboard_date' => date('l, F j, Y', strtotime('yesterday')),
+      '#leaderboard' => $leaderboard,
     ];
   }
 
