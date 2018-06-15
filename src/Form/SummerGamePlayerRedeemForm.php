@@ -113,7 +113,7 @@ class SummerGamePlayerRedeemForm extends FormBase {
         drupal_set_message($status['success']);
       }
     }
-    $form_state->setRedirect('summergame.player');
+    $form_state->setRedirect('summergame.player', ['pid' => $form_state->getValue('pid')]);
 
     return;
   }

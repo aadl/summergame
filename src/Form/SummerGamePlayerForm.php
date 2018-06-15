@@ -28,6 +28,8 @@ class SummerGamePlayerForm extends FormBase {
     $summergame_settings = \Drupal::config('summergame.settings');
     $user = \Drupal::currentUser();
 
+    $submit_text = 'Save Player Changes';
+
     if ($route == 'summergame.player.new') {
       // Check if user logged in
       if ($uid = $user->id()) {
@@ -39,6 +41,7 @@ class SummerGamePlayerForm extends FormBase {
         else {
           // Website user, no player, set up empty player record
           $player = ['uid' => $uid];
+          $submit_text = 'Sign Up';
         }
       }
       else {
@@ -98,24 +101,13 @@ class SummerGamePlayerForm extends FormBase {
                     '</p>' .
                     '<h1>Edit Summer Game Player Information</h1>',
       ];
-      $submit_text = 'Save Player Changes';
-    }
-    else {
-      drupal_set_message('Unable to edit player', 'error');
-      return $this->redirect('summergame.player');
     }
 
     $form['buttons'] = [
       '#prefix' => '<div class="summergame-player-edit-buttons">',
       '#suffix' => '</div>',
     ];
-    if ($player['pid']) {
-      $form['buttons']['delete'] = [
-        '#value' => '<div class="summergame-player-delete-link">' .
-                    '<a href="/summergame/player/delete/' . $player['pid'] . '">Delete Player</a>' .
-                    '</div>',
-      ];
-    }
+
     $form['buttons']['submit'] = [
       '#type' => 'submit',
       '#value' => t($submit_text),
@@ -131,11 +123,13 @@ class SummerGamePlayerForm extends FormBase {
     else {
       $cancel_path = '';
     }
-    $form['buttons']['links'] = [
-      '#markup' => '<a href="/' . $cancel_path . '">Cancel</a>' .
-                   '&nbsp;&nbsp;&nbsp;&nbsp;' .
-                   '<a href="/summergame/player/' . $player['pid'] . '/delete">Delete Player</a>',
-    ];
+    if ($player['pid']) {
+      $form['buttons']['links'] = [
+        '#markup' => '<a href="/' . $cancel_path . '">Cancel</a>' .
+                     '&nbsp;&nbsp;&nbsp;&nbsp;' .
+                     '<a href="/summergame/player/' . $player['pid'] . '/delete">Delete Player</a>',
+      ];
+    }
 
     if ($player['pid'] && $user->hasPermission('administer summergame')) {
       $form['admin'] = [
