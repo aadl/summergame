@@ -456,7 +456,7 @@ FBL;
   }
 
   public function badge_list() {
-    $vocabs = ['Summer_Game_2018']; 
+    $vocabs = ['Summer_Game_2018'];
     $badges = [];
     foreach ($vocabs as $vocab) {
       $query = \Drupal::entityQuery('taxonomy_term')
@@ -468,17 +468,28 @@ FBL;
       foreach ($terms as $term) {
         $series_info = explode("\n", strip_tags($term->get('description')->value));
         $series = $term->get('name')->value;
-        $badges[$vocab][$series]['description'] = $series_info[0];
-        $badges[$vocab][$series]['level'] = $series_info[2];
         $query = \Drupal::entityQuery('node')
           ->condition('type', 'sg_badge')
           ->condition('status', 1)
           ->condition('field_sg_2018_badge_series', $term->id());
         $nodes = $query->execute();
-
-        foreach ($nodes as $nid) {
-          $node = entity_load('node', $nid);
-          $badges[$vocab][$series]['nodes'][] = $node;
+        if (count($nodes)) {
+          $badges[$vocab][$series]['description'] = $series_info[0];
+          $series_level = (int) $series_info[2];
+          $max_level = 4;
+          $level_diff = $max_level - $series_level;
+          $level_output = '';
+          for ($i = 0; $i < $series_level; $i++) {
+            $level_output .= '&starf;';
+          }
+          for ($i = 0; $i < $level_diff; $i++) {
+            $level_output .= '&star;';
+          }
+          $badges[$vocab][$series]['level'] = $level_output;
+          foreach ($nodes as $nid) {
+            $node = entity_load('node', $nid);
+            $badges[$vocab][$series]['nodes'][] = $node;
+          }
         }
       }
     }
