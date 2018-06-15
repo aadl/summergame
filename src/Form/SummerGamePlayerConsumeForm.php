@@ -104,7 +104,7 @@ class SummerGamePlayerConsumeForm extends FormBase {
     $res = $db->query("SELECT * FROM sg_ledger WHERE pid=:pid AND type='Read Watched Listened Daily Bonus' ORDER BY lid DESC LIMIT 1", [':pid' => $pid])->fetch();
     if (date('mdY', $res->timestamp) != date('mdY', time())) {
       $type .= ' Daily Bonus';
-      $points = 10;
+      $points = 50;
     }
 
     $points = summergame_player_points($pid, $points, $type, $title);
