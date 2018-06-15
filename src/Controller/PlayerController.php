@@ -137,13 +137,13 @@ class PlayerController extends ControllerBase {
         $completed_classic = 'Yes, completed on ' . date('F j, Y', $row->timestamp);
       }
       else {
-       $completed_classic = false;
+        $completed_classic = FALSE;
       }
 
       // Check for cell phone attachment code
       if (preg_match('/^[\d]{6}$/', $player['phone'])) {
         $char = chr(($player['pid'] % 26) + 65);
-        $player['phone'] = 'TEXT ' . $char . $player['phone'] . ' to 4AADL (42235) to connect your phone';
+        $player['phone'] = 'TEXT ' . $char . $player['phone'] . ' to 734-327-4200 to connect your phone';
       }
 
       // Lookup drupal user if admin
