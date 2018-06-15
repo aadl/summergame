@@ -3749,7 +3749,7 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
       $badge['img'] = file_create_url($fid->getFileUri());
     }
     $badge['title'] = $node->get('title')->value;
-    $player_points[$game_term]['badges'];
+    $player_points[$game_term]['badges'][] = $badge;
   }
 
   return $player_points;
