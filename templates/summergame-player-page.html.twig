@@ -69,7 +69,13 @@
                   {% if player_game_points.badges %}
                     {% for badge in player_game_points.badges %}
                       {# TODO Replicate theme_summergame_badge function in Drupal 8 #}
-                      <img class="summergame-badge" title="{{ badge.title }}" src="/files/old-sg-images/{{ badge.image }}_100.png">
+                      {% if badge.nid %}
+                        <a href="/node/{{ badge.nid }}">
+                          <img class="summergame-badge" title="{{ badge.title }}" src="{{ badge.img }}">
+                        </a>
+                      {% else %}
+                        <img class="summergame-badge" title="{{ badge.title }}" src="{{ badge.img }}">
+                      {% endif %}
                     {% endfor %}
                   {% else %}
                     <p>This player hasn't earned any {{ game_term }} badges yet.</p>
