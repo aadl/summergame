@@ -44,7 +44,7 @@ class SummerGamePlayerConsumeForm extends FormBase {
     }
 
     $mat_types = $guzzle->get("$api_url/mat-names")->getBody()->getContents();
-    $mat_names = json_decode($mat_types);
+    $mat_names = json_decode($mat_types, TRUE);
 
     $form['pid'] = [
       '#type' => 'value',
@@ -87,37 +87,32 @@ class SummerGamePlayerConsumeForm extends FormBase {
    * {@inheritdoc}
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
-
   }
 
   /**
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    $db = \Drupal::connection();
+    $db = \Drupal::database();
 
     // check for daily read watch listen bonus
+    $pid = $form_state->getValue('pid');
+    $title = $form_state->getValue('title');
     $type = 'Read Watched Listened';
     $points = 0;
     $game_term = \Drupal::config('summergame.settings')->get('summergame_current_game_term');
-    $res = $db->query("SELECT * FROM sg_ledger WHERE pid=:pid AND type='Read Watched Listened Daily Bonus' ORDER BY lid DESC LIMIT 1", [':pid' => $form_state->getValue('pid')])->fetch();
+    $res = $db->query("SELECT * FROM sg_ledger WHERE pid=:pid AND type='Read Watched Listened Daily Bonus' ORDER BY lid DESC LIMIT 1", [':pid' => $pid])->fetch();
     if (date('mdY', $res->timestamp) != date('mdY', time())) {
       $type .= ' Daily Bonus';
       $points = 10;
     }
 
-    $db->insert('sg_ledger')
-      ->fields([
-        'pid' => $form_state->getValue('pid'),
-        'points' => $points,
-        'type' => $type,
-        'description' => $form_state->getValue('title'),
-        'game_term' => $game_term,
-        'timestamp' => time()
-      ])
-      ->execute();
+    $points = summergame_player_points($pid, $points, $type, $title);
+    drupal_set_message("Earned $points points for $title");
 
-      drupal_set_message("You logged a $type for $points!");
+    $form_state->setRedirect('summergame.player', ['pid' => $pid]);
+
+    return;
   }
 
 }
