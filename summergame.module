@@ -4044,7 +4044,7 @@ function summergame_player_check_badges($pid, $game_term) {
                                     )
                               );
 */
-        $messages[] = "Earned the $badge_title Badge! Share your accomplishment on Twitter or Facebook on the " . $badge_detail_link;
+        $messages[] = "Earned the $badge_title Badge!"; //Share your accomplishment on Twitter or Facebook on the " . $badge_detail_link;
         $player_bids[] = $badge->bid;
         // check if a bonus should be applied
         if ($points = $badge_node->get('field_badge_points')->value) {
