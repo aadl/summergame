@@ -472,7 +472,7 @@ FBL;
     foreach ($vocabs as $vocab) {
       $query = \Drupal::entityQuery('taxonomy_term')
         ->condition('vid', $vocab)
-        ->sort('vid');
+        ->sort('weight');
       $tids = $query->execute();
       $terms = \Drupal\taxonomy\Entity\Term::loadMultiple($tids);
 
