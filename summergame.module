@@ -3972,7 +3972,8 @@ function summergame_player_check_badges($pid, $game_term) {
 
   $res = $db->query("SELECT gt.entity_id AS bid, f.field_badge_formula_value AS formula " .
                     "FROM node__field_badge_game_term gt, node__field_badge_formula f " .
-                    "WHERE gt.field_badge_game_term_value = :game_term " .
+                    "WHERE gt.entity_id = f.entity_id " .
+                    "AND gt.field_badge_game_term_value = :game_term " .
                     "AND f.field_badge_formula_value != '' " .
                     "ORDER BY bid ASC", [':game_term' => $game_term]);
   while ($badge = $res->fetchObject()) {
