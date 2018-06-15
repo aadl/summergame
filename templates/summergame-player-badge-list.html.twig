@@ -2,8 +2,17 @@
 <div>
   <div class="page-with-sidebar-content">
     <div id="badge-list">
-      
+      {% for name, game in games %}
+        <h2>{{ name }}</h2>
+        {% for k, series in game %}
+          <h3>{{ k }}</h3>
+          <p>
+            {{ series.description }}<br>
+            Difficulty: {{ series.level|raw }}
+          </p>
+        {% endfor %}
+      {% endfor %}
     </div>
   </div>
-  {% include directory ~ "/templates/base/user/user-sidebar.html.twig" %}
+  {% include directory ~ "/templates/base/nodes/sidebars/summergame.html.twig" %}
 </div>
