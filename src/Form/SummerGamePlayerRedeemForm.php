@@ -111,6 +111,9 @@ class SummerGamePlayerRedeemForm extends FormBase {
       }
       else if ($status['success']) {
         drupal_set_message($status['success']);
+        if (isset($status['clue'])) {
+          drupal_set_message('New Clue: ' . $status['clue']);
+        }
       }
     }
     $form_state->setRedirect('summergame.player', ['pid' => $form_state->getValue('pid')]);

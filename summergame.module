@@ -3303,6 +3303,9 @@ function summergame_twilio_respond($incoming) {
           $response = $response_template;
           $response['text'] .= $status['success'] . $status['error'];
           $responses[] = $response;
+          if (isset($status['clue'])) {
+            $responses[] = 'New Clue: ' . $status['clue'];
+          }
         }
 /* No Do or Diag mode for now
         if (variable_get('summergame_dod_enabled', FALSE)) {
@@ -3835,14 +3838,16 @@ function summergame_redeem_code($pid, $code_text) {
       $message .= ': ' . $code->description;
     }
 
+    $result = ['success' => $message];
+
     // Look for Clue trigger
     $gc = $db->query('SELECT * FROM sg_game_codes WHERE clue_trigger = :code_text',
                      [':code_text' => $code->text])->fetchObject();
     if (isset($gc->code_id)) {
-      $message .= "\nNEW CLUE: $gc->clue";
+      $result['clue'] = $gc->clue;
     }
 
-    return ['success' => $message];
+    return $result;
   }
   else {
     return ['warning' => "Code is not recognized"];
