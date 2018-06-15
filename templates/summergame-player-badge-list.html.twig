@@ -2,14 +2,25 @@
 <div>
   <div class="page-with-sidebar-content">
     <div id="badge-list">
-      {% for name, game in games %}
-        <h2>{{ name }}</h2>
+      {% for name, game in badge_list %}
+        <h2>{{ name|replace({'_': ' '}) }}</h2>
         {% for k, series in game %}
-          <h3>{{ k }}</h3>
+          <h3 class="no-margin-bottom">{{ k }} Badge Series</h3>
           <p>
             {{ series.description }}<br>
             Difficulty: {{ series.level|raw }}
           </p>
+          <div class="badgelist-badges">
+            {% for node in series.nodes %}
+              <div class="badgelist-badge l-inline-b">
+                {% if file_url(node.field_badge_image[0].entity.fileuri) %}
+                  <a href="/node/{{ node.id }}" target="_blank">
+                    <img class="sg-admin-badge" src="{{ file_url(node.field_badge_image[0].entity.fileuri) }}" alt="{{ node.title.value }} badge image" title="{{ node.title.value }}">
+                  </a>
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
         {% endfor %}
       {% endfor %}
     </div>
