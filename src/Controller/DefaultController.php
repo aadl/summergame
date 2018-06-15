@@ -19,6 +19,17 @@ use setasign\Fpdi;
 class DefaultController extends ControllerBase {
 
   public function leaderboard() {
+    $db = \Drupal::database();
+    $cutoff = strtotime('today');
+    $res = $db->query("SELECT SUM(points) AS total FROM sg_ledger WHERE timestamp > :cutoff", [':cutoff' => $cutoff])->fetchObject();
+
+    return [
+      '#markup' => "<h1>$res->total POINTS earned for ALL Players so far today</h1>" .
+        "<p>The new Leaderboard updates once a day. Check back tomorrow for score details.<p>"
+    ];
+  }
+
+  public function leaderboard_old() {
     $summergame_settings = \Drupal::config('summergame.settings');
 
     $type = $_GET['type'];
