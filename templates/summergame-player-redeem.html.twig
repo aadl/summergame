@@ -4,7 +4,7 @@
     {% if type == 'gamecode' %}
       Redeem a Game Code
     {% else %}
-      Read, Watch, Listen Redemption
+      Log Your Enjoyment
     {% endif %}
   </span>
 </h1>
@@ -12,6 +12,6 @@
   <div class="page-with-sidebar-content">
     {{ redeem_form }}
   </div>
-  {% include directory ~ "/templates/base/user/user-sidebar.html.twig" %}
+  {% include directory ~ "/templates/base/nodes/sidebars/summergame.html.twig" %}
 </div>
 {% endspaceless %}
