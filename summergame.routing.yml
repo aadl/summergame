@@ -178,6 +178,13 @@ summergame.leaderboard:
     _title: 'Summer Game Leaderboard'
   requirements:
     _permission: 'access summergame'
+summergame.badgelist:
+  path: '/summergame/badgelist'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\DefaultController::badge_list'
+    _title: 'Summer Game Badge List'
+  requirements:
+    _permission: 'access summergame'
 # summergame.badge:
 #   path: '/summergame/badge'
 #   defaults:
