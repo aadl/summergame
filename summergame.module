@@ -79,7 +79,7 @@ function summergame_leaderboard_update() {
   $range = $_GET['range'];
   $staff = $_GET['staff'];
 
-  $rows = (int) $_GET['rows'] ? (int) $_GET['rows'] : 15;
+  $rows = (int) $_GET['rows'] ? (int) $_GET['rows'] : 1000;
 
   //drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
   $args = [];
