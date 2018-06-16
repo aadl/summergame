@@ -22,7 +22,7 @@ class DefaultController extends ControllerBase {
     $db = \Drupal::database();
     $cutoff = strtotime('today');
     $total = $db->query("SELECT SUM(points) FROM sg_ledger WHERE timestamp > :cutoff", [':cutoff' => $cutoff])->fetchField();
-    $player_count = (int) $db->query("SELECT COUNT(*) FROM sg_ledger WHERE timestamp > :cutoff GROUP BY pid", [':cutoff' => $cutoff])->fetchField();
+    $player_count = (int) $db->query("SELECT COUNT(DISTINCT pid) FROM sg_ledger WHERE timestamp > :cutoff", [':cutoff' => $cutoff])->fetchField();
 
     $leaderboard = summergame_get_leaderboard();
 
