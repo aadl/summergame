@@ -3831,12 +3831,31 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
     }
   }
 
-  // Get badges
+  // Get old badges
   $res = $db->query("SELECT * FROM sg_players_badges, sg_badges " .
                     "WHERE sg_players_badges.pid = :pid AND sg_players_badges.bid = sg_badges.bid " .
                     "ORDER BY sg_players_badges.timestamp ASC", [':pid' => $pid]);
   while ($badge = $res->fetchAssoc()) {
     $game_term = $badge['game_term'];
+    $badge['img'] = '/files/old-sg-images/' . $badge['image'] . '_100.png';
+    $player_points[$game_term]['badges'][] = $badge;
+  }
+
+  // Get new badges
+  $res = $db->query("SELECT gt.entity_id AS bid, gt.field_badge_game_term_value AS game_term, b.bid AS pbid " .
+                    "FROM node__field_badge_game_term gt, sg_players_badges b " .
+                    "WHERE gt.entity_id = b.bid " .
+                    "AND b.pid = :pid " .
+                    "ORDER BY bid ASC", [':pid' => $pid]);
+  while ($badge = $res->fetchAssoc()) {
+    $game_term = $badge['game_term'];
+    $badge['nid'] = $badge['bid'];
+    $node = entity_load('node', $badge['bid']);
+    $fid = \Drupal\file\Entity\File::load($node->get('field_badge_image')->target_id);
+    if ($fid) {
+      $badge['img'] = file_create_url($fid->getFileUri());
+    }
+    $badge['title'] = $node->get('title')->value;
     $player_points[$game_term]['badges'][] = $badge;
   }
 
