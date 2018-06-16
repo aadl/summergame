@@ -37,7 +37,16 @@
     <div id="player-info-table">
       <h2>Player Details (<a href="/summergame/player/{{ player.pid }}/edit">Edit Player Info</a>)</h2>
       <table class="account-summary not-fixed-table">
-        <tr><th>Nickname:</th><td>{{ player.nickname }}</td></tr>
+        <tr>
+          <th>Nickname:</th>
+          <td>
+            {% if player.nickname %}
+              {{ player.nickname }}
+            {% else %}
+              {{ player.name }}
+            {% endif %}
+          </td>
+        </tr>
         <tr>
           <th>Cell Phone:</th>
           <td>
@@ -65,7 +74,15 @@
           <tbody>
             {% for other_player in other_players %}
             <tr>
-              <td><a href="/summergame/player/{{ other_player.pid }}">{{ other_player.nickname }}</a></td>
+              <td>
+                <a href="/summergame/player/{{ other_player.pid }}">
+                  {% if other_player.nickname %}
+                    {{ other_player.nickname }}
+                  {% else %}
+                    {{ other_player.name }}
+                  {% endif %}
+                </a>
+              </td>
               <td><a href="/summergame/player/{{ other_player.pid }}/setactive">Set Active</a></td>
             </tr>
           {% endfor %}
