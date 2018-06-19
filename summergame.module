@@ -3763,6 +3763,41 @@ function summergame_player_load_all($uid) {
 }
 
 /**
+ * Load the active player record for the currently logged in user, if set
+ */
+function summergame_get_active_player() {
+  $active_player = FALSE;
+
+  $user = \Drupal::currentUser();
+  if ($user->isAuthenticated()) {
+    // Get all players for this user
+    $user_players = summergame_player_load_all($user->id());
+    if (count($user_players)) {
+      // Determine currently active player
+      $userData = \Drupal::service('user.data');
+      if ($sg_active_pid = $userData->get('summergame', $user->id(), 'sg_active_pid')) {
+        foreach ($user_players as $i => $user_player) {
+          if ($user_player['pid'] == $sg_active_pid) {
+            $active_player = $user_player;
+            unset($user_players[$i]);
+          }
+        }
+      }
+      else {
+        $active_player = array_shift($user_players);
+      }
+
+      $active_player = summergame_player_load($active_player['pid']);
+      if (count($user_players)) {
+        $active_player['other_players'] = $user_players;
+      }
+    }
+  }
+
+  return $active_player;
+}
+
+/**
  * PAGE CALLBACK: Set active player for a user
  */
 function summergame_player_set_active($pid) {
