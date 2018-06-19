@@ -15,7 +15,7 @@
               <div class="badgelist-badge l-inline-b">
                 {% if file_url(node.field_badge_image[0].entity.fileuri) %}
                   <a href="/node/{{ node.id }}" target="_blank">
-                    <img class="sg-admin-badge" src="{{ file_url(node.field_badge_image[0].entity.fileuri) }}" alt="{{ node.title.value }} badge image" title="{{ node.title.value }}">
+                    <img class="sg-admin-badge {% if not node.badge_earned %} sg-badge-faded {% endif %}" src="{{ file_url(node.field_badge_image[0].entity.fileuri) }}" alt="{{ node.title.value }} badge image" title="{{ node.title.value }}">
                   </a>
                 {% endif %}
               </div>
