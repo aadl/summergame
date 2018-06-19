@@ -27,8 +27,6 @@
     <tr>
       <th>Text</th>
       <th>Description</th>
-      <th>Clue</th>
-      <th>Clue Trigger</th>
       <th>Hint</th>
       <th>Points</th>
       <th>Created</th>
@@ -44,8 +42,6 @@
           <a href="/summergame/pdf/gamecode/{{ gc_row.id }}">Print Sign</a>
         </td>
         <td>{{ gc_row.Description|raw|slice(0, 70) }}</td>
-        <td>{{ gc_row.Clue }}</td>
-        <td>{{ gc_row.ClueTrigger }}</td>
         <td>{{ gc_row.Hint }}</td>
         <td>{{ gc_row.Points }}</td>
         <td>{{ gc_row.Created }}</td>
