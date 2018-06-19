@@ -86,7 +86,7 @@ summergame.player:
     _title: 'Summer Game Player Page'
     pid: 0
   requirements:
-    _permission: 'access summergame'
+    _permission: 'access content'
 summergame.player.new:
   path: '/summergame/player/new'
   defaults:

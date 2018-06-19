@@ -17,6 +17,9 @@ class PlayerController extends ControllerBase {
 
   public function index($pid) {
     $user = \Drupal::currentUser();
+    if (!$user->isAuthenticated()) {
+      return new RedirectResponse('/user/login?destination=/summergame/player');
+    }
 /*
     if ($user->id() && $pid === 'extra') {
       if ($user->player['pid']) {
