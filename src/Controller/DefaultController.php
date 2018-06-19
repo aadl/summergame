@@ -515,7 +515,7 @@ FBL;
           foreach ($nodes as $nid) {
             $node = entity_load('node', $nid);
             if ($player['pid']) {
-              $earned = $db->query("SELECT * FROM sg_players_badges WHERE pid=:pid AND bid=:nid LIMIT 1", [':pid' => $pid, ':nid' => $nid])->fetch();
+              $earned = $db->query("SELECT * FROM sg_players_badges WHERE pid=:pid AND bid=:nid LIMIT 1", [':pid' => $player['pid'], ':nid' => $nid])->fetch();
               if ($earned->bid) {
                 $node->badge_earned = true;
               }
