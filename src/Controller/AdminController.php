@@ -74,9 +74,9 @@ class AdminController extends ControllerBase {
       }
       $badge_rows[] = [
         'BadgeID' => '<a href="/node/' . $badge->id() . '">' . $badge->id() . '</a>',
-        'Image' => $badge->field_badge_image->entity->getFileUri(),
+//        'Image' => $badge->field_badge_image->entity->getFileUri(),
         'Title' => $badge->get('title')->value,
-        'Level' => '',
+        'Level' => $badge->get('field_badge_level')->value,
         'Description' => $badge->get('body')->value,
         'Formula' => strlen($formula) > 25 ? substr($formula, 0, 25) . '...' : $formula,
       ];
