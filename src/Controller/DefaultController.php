@@ -477,11 +477,9 @@ FBL;
 
   public function badge_list() {
     // check if pid to fade unearned badges
-    $user = \Drupal::currentUser();
     $db = \Drupal::database();
-    if ($user->isAuthenticated()) {
-      $player = summergame_player_load(['uid' => $user->id()]);
-    }
+    $player = summergame_get_active_player();
+
     $vocabs = ['Summer_Game_2018'];
     $badges = [];
     foreach ($vocabs as $vocab) {
@@ -514,11 +512,9 @@ FBL;
           $badges[$vocab][$series]['level'] = $level_output;
           foreach ($nodes as $nid) {
             $node = entity_load('node', $nid);
-            if ($player['pid']) {
-              $earned = $db->query("SELECT * FROM sg_players_badges WHERE pid=:pid AND bid=:nid LIMIT 1", [':pid' => $player['pid'], ':nid' => $nid])->fetch();
-              if ($earned->bid) {
-                $node->badge_earned = true;
-              }
+            if ($player['pid'] &&
+                isset($player['bids'][$nid])) {
+              $node->badge_earned = true;
             }
             $badges[$vocab][$series]['nodes'][] = $node;
           }
