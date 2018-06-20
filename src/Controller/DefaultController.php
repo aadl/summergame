@@ -513,7 +513,7 @@ FBL;
           foreach ($nodes as $nid) {
             $node = entity_load('node', $nid);
             if ($player['pid'] &&
-                in_array($nid, $player['bids'])) {
+                isset($player['bids'][$nid])) {
               $node->badge_earned = true;
             }
             $badges[$vocab][$series]['nodes'][] = $node;
