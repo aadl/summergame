@@ -47,8 +47,7 @@ class PlayerController extends ControllerBase {
     }
     else {
       // Default to the active player if none specified
-      $player = summergame_player_load(['uid' => $user->id()]);
-      if ($player) {
+      if ($player = summergame_get_active_player()) {
         return new RedirectResponse('/summergame/player/' . $player['pid']);
       }
     }
@@ -216,7 +215,7 @@ class PlayerController extends ControllerBase {
         }
       } else {
         // pid = 0, try to load default player record and redirect
-        if ($player = summergame_player_load(['uid' => $user->id()])) {
+        if ($player = summergame_get_active_player()) {
           $redirect_uri = '/summergame/player/' . $player['pid'] . '/' . $type;
           if ($_GET['text']) {
             $redirect_uri .= '?text=' . $_GET['text'];
@@ -377,9 +376,9 @@ class PlayerController extends ControllerBase {
         if (isset($account)) {
           // Use the user data service to store active Player ID
           \Drupal::service('user.data')->set('summergame', $account->id(), 'sg_active_pid', $pid);
-          drupal_set_message('Player #' . $pid . ' (' . $player['nickname'] . ') is now the active player for the website account <em>' .
-                             $account->get('name')->value . '</em>. Online activities that earn points (comments, ratings, reviews, etc.) will now be awarded ' .
-                             'to this player.');
+          drupal_set_message(['#markup' => 'Player #' . $pid . ' (' . $player['nickname'] . ') is now the active player for the website account <em>' .
+                             $account->get('name')->value . '</em>. Online activities that earn points (checkout history, reviews, etc.) will now be awarded ' .
+                             'to this player.']);
         }
         else {
           drupal_set_message('Cannot load the website account associated with Player #' . $pid, 'warning');
