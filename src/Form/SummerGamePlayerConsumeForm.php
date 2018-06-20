@@ -51,7 +51,9 @@ class SummerGamePlayerConsumeForm extends FormBase {
       '#value' => $pid,
     ];
     $form['message'] = [
-      '#markup' => '<p>Earn 50 points for each day that you log something!</p>'
+      '#markup' => '<p>Logging points for ' .
+                   ($player['nickname'] ? $player['nickname'] : $player['name']) . '</p>' .
+                   '<p>Earn 50 points for each day that you log something!</p>'
     ];
     $form['mat_code'] = [
       '#type' => 'select',
