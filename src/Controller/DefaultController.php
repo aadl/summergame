@@ -479,7 +479,10 @@ FBL;
     // check if pid to fade unearned badges
     $db = \Drupal::database();
     $player = summergame_get_active_player();
-    $all_players = summergame_player_load_all($player['uid']);
+    $all_players = [];
+    if ($player['pid']) {
+      $all_players = summergame_player_load_all($player['uid']);
+    }
     if (isset($_GET['pid'])) {
       $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
       $player_info = summergame_player_load($_GET['pid']);
