@@ -479,6 +479,22 @@ FBL;
     // check if pid to fade unearned badges
     $db = \Drupal::database();
     $player = summergame_get_active_player();
+    $all_players = summergame_player_load_all($player['uid']);
+    if (isset($_GET['pid'])) {
+      $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+      $player_info = summergame_player_load($_GET['pid']);
+      if ($player_info['uid'] == $player['uid'] || $user->hasPermission('administer summergame')) {
+        $player = $player_info;
+      } else {
+        return [
+          '#cache' => [
+            'max-age' => 0, // Don't cache, always get fresh data
+          ],
+          '#theme' => 'summergame_player_badge_list',
+          '#viewing_access' => false
+        ];
+      }
+    }
 
     $vocabs = ['Summer_Game_2018'];
     $badges = [];
@@ -527,6 +543,9 @@ FBL;
         'max-age' => 0, // Don't cache, always get fresh data
       ],
       '#theme' => 'summergame_player_badge_list',
+      '#player' => $player,
+      '#all_players' => $all_players,
+      '#viewing_access' => true,
       '#badge_list' => $badges
     ];
   }

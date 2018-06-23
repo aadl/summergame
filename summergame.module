@@ -160,6 +160,9 @@ function summergame_theme() {
     ],
     'summergame_player_badge_list' => [
       'variables' => [
+        'player' => NULL,
+        'all_players' => NULL,
+        'viewing_access' => NULL,
         'badge_list' => NULL
       ]
     ],
