@@ -110,9 +110,9 @@ class SummerGamePlayerRedeemForm extends FormBase {
         drupal_set_message($status['warning'], 'warning');
       }
       else if ($status['success']) {
-        drupal_set_message($status['success']);
+        drupal_set_message(['#markup' => $status['success']]);
         if (isset($status['clue'])) {
-          drupal_set_message(\Drupal\Core\Render\Markup::create('New Clue: ' . $status['clue']));
+          drupal_set_message(['#markup' => 'New Clue: ' . $status['clue']]);
         }
       }
     }
