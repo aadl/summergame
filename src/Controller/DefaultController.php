@@ -24,7 +24,11 @@ class DefaultController extends ControllerBase {
     $total = $db->query("SELECT SUM(points) FROM sg_ledger WHERE timestamp > :cutoff", [':cutoff' => $cutoff])->fetchField();
     $player_count = (int) $db->query("SELECT COUNT(DISTINCT pid) FROM sg_ledger WHERE timestamp > :cutoff", [':cutoff' => $cutoff])->fetchField();
 
-    $leaderboard = summergame_get_leaderboard();
+    $type = $_GET['type'] ?? \Drupal::config('summergame.settings')->get('summergame_current_game_term');
+    $range = $_GET['range'] ?? 'alltime';
+    $staff = $_GET['staff'] ?? 0;
+
+    $leaderboard = summergame_get_leaderboard($type, $range, $staff);
 
     return [
       '#cache' => [
@@ -33,8 +37,12 @@ class DefaultController extends ControllerBase {
       '#theme' => 'summergame_leaderboard_page',
       '#total' => $total,
       '#player_count' => $player_count,
-      '#leaderboard_date' => date('l, F j, Y', strtotime('yesterday')),
-      '#leaderboard' => $leaderboard,
+      '#game_terms' => summergame_get_game_terms(),
+      '#type' => $type,
+      '#range' => $range,
+      '#staff' => $staff,
+      '#leaderboard_timestamp' => $leaderboard['timestamp'],
+      '#leaderboard' => $leaderboard['rows'],
     ];
   }
 
