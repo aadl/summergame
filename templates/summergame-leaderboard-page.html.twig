@@ -9,66 +9,34 @@
   <p>The new Leaderboard updates once a day. Check back tomorrow for score updates.<p>
 
   <!-- FILTER TABLES -->
-  <p>
-    <h4>Scores by Game:</h4>
-    <ul>
-      {% for game_term in game_terms %}
-        <li>
-          {% if game_term == type %}
-            {{ game_term }}
-          {% else %}
-            <a href="?type={{ game_term }}&range={{ range }}&staff={{ staff }}">{{ game_term }}</a>
-          {% endif %}
-        </li>
-      {% endfor %}
-    </ul>
-  </p>
-  <p>
-    <h4>Scores by Time:</h4>
-    <ul>
-      <li>
-        {% if range == 'day' %}
-          Day
-        {% else %}
-          <a href="?type={{ type }}&range=day&staff={{ staff }}">Day</a>
-        {% endif %}
-      </li>
-      <li>
-        {% if range == 'week' %}
-          Week
-        {% else %}
-          <a href="?type={{ type }}&range=week&staff={{ staff }}">Week</a>
-        {% endif %}
-      </li>
-      <li>
-        {% if range == 'alltime' %}
-          All Time
-        {% else %}
-          <a href="?type={{ type }}&range=alltime&staff={{ staff }}">All Time</a>
-        {% endif %}
-      </li>
-    </ul>
-  </p>
-  <p>
-    <h4>Player Groups:</h4>
-    <ul>
-      {% if staff %}
-        <li>
-          <a href="?type={{ type }}&range={{ range }}&staff=0">Public</a>
-        </li>
-        <li>
-          Staff
-        </li>
-      {% else %}
-        <li>
-          Public
-        </li>
-        <li>
-          <a href="?type={{ type }}&range={{ range }}&staff=1">Staff</a>
-        </li>
-      {% endif %}
-    </ul>
-  </p>
+  <form id="sg-scores-filter-form" class="form-width-exception">
+    <div class="l-inline-b">
+      <label for="sg-scores-game">Scores by Game:</label>
+      <select id="sg-scores-game">
+        {% for game_term in game_terms %}
+          <option value="{{ game_term }}"{% if type == game_term %} selected{% endif %}>{{ game_term }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="l-inline-b">
+      <label for="sg-scores-range">Scores by Time:</label>
+      <select id="sg-scores-range" class="form-width-exception">
+        <option value="day"{% if range == 'day' %} selected{% endif %}>Day</option>
+        <option value="week"{% if range == 'week' %} selected{% endif %}>Week</option>
+        <option value="alltime"{% if range == 'alltime' %} selected{% endif %}>All Time</option>
+      </select>
+    </div>
+    <div class="l-inline-b">
+      <label for="sg-scores-staff">Player Groups:</label>
+      <select id="sg-scores-staff" class="form-width-exception">
+        <option value="0"{% if staff == 0 %} selected{% endif %}>Public</option>
+        <option value="1"{% if staff == 1 %} selected{% endif %}>Staff</option>
+      </select>
+    </div>
+    <div class="l-inline-b">
+      <input id="sg-scores-filter" class="button" type="submit" value="Filter">
+    </div>
+  </form>
 
   {% if leaderboard %}
     <h1>{{ staff ? 'Staff ' : '' }}{{ type }} Leaderboard for {{ range }}</h1>
