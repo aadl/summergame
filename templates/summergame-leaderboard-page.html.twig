@@ -6,10 +6,73 @@
 
 <div id="summergame-leaderboard-page">
   <h1>{{ total|number_format }} POINTS earned from {{ player_count|number_format }} Player{% if player_count != 1 %}s{% endif %} so far today</h1>
-  <p>The new Leaderboard updates once a day. Check back tomorrow for score details.<p>
+  <p>The new Leaderboard updates once a day. Check back tomorrow for score updates.<p>
+
+  <!-- FILTER TABLES -->
+  <p>
+    <h4>Scores by Game:</h4>
+    <ul>
+      {% for game_term in game_terms %}
+        <li>
+          {% if game_term == type %}
+            {{ game_term }}
+          {% else %}
+            <a href="?type={{ game_term }}&range={{ range }}&staff={{ staff }}">{{ game_term }}</a>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  </p>
+  <p>
+    <h4>Scores by Time:</h4>
+    <ul>
+      <li>
+        {% if range == 'day' %}
+          Day
+        {% else %}
+          <a href="?type={{ type }}&range=day&staff={{ staff }}">Day</a>
+        {% endif %}
+      </li>
+      <li>
+        {% if range == 'week' %}
+          Week
+        {% else %}
+          <a href="?type={{ type }}&range=week&staff={{ staff }}">Week</a>
+        {% endif %}
+      </li>
+      <li>
+        {% if range == 'alltime' %}
+          All Time
+        {% else %}
+          <a href="?type={{ type }}&range=alltime&staff={{ staff }}">All Time</a>
+        {% endif %}
+      </li>
+    </ul>
+  </p>
+  <p>
+    <h4>Player Groups:</h4>
+    <ul>
+      {% if staff %}
+        <li>
+          <a href="?type={{ type }}&range={{ range }}&staff=0">Public</a>
+        </li>
+        <li>
+          Staff
+        </li>
+      {% else %}
+        <li>
+          Public
+        </li>
+        <li>
+          <a href="?type={{ type }}&range={{ range }}&staff=1">Staff</a>
+        </li>
+      {% endif %}
+    </ul>
+  </p>
 
   {% if leaderboard %}
-    <h1>Leaderboard for Yesterday, {{ leaderboard_date }}</h1>
+    <h1>{{ staff ? 'Staff ' : '' }}{{ type }} Leaderboard for {{ range }}</h1>
+    <p>Updated {{ leaderboard_timestamp|date("l, F j, Y H:i:j") }}</p>
     <table>
     <tr>
       <th>Place</th>
@@ -30,5 +93,7 @@
       </tr>
     {% endfor %}
   </table>
+  {% else %}
+    <p>No scores found</p>
   {% endif %}
 </div>

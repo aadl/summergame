@@ -5,101 +5,111 @@ use Predis\Client;
 
 function summergame_leaderboard_update() {
   $summergame_settings = \Drupal::config('summergame.settings');
+  $staff_rid = $summergame_settings->get('summergame_staff_role_id');
+  $redis = new Client(\Drupal::config('summergame.settings')->get('summergame_redis_conn'));
 
-  $type = $_GET['type'];
-  $range = $_GET['range'];
-  $staff = $_GET['staff'];
+  $terms = summergame_get_game_terms();
+  $terms[] = 'career'; // add string for career points over all games
+  $ranges = ['day', 'week', 'alltime'];
+  $staffs = [1, 0];
 
   $rows = (int) $_GET['rows'] ? (int) $_GET['rows'] : 10000;
 
-  //drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
-  $args = [];
+  foreach ($staffs as $staff) {
+    foreach ($ranges as $range) {
+      foreach ($terms as $type) {
+        if (PHP_SAPI === 'cli') {
+          echo "Generating $staff:$range:$type\n";
+        }
 
-  // Switch for staff
-  $staff_rid = $summergame_settings->get('summergame_staff_role_id');
+        $args = [];
 
-  if ($staff_rid) {
-    if ($staff) {
-      $lb_title .= 'Staff ';
-      $staff_query = " AND {user__roles}.roles_target_id = '$staff_rid' ";
+        // Switch for staff
+        if ($staff_rid) {
+          if ($staff) {
+            $lb_title .= 'Staff ';
+            $staff_query = " AND {user__roles}.roles_target_id = '$staff_rid' ";
+          }
+          else {
+            $staff_query = ' AND {user__roles}.roles_target_id IS NULL ';
+          }
+        }
+
+        // Determine type
+        if ($type != 'career') {
+          $type_query = 'AND {sg_ledger}.game_term LIKE :game_term ';
+          $args[':game_term'] = $type;
+          $lb_title .= $type;
+        }
+        else {
+          $type_query = '';
+          $lb_title .= 'Career';
+        }
+
+        $lb_title .= ' Leaderboard';
+
+        // Determine range
+        if ($range == 'day') {
+          $range_query = 'AND {sg_ledger}.timestamp > ' . (time() - (60 * 60 * 24)) . ' ';
+          $lb_title .= ' for Today (Last 24 hours)';
+        }
+        else if ($range == 'week') {
+          $range_query = 'AND {sg_ledger}.timestamp > ' . (time() - (60 * 60 * 24 * 7)) . ' ';
+          $lb_title .= ' for This Week (Last 7 Days)';
+        }
+        else {
+          $range_query = '';
+          $lb_title .= ' for All Time';
+        }
+
+        $leaderboard = [];
+
+        $db = \Drupal::database();
+
+        $res = $db->query('SELECT {sg_players}.pid, SUM(points) AS lb_total ' .
+                          'FROM {sg_ledger}, {sg_players} ' .
+                          "LEFT JOIN {user__roles} ON {sg_players}.uid = {user__roles}.entity_id AND {user__roles}.roles_target_id = '$staff_rid' " .
+                          'WHERE {sg_players}.pid = {sg_ledger}.pid ' .
+                          "AND {sg_ledger}.metadata NOT LIKE '%leaderboard:no%' " .
+                          $type_query .
+                          $range_query .
+                          $staff_query .
+                          'GROUP BY {sg_players}.pid ' .
+                          'ORDER BY lb_total DESC ' .
+                          'LIMIT ' . $rows, $args);
+
+        while ($row = $res->fetchAssoc()) {
+          $lb_player = summergame_player_load($row['pid']);
+
+          if ($lb_player['show_leaderboard']) {
+            $player_name = $lb_player['nickname'] ? $lb_player['nickname'] : $lb_player['name'];
+          }
+          else {
+            $player_name = 'Player #' . $lb_player['pid'];
+          }
+
+          $pid = $lb_player['show_myscore'] ? $lb_player['pid'] : 0;
+
+          $leaderboard[] = [
+            'pid' => $pid,
+            'player' => $player_name,
+            'score' => $row['lb_total'],
+          ];
+        }
+
+        $redis->set("summergame:leaderboard:$staff:$range:$type", json_encode($leaderboard));
+      }
     }
-    else {
-      $staff_query = ' AND {user__roles}.roles_target_id IS NULL ';
-    }
   }
-
-  // Determine type
-  $terms = summergame_get_game_terms();
-  $game_term = $summergame_settings->get('summergame_current_game_term');
-  $type = (in_array($type, $terms) ? $type : $game_term);
-  if ($type) {
-    $type_query = 'AND {sg_ledger}.game_term LIKE :game_term ';
-    $args[':game_term'] = $type;
-    $lb_title .= $type;
-  }
-  else {
-    $type_query = '';
-    $lb_title .= 'Career';
-  }
-
-  $lb_title .= ' Leaderboard';
-
-  // Determine range
-  if ($range == 'day') {
-    $range_query = 'AND {sg_ledger}.timestamp > ' . (time() - (60 * 60 * 24)) . ' ';
-    $lb_title .= ' for Today (Last 24 hours)';
-  }
-  else if ($range == 'week') {
-    $range_query = 'AND {sg_ledger}.timestamp > ' . (time() - (60 * 60 * 24 * 7)) . ' ';
-    $lb_title .= ' for This Week (Last 7 Days)';
-  }
-  else {
-    $range_query = '';
-    $lb_title .= ' for All Time';
-  }
-
-  $leaderboard = [];
-
-  $db = \Drupal::database();
-
-  $res = $db->query('SELECT {sg_players}.pid, SUM(points) AS lb_total ' .
-                    'FROM {sg_ledger}, {sg_players} ' .
-                    "LEFT JOIN {user__roles} ON {sg_players}.uid = {user__roles}.entity_id AND {user__roles}.roles_target_id = '$staff_rid' " .
-                    'WHERE {sg_players}.pid = {sg_ledger}.pid ' .
-                    "AND {sg_ledger}.metadata NOT LIKE '%leaderboard:no%' " .
-                    $type_query .
-                    $range_query .
-                    $staff_query .
-                    'GROUP BY {sg_players}.pid ' .
-                    'ORDER BY lb_total DESC ' .
-                    'LIMIT ' . $rows, $args);
-
-  while ($row = $res->fetchAssoc()) {
-    $lb_player = summergame_player_load($row['pid']);
-
-    if ($lb_player['show_leaderboard']) {
-      $player_name = $lb_player['nickname'] ? $lb_player['nickname'] : $lb_player['name'];
-    }
-    else {
-      $player_name = 'Player #' . $lb_player['pid'];
-    }
-
-    $pid = $lb_player['show_myscore'] ? $lb_player['pid'] : 0;
-
-    $leaderboard[] = [
-      'pid' => $pid,
-      'player' => $player_name,
-      'score' => $row['lb_total'],
-    ];
-  }
-
-  $redis = new Client(\Drupal::config('summergame.settings')->get('summergame_redis_conn'));
-  $redis->set('summergame:leaderboard', json_encode($leaderboard));
+  $redis->set("summergame:leaderboard:timestamp", time());
 }
 
-function summergame_get_leaderboard() {
+function summergame_get_leaderboard($type = '', $range = 'day', $staff = 0) {
   $redis = new Client(\Drupal::config('summergame.settings')->get('summergame_redis_conn'));
-  return json_decode($redis->get('summergame:leaderboard'), TRUE);
+  return [
+    'timestamp' => $redis->get('summergame:leaderboard:timestamp'),
+    'rows' => json_decode($redis->get("summergame:leaderboard:$staff:$range:$type"), TRUE),
+  ];
 }
 
 function summergame_theme() {
@@ -170,7 +180,11 @@ function summergame_theme() {
       'variables' => [
         'total' => NULL,
         'player_count' => NULL,
-        'leaderboard_date' => NULL,
+        'game_terms' => NULL,
+        'type' => NULL,
+        'range' => NULL,
+        'staff' => NULL,
+        'leaderboard_timestamp' => NULL,
         'leaderboard' => NULL,
       ]
     ]
