@@ -411,7 +411,7 @@ class PlayerController extends ControllerBase {
         $player['phone'] = $code;
         summergame_player_save($player);
         $char = chr(($player['pid'] % 26) + 65);
-        drupal_set_message('TEXT ' . $char. $code . ' to 4AADL (42235) to connect your phone');
+        drupal_set_message('TEXT ' . $char. $code . ' to 734-327-4200 (42235) to connect your phone');
       }
       return new RedirectResponse('/summergame/player/' . $player['pid']);
     }
