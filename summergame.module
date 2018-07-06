@@ -970,7 +970,7 @@ function summergame_player_check_badges($pid, $game_term) {
         list($count_limit, $text_pattern) = explode('::', $badge->formula);
         $lid_count = $db->query("SELECT COUNT(lid) AS lid_count FROM sg_ledger WHERE pid = $pid " .
                                 "AND (type LIKE :text_pattern OR metadata LIKE :gamecode_pattern) AND game_term = :game_term",
-                                [':text_pattern' => $text_pattern, ':gamecode_pattern' => "gamecode:$text_pattern%", ':game_term' => $game_term]);
+                                [':text_pattern' => $text_pattern, ':gamecode_pattern' => "gamecode:$text_pattern%", ':game_term' => $game_term])->fetchObject();
         if ($lid_count->lid_count >= $count_limit) {
           $awarded = summergame_player_award_badge($pid, $badge->bid);
         }
