@@ -1401,6 +1401,11 @@ function summergame_tag_bib($bib_id, $game_code, $game_term = '') {
     $doc->gamecodes->{$game_term}[] = $game_code;
   }
 
+  if(!isset($doc->flags)) {
+    $doc->flags = new \stdClass;
+  }
+  $doc->flags->protected = 1;
+
   // update bib record
   try {
     $client->storeDoc($doc);
