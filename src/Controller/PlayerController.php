@@ -229,7 +229,7 @@ class PlayerController extends ControllerBase {
       }
     } else {
       drupal_set_message('You must be logged in to redeem a Summer Game code.');
-      return new RedirectResponse("/user/login?destination=/summergame/player/0/$type");
+      return new RedirectResponse("/user/login?destination=" . $_SERVER['REQUEST_URI']);
     }
   }
 

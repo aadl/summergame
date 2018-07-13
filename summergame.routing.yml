@@ -107,7 +107,7 @@ summergame.player.gamecode:
     _controller: '\Drupal\summergame\Controller\PlayerController::redeem'
     _title: 'Redeem a Summer Game Code'
   requirements:
-    _permission: 'access summergame'
+    _permission: 'access content'
 # summergame.player.friends:
 #   path: '/summergame/player/friends'
 #   defaults:
@@ -121,7 +121,7 @@ summergame.player.consume:
     _controller: '\Drupal\summergame\Controller\PlayerController::consume'
     _title: 'I Read/Listened/Watched Something'
   requirements:
-    _permission: 'access summergame'
+    _permission: 'access content'
 summergame.player.edit:
   path: '/summergame/player/{pid}/edit'
   defaults:
