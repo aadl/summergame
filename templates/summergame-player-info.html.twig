@@ -18,7 +18,7 @@
   </div>
   <div class="l-overflow-clear no-margin">
     {# Points Summary #}
-    {% set sg_balance = 0 %}
+    {% set current_sg_balance, classic_sg_balance = 0, 0 %}
     <div id="player-points-summary">
       <h2>Points Summary</h2>
       <table class="account-summary not-fixed-table">
@@ -26,12 +26,16 @@
         {% for game_term, player_game_points in points %}
           {% if player_game_points.total %}
             <tr><td><a href="#{{ game_term }}">{{ game_term }}</a></td><td>{{ player_game_points.total }}</td></tr>
+            {% if game_term == summergame_current_game_term %}
+              {% set current_sg_balance = current_sg_balance + player_game_points.balance %}
+            {% endif %}
             {% if game_term starts with 'SummerGame' %}
-              {% set sg_balance = sg_balance + player_game_points.balance %}
+              {% set classic_sg_balance = classic_sg_balance + player_game_points.balance %}
             {% endif %}
           {% endif %}
         {% endfor %}
-        <tr><td>Summer Game Shop Balance</td><td>{{ sg_balance }}</td></tr>
+        <tr><td>{{ summergame_current_game_term }} Shop Balance</td><td>{{ current_sg_balance }}</td></tr>
+        <tr><td>Classic Shop Balance</td><td>{{ classic_sg_balance }}</td></tr>
       </table>
     </div>
     <div id="player-info-table">

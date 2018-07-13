@@ -171,6 +171,7 @@ class PlayerController extends ControllerBase {
         '#player_access' => $player_access,
         '#other_players' => $other_players,
         '#points' => summergame_get_player_points($player['pid']),
+        '#summergame_current_game_term' => $summergame_settings->get('summergame_current_game_term'),
         '#completed_classic' => $completed_classic,
         '#website_user' => $website_user,
       ];
