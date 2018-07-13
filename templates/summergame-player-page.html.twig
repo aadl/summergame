@@ -47,7 +47,9 @@
                 <table>
                   <tr><th>Type</th><th>Points</th></tr>
                   {% for type, type_points in player_game_points.types %}
-                    <tr><td>{{ type }}</td><td>{{ type_points }}</td></tr>
+                    {% if type_points %}
+                      <tr><td>{{ type }}</td><td>{{ type_points }}</td></tr>
+                    {% endif %}
                   {% endfor %}
                   <tr><td>TOTAL POINTS EARNED</td><td>{{ player_game_points.total }}</td></tr>
                   {% if game_term starts with 'SummerGame' %}
