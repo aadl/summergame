@@ -152,6 +152,7 @@ function summergame_theme() {
         'player_access' => NULL,
         'other_players' => NULL,
         'points' => NULL,
+        'summergame_current_game_term' => NULL,
         'completed_classic' => NULL,
         'website_user' => NULL,
       ],
