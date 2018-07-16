@@ -10,8 +10,6 @@
     <tr>
       <th>Text</th>
       <th>Description</th>
-      <th>Clue</th>
-      <th>Clue Trigger</th>
       <th>Hint</th>
       <th>Points</th>
       <th>Created</th>
@@ -22,18 +20,16 @@
     </tr>
     {% for row in rows %}
       <tr>
-        <td><a href="/summergame/admin/gamecode/{{ row.id }}">{{ row.Text }} <i class="fa fa-pencil-square-o"></i></a></td>
         <td>
-          {{ row.Description|raw|slice(0, 70) }}<br>
-          <a href="/summergame/pdf/gamecode/{{ row.id }}">Print Sign</a>
+          <a href="/summergame/admin/gamecode/{{ row.id }}">{{ row.Text }} <i class="fa fa-pencil-square-o"></i></a><br><br>
+          <a href="/summergame/pdf/gamecode/{{ gc_row.id }}">Print Sign</a>
         </td>
-        <td>{{ row.Clue }}</td>
-        <td>{{ row.ClueTrigger }}</td>
-        <td>{{ row.Hint }}</td>
+        <td class="column-max-width-100">{{ row.Description|length > 50 ? row.Description|slice(0, 50) ~ '...' : row.Description  }}</td>
+        <td class="column-max-width-100">{{ row.Hint|length > 50 ? row.Hint|slice(0, 50) ~ '...' : row.Hint  }}</td>
         <td>{{ row.Points }}</td>
         <td>{{ row.Created }}</td>
         <td>{{ row.CreatedBy|raw }}</td>
-        <td>{{ row.ValidDates|raw }}</td>
+        <td class="column-max-width-100">{{ row.ValidDates|raw }}</td>
         <td>{{ row.GameTerm }}</td>
         <td>{{ row.Redemptions }}</td>
       </tr>
