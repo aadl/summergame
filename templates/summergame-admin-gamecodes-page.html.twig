@@ -22,7 +22,7 @@
       <tr>
         <td>
           <a href="/summergame/admin/gamecode/{{ row.id }}">{{ row.Text }} <i class="fa fa-pencil-square-o"></i></a><br><br>
-          <a href="/summergame/pdf/gamecode/{{ gc_row.id }}">Print Sign</a>
+          <a href="/summergame/pdf/gamecode/{{ row.id }}">Print Sign</a>
         </td>
         <td class="column-max-width-100">{{ row.Description|length > 50 ? row.Description|slice(0, 50) ~ '...' : row.Description  }}</td>
         <td class="column-max-width-100">{{ row.Hint|length > 50 ? row.Hint|slice(0, 50) ~ '...' : row.Hint  }}</td>
