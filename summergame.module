@@ -666,6 +666,9 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
     if (preg_match('/prize_count:(\d+)/', $row['metadata'], $matches)) {
       $player_points[$game_term]['prize_count'] += $matches[1];
     }
+    else {
+      $player_points[$game_term]['prize_count'] += 0;
+    }
   }
 
   // Sort type points
