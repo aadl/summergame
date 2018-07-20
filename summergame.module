@@ -663,7 +663,7 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
       $player_points[$game_term]['total'] += $row['points'];
       $player_points['career'] += $row['points'];
     }
-    if (preg_match('/prize_count:(\d+)/', $row['metadata'], $matches)) {
+    if (preg_match('/prize_count:(-?\d+)/', $row['metadata'], $matches)) {
       $player_points[$game_term]['prize_count'] += $matches[1];
     }
     else {
