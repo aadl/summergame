@@ -151,7 +151,20 @@ class SummerGameAdminForm extends ConfigFormBase {
       '#maxlength' => 32,
       '#description' => t("Name of the Couch Database to place Gamecodes in Bib Records"),
     ];
-
+    $form['summergame_shop_message_threshold'] = [
+      '#type' => 'textfield',
+      '#title' => 'Shop Message Threshold',
+      '#default_value' => $summergame_settings->get('summergame_shop_message_threshold'),
+      '#size' => 32,
+      '#maxlength' => 32,
+      '#description' => t("Current Game Term Points required to display the special shop message"),
+    ];
+    $form['summergame_shop_message'] = [
+      '#type' => 'textarea',
+      '#title' => 'Shop Message',
+      '#default_value' => $summergame_settings->get('summergame_shop_message'),
+      '#description' => 'Message to be displayed under the player shop balance when current points is greater than current point threshold',
+    ];
 
     return parent::buildForm($form, $form_state);
   }

@@ -38,6 +38,9 @@
         <tr><td>{{ summergame_current_game_term }} Shop Balance ({{ current_prize_count }}/4 items)</td><td>{{ current_sg_balance }}</td></tr>
         <tr><td>Classic Shop Balance</td><td>{{ classic_sg_balance }}</td></tr>
       </table>
+      {% if (summergame_shop_message_threshold > 0) and (current_sg_balance > summergame_shop_message_threshold) %}
+        <p>{{ summergame_shop_message|raw }}</p>
+      {% endif %}
     </div>
     <div id="player-info-table">
       <h2>Player Details (<a href="/summergame/player/{{ player.pid }}/edit">Edit Player Info</a>)</h2>
