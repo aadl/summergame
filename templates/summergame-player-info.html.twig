@@ -24,6 +24,9 @@
       <table class="account-summary not-fixed-table">
         <tr><th>Game</th><th>Points</th></tr>
         {% for game_term, player_game_points in points %}
+          {% if game_term == 'SummerGameClassic' %}
+            {% set classic_sg_balance = classic_sg_balance + player_game_points.balance %}
+          {% endif %}
           {% if player_game_points.total %}
             <tr><td><a href="#{{ game_term }}">{{ game_term }}</a></td><td>{{ player_game_points.total }}</td></tr>
             {% if game_term == summergame_current_game_term %}
