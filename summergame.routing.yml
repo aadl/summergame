@@ -79,6 +79,13 @@ summergame.admin.badgeify:
     _form: '\Drupal\summergame\Form\SummerGameBadgeifierForm'
   requirements:
     _permission: 'administer summergame'
+summergame.admin.legoresults:
+  path: '/summergame/admin/legoresults'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\AdminController::lego_results'
+    _title: 'Lego Results'
+  requirements:
+    _permission: 'administer summergame'
 summergame.player:
   path: '/summergame/player/{pid}'
   defaults:

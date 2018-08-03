@@ -6,6 +6,7 @@
 namespace Drupal\summergame\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
+use Predis\Client;
 //use Drupal\Core\Database\Database;
 //use Drupal\Core\Url;
 
@@ -335,7 +336,7 @@ class AdminController extends ControllerBase {
 
     // Don't worry about Badge IDs
     unset($p1['bids'], $p2['bids']);
-    
+
     if ($p1['pid'] && $p2['pid']) {
       $p1_points = summergame_get_player_points($pid1);
       $p1['total'] = $p1_points['career'];
@@ -368,5 +369,35 @@ class AdminController extends ControllerBase {
       drupal_set_message('Invalid Player IDs', 'error');
       return $this->redirect('summergame.admin');
     }
+  }
+
+  public function lego_results() {
+    $time_start = microtime(true);
+    ////////////////////////////////////////////////////////////////////////////
+    $redis = new Client(\Drupal::config('summergame.settings')->get('summergame_redis_conn'));
+
+    $results = [];
+    $keys = $redis->keys('lego_vote*');
+    foreach ($keys as $key) {
+      $vote = $redis->get($key);
+      $results[$vote[1]][$vote]++;
+    }
+
+    $content = '<h1>Lego Voting Results</h1>';
+    foreach ($results as $group_char => $group_results) {
+      arsort($group_results);
+      $content .= "<h2>Group $group_char</h2>";
+      $content .= '<table><tr><th>ENTRY</th><th>VOTES</th></tr>';
+      foreach ($group_results as $entry => $votes) {
+        $content .= "<tr><td>$entry</td><td>$votes</td></tr>";
+      }
+      $content .= '</table></div>';
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    $time = microtime(true) - $time_start;
+    $content .= "<p>Execution time: $time seconds</p>";
+
+    return ['#markup' => $content];
   }
 }
