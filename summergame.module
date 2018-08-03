@@ -210,6 +210,7 @@ function summergame_get_game_terms() {
  * HOOK: Receive and respond to text messages
  */
 function summergame_twilio_respond($incoming) {
+  $summergame_settings = \Drupal::config('summergame.settings');
   $db = \Drupal::database();
   // Prep generic response array
   $response_template = ['uid' => twilio_lookup_user($incoming['phone']),
@@ -354,13 +355,12 @@ function summergame_twilio_respond($incoming) {
     $response['text'] .= 'Your Player nickname has been set to ' . $player['nickname'];
     $responses[] = $response;
   }
-/*
   // Lego Contest
-  else if (variable_get('summergame_lego_enabled', FALSE)) {
+  else if ($summergame_settings->get('summergame_lego_enabled')) {
     $text = strtoupper($incoming['text']);
     if (preg_match('/^L[PKEMHA][\d]{3}$/', $text)) {
-      require_once(variable_get('summergame_libphp_path', '') . 'contrib/redisent/redisent.php');
-      $redis = new Redisent('multivac');
+      $redis = new Client($summergame_settings->get('summergame_redis_conn'));
+      
       // Set category vote for this phone
       $redis->set('lego_vote:' . $text[1] . ':' . $incoming['phone'], $text);
       $response = $response_template;
@@ -368,7 +368,6 @@ function summergame_twilio_respond($incoming) {
       $responses[] = $response;
     }
   }
-*/
 /*
   // Do Or Diag
   else if (variable_get('summergame_dod_enabled', FALSE)) {
