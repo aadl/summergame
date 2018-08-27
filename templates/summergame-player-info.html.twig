@@ -3,6 +3,7 @@
  * Summer Game Player Info
  */
 #}
+
 {% spaceless %}
 <div id="player-card">
 
@@ -18,31 +19,29 @@
   </div>
   <div class="l-overflow-clear no-margin">
     {# Points Summary #}
-    {% set current_sg_balance, current_prize_count, classic_sg_balance = 0, 0, 0 %}
     <div id="player-points-summary">
       <h2>Points Summary</h2>
       <table class="account-summary not-fixed-table">
         <tr><th>Game</th><th>Points</th></tr>
         {% for game_term, player_game_points in points %}
-          {% if game_term == 'SummerGameClassic' %}
-            {% set classic_sg_balance = classic_sg_balance + player_game_points.balance %}
-          {% endif %}
           {% if player_game_points.total %}
             <tr><td><a href="#{{ game_term }}">{{ game_term }}</a></td><td>{{ player_game_points.total }}</td></tr>
-            {% if game_term == summergame_current_game_term %}
-              {% set current_sg_balance = current_sg_balance + player_game_points.balance %}
-              {% set current_prize_count = current_prize_count + player_game_points.prize_count %}
-            {% endif %}
-            {% if game_term starts with 'SummerGame' %}
-              {% set classic_sg_balance = classic_sg_balance + player_game_points.balance %}
-            {% endif %}
           {% endif %}
         {% endfor %}
-        <tr><td>{{ summergame_current_game_term }} Shop Balance ({{ current_prize_count }}/4 items)</td><td>{{ current_sg_balance }}</td></tr>
-        <tr><td>Classic Shop Balance</td><td>{{ classic_sg_balance }}</td></tr>
       </table>
-      {% if (summergame_shop_message_threshold > 0) and (current_sg_balance > summergame_shop_message_threshold) %}
-        <p>{{ summergame_shop_message|raw }}</p>
+      {% if balances|length %}
+        <h2>Shop Balances</h2>
+        <table class="account-summary not-fixed-table">
+          <tr><td>TOTAL BALANCE</td><td><strong>{{ balances.total }}</strong></td></tr>
+          <tr>
+            <td>- {{ summergame_current_game_term }} Shop ({{ balances.prize_count }}/4 items)</td>
+            <td>{{ attribute(balances, summergame_current_game_term) }}</td>
+          </tr>
+          <tr><td>- Classic Shop</td><td>{{ balances.SummerGameClassic }}</td></tr>
+        </table>
+        {% if (summergame_shop_message_threshold > 0) and (attribute(points, summergame_current_game_term).total > summergame_shop_message_threshold) %}
+          <p>{{ summergame_shop_message|raw }}</p>
+        {% endif %}
       {% endif %}
     </div>
     <div id="player-info-table">

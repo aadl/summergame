@@ -159,6 +159,12 @@ class PlayerController extends ControllerBase {
         }
       }
 
+      // Get Player Balances
+      $balances = [];
+      if (\Drupal::moduleHandler()->moduleExists('uc_summergame')) {
+        $balances = uc_summergame_get_player_balances($player['pid']);
+      }
+
       // Prepare Scorecards
       $render[] = [
         '#cache' => [
@@ -171,6 +177,7 @@ class PlayerController extends ControllerBase {
         '#player_access' => $player_access,
         '#other_players' => $other_players,
         '#points' => summergame_get_player_points($player['pid']),
+        '#balances' => $balances,
         '#summergame_current_game_term' => $summergame_settings->get('summergame_current_game_term'),
         '#summergame_shop_message_threshold' => $summergame_settings->get('summergame_shop_message_threshold'),
         '#summergame_shop_message' => $summergame_settings->get('summergame_shop_message'),
