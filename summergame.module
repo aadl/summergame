@@ -361,7 +361,7 @@ function summergame_twilio_respond($incoming) {
     $text = strtoupper($incoming['text']);
     if (preg_match('/^L[PKEMHA][\d]{3}$/', $text)) {
       $redis = new Client($summergame_settings->get('summergame_redis_conn'));
-      
+
       // Set category vote for this phone
       $redis->set('lego_vote:' . $text[1] . ':' . $incoming['phone'], $text);
       $response = $response_template;
@@ -1098,8 +1098,9 @@ function summergame_player_award_badge($pid, $bid) {
  */
 function summergame_check_all_player_badges($game_term = '') {
   $p_count = 0;
-  $res = db_query("SELECT pid FROM sg_ledger WHERE game_term = '%s' GROUP BY pid", $game_term);
-  while ($p = db_fetch_object($res)) {
+  $db = \Drupal::database();
+  $res = $db->query("SELECT DISTINCT pid FROM sg_ledger WHERE game_term = :gt ORDER BY pid", [':gt' => $game_term]);
+  while ($p = $res->fetchObject()) {
     summergame_player_check_badges($p->pid, $game_term);
     if (++$p_count % 100 == 0) {
       echo date("Y-m-d H:i:s") . "Processed $p_count Players..." . PHP_EOL;
