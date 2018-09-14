@@ -86,6 +86,16 @@ summergame.admin.legoresults:
     _title: 'Lego Results'
   requirements:
     _permission: 'administer summergame'
+summergame.admin.stats:
+  path: '/summergame/admin/stats/{game_term}/{year}/{month}'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\AdminController::stats'
+    _title: 'Summer Game Stats'
+    game_term: ''
+    year: 0
+    month: 0
+  requirements:
+    _permission: 'administer summergame'
 summergame.player:
   path: '/summergame/player/{pid}'
   defaults:

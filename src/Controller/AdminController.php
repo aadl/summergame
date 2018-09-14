@@ -400,4 +400,49 @@ class AdminController extends ControllerBase {
 
     return ['#markup' => $content];
   }
+
+  public function stats($game_term = '', $year = 0, $month = 0) {
+    $db = \Drupal::database();
+
+    // Get Game Term
+    $game_term = (empty($game_term) ? \Drupal::config('summergame.settings')->get('summergame_current_game_term') : $game_term);
+    $year = (empty($year) ? date('Y') : $year);
+    $month = (empty($month) ? date('n') : $month);
+    $end_month = ($month % 12) + 1;
+
+    // Find Start and End Dates for game term
+    // $earliest = date('Y-m-d', $db->query("SELECT MIN(timestamp) FROM `sg_ledger` WHERE `game_term` = '$game_term'")->fetchField());
+    // $latest = date('Y-m-d', $db->query("SELECT MAX(timestamp) FROM `sg_ledger` WHERE `game_term` = '$game_term'")->fetchField());
+
+    $date = new \DateTime("$year-$month-1");
+    $end = new \DateTime("$year-$end_month-1");
+
+    $page_header = [
+      '#markup' => "<h1>Daily Stats for $game_term, " . $date->format('l F j, Y') . ' - ' . $end->format('l F j, Y') . '</h1>',
+    ];
+
+    $table = [
+      '#type' => 'table',
+      '#header' => ['Date', 'Player Count', 'Total Points', 'Shop Point Total', 'Classic Shop Point Total', 'Game Code Count', 'Badge Count'],
+    ];
+
+    while ($date <= $end) {
+      $timestamp = $date->getTimestamp();
+      $player_count = $db->query("SELECT COUNT(DISTINCT pid) FROM `sg_ledger` WHERE `game_term` = '$game_term' AND `timestamp` < $timestamp")->fetchField();
+      $point_total = $db->query("SELECT SUM(points) FROM `sg_ledger` WHERE `game_term` = '$game_term' AND points > 0 AND `timestamp` < $timestamp")->fetchField();
+      $shop_total = $db->query("SELECT SUM(points) FROM `sg_ledger` WHERE `game_term` = '$game_term' AND `type` = 'Shop Order' AND `timestamp` < $timestamp")->fetchField();
+      $classic_shop_total = $db->query("SELECT SUM(points) FROM `sg_ledger` WHERE `game_term` = 'SummerGameClassic' AND `type` = 'Shop Order' AND `timestamp` < $timestamp")->fetchField();
+      $code_count = $db->query("SELECT COUNT(*) FROM `sg_ledger` WHERE `game_term` = '$game_term' AND `type` = 'Game Code' AND `timestamp` < $timestamp")->fetchField();
+      $badge_count = $db->query("SELECT COUNT(*) FROM `sg_ledger` WHERE `game_term` = '$game_term' AND `type` = 'Badge Bonus' AND `timestamp` < $timestamp")->fetchField();
+
+      $table['#rows'][] = [$date->format('Y-m-d'), $player_count, $point_total, $shop_total, $classic_shop_total, $code_count, $badge_count];
+
+      $date->modify('+1 day');
+    }
+
+    return [
+      $page_header,
+      $table,
+    ];
+  }
 }
