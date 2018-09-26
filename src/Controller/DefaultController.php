@@ -543,6 +543,23 @@ FBL;
                 isset($player['bids'][$nid])) {
               $node->badge_earned = true;
             }
+
+            // Hidden Badges
+            if ($reveal = $node->field_badge_reveal->value) {
+              if ($player['pid']) {
+                $required_bids = explode(',', $reveal);
+                foreach ($required_bids as $required_bid) {
+                  if (!$player['bids'][$required_bid]) {
+                    $node->hide_badge = TRUE;
+                    break;
+                  }
+                }
+              }
+              else {
+                $node->hide_badge = TRUE;
+              }
+            }
+
             $badges[$vocab][$series]['nodes'][] = $node;
           }
         }

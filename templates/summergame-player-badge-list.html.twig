@@ -27,7 +27,11 @@
             <div class="badgelist-badges">
               {% for node in series.nodes %}
                 <div class="badgelist-badge l-inline-b">
-                  {% if file_url(node.field_badge_image[0].entity.fileuri) %}
+                  {% if node.hide_badge %}
+                    <a href="/node/{{ node.id }}" target="_blank">
+                      <img class="sg-admin-badge" src="/{{ directory }}/images/hidden_400.png" alt="Hidden Badge image">
+                    </a>
+                  {% elseif file_url(node.field_badge_image[0].entity.fileuri) %}
                     <a href="/node/{{ node.id }}" target="_blank">
                       <img class="sg-admin-badge {% if not node.badge_earned and user.isAuthenticated %} sg-badge-faded {% endif %}" src="{{ file_url(node.field_badge_image[0].entity.fileuri) }}" alt="{{ node.title.value }} badge image" title="{{ node.title.value }}">
                     </a>
