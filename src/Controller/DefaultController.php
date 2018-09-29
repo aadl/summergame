@@ -547,11 +547,23 @@ FBL;
             // Hidden Badges
             if ($reveal = $node->field_badge_reveal->value) {
               if ($player['pid']) {
-                $required_bids = explode(',', $reveal);
-                foreach ($required_bids as $required_bid) {
-                  if (!$player['bids'][$required_bid]) {
-                    $node->hide_badge = TRUE;
-                    break;
+                $required_parts = explode(',', $reveal);
+                foreach ($required_parts as $required_part) {
+                  if (strpos($required_part, 'gamecode:') === 0) {
+                    // Required Game Code, search player ledger
+                    $ledger = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND metadata LIKE :metadata AND game_term = :term LIMIT 1",
+                                                       [':pid' => $player['pid'], ':metadata' => $required_part, ':term' => $node->field_badge_game_term->value])->fetch();
+                    if (!$ledger->lid) {
+                      $node->hide_badge = TRUE;
+                      break;
+                    }
+                  }
+                  else {
+                    // Required Badge
+                    if (!$player['bids'][$required_part]) {
+                      $node->hide_badge = TRUE;
+                      break;
+                    }
                   }
                 }
               }
