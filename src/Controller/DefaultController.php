@@ -41,6 +41,7 @@ class DefaultController extends ControllerBase {
       '#type' => $type,
       '#range' => $range,
       '#staff' => $staff,
+      '#sg_admin' => \Drupal::currentUser()->hasPermission('administer summergame'),
       '#leaderboard_timestamp' => $leaderboard['timestamp'],
       '#leaderboard' => $leaderboard['rows'],
     ];

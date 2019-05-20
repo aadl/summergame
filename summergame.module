@@ -88,10 +88,9 @@ function summergame_leaderboard_update() {
             $player_name = 'Player #' . $lb_player['pid'];
           }
 
-          $pid = $lb_player['show_myscore'] ? $lb_player['pid'] : 0;
-
           $leaderboard[] = [
-            'pid' => $pid,
+            'pid' => $lb_player['pid'],
+            'show_myscore' => $lb_player['show_myscore'],
             'player' => $player_name,
             'score' => $row['lb_total'],
           ];
@@ -188,6 +187,7 @@ function summergame_theme() {
         'type' => NULL,
         'range' => NULL,
         'staff' => NULL,
+        'sg_admin' => NULL,
         'leaderboard_timestamp' => NULL,
         'leaderboard' => NULL,
       ]
