@@ -135,6 +135,14 @@ class SummerGameAdminForm extends ConfigFormBase {
       '#default_value' => $summergame_settings->get('summergame_staff_role_id'),
       '#description' => t('Select the role that separates staff from regular players on the leaderboard'),
     ];
+    $form['summergame_play_test_term_id'] = [
+      '#type' => 'textfield',
+      '#title' => t("Play Tester Term ID"),
+      '#default_value' => $summergame_settings->get('summergame_play_test_term_id'),
+      '#size' => 32,
+      '#maxlength' => 32,
+      '#description' => t("Term ID of Badges to restrict display on Badge List to play testers"),
+    ];
     $form['summergame_couch_dsn'] = [
       '#type' => 'textfield',
       '#title' => t("Couch DSN"),

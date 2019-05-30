@@ -485,15 +485,17 @@ FBL;
   }
 
   public function badge_list() {
-    // check if pid to fade unearned badges
     $db = \Drupal::database();
+    $summergame_settings = \Drupal::config('summergame.settings');
+    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+
+    // check if pid to fade unearned badges
     $player = summergame_get_active_player();
     $all_players = [];
     if ($player['pid']) {
       $all_players = summergame_player_load_all($player['uid']);
     }
     if (isset($_GET['pid'])) {
-      $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
       $player_info = summergame_player_load($_GET['pid']);
       if ($player_info['uid'] == $player['uid'] || $user->hasPermission('administer summergame')) {
         $player = $player_info;
@@ -509,6 +511,8 @@ FBL;
     }
 
     $vocab = 'sg_badge_series';
+    $play_test_term_id = $summergame_settings->get('summergame_play_test_term_id');
+    $play_tester = $user->hasRole('staff'); // Use staff role for play testing
     $badges = [];
 
     $query = \Drupal::entityQuery('taxonomy_term')
@@ -518,8 +522,14 @@ FBL;
     $terms = \Drupal\taxonomy\Entity\Term::loadMultiple($tids);
 
     foreach ($terms as $term) {
+      // Check if Play Tester term and not a play tester, skip rest of loop if so
+      if ($term->id() == $play_test_term_id && !$play_tester) {
+        continue;
+      }
+
       $series_info = explode("\n", strip_tags($term->get('description')->value));
       $series = $term->get('name')->value;
+
       $query = \Drupal::entityQuery('node')
         ->condition('type', 'sg_badge')
         ->condition('status', 1)
