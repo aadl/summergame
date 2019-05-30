@@ -512,7 +512,7 @@ FBL;
 
     $vocab = 'sg_badge_series';
     $play_test_term_id = $summergame_settings->get('summergame_play_test_term_id');
-    $play_tester = $user->hasRole('staff'); // Use staff role for play testing
+    $play_tester = $user->hasPermission('play test summergame');
     $badges = [];
 
     $query = \Drupal::entityQuery('taxonomy_term')

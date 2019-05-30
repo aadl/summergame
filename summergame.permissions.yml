@@ -1,6 +1,9 @@
 access summergame:
   title: 'Access Summer Game'
   description: 'Access the Summer Game as a player'
+play test summergame:
+  title: 'Play Test Summer Game'
+  description: 'Access Summer Game as a Play Tester'
 manage summergame:
   title: 'Manage Summer Game'
   description: 'Limited management of Summer Game'
