@@ -88,10 +88,9 @@ function summergame_leaderboard_update() {
             $player_name = 'Player #' . $lb_player['pid'];
           }
 
-          $pid = $lb_player['show_myscore'] ? $lb_player['pid'] : 0;
-
           $leaderboard[] = [
-            'pid' => $pid,
+            'pid' => $lb_player['pid'],
+            'show_myscore' => $lb_player['show_myscore'],
             'player' => $player_name,
             'score' => $row['lb_total'],
           ];
@@ -188,6 +187,7 @@ function summergame_theme() {
         'type' => NULL,
         'range' => NULL,
         'staff' => NULL,
+        'sg_admin' => NULL,
         'leaderboard_timestamp' => NULL,
         'leaderboard' => NULL,
       ]
@@ -691,6 +691,10 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
   }
 
   // Get new badges
+  $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+  $play_tester = $user->hasPermission('play test summergame');
+  $play_test_term_id = \Drupal::config('summergame.settings')->get('summergame_play_test_term_id');
+
   $res = $db->query("SELECT gt.entity_id AS bid, gt.field_badge_game_term_value AS game_term, b.bid AS pbid " .
                     "FROM node__field_badge_game_term gt, sg_players_badges b " .
                     "WHERE gt.entity_id = b.bid " .
@@ -700,6 +704,11 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
     $game_term = $badge['game_term'];
     $badge['nid'] = $badge['bid'];
     $node = entity_load('node', $badge['bid']);
+
+    if ($node->field_sg_badge_series->target_id == $play_test_term_id && !$play_tester) {
+      continue;
+    }
+
     $fid = \Drupal\file\Entity\File::load($node->get('field_badge_image')->target_id);
     if ($fid) {
       $badge['img'] = file_create_url($fid->getFileUri());

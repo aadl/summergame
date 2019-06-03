@@ -41,6 +41,7 @@ class DefaultController extends ControllerBase {
       '#type' => $type,
       '#range' => $range,
       '#staff' => $staff,
+      '#sg_admin' => \Drupal::currentUser()->hasPermission('administer summergame'),
       '#leaderboard_timestamp' => $leaderboard['timestamp'],
       '#leaderboard' => $leaderboard['rows'],
     ];
@@ -484,15 +485,17 @@ FBL;
   }
 
   public function badge_list() {
-    // check if pid to fade unearned badges
     $db = \Drupal::database();
+    $summergame_settings = \Drupal::config('summergame.settings');
+    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+
+    // check if pid to fade unearned badges
     $player = summergame_get_active_player();
     $all_players = [];
     if ($player['pid']) {
       $all_players = summergame_player_load_all($player['uid']);
     }
     if (isset($_GET['pid'])) {
-      $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
       $player_info = summergame_player_load($_GET['pid']);
       if ($player_info['uid'] == $player['uid'] || $user->hasPermission('administer summergame')) {
         $player = $player_info;
@@ -507,73 +510,87 @@ FBL;
       }
     }
 
-    $vocabs = ['Summer_Game_2018'];
+    $vocab = 'sg_badge_series';
+    $play_test_term_id = $summergame_settings->get('summergame_play_test_term_id');
+    $play_tester = $user->hasPermission('play test summergame');
     $badges = [];
-    foreach ($vocabs as $vocab) {
-      $query = \Drupal::entityQuery('taxonomy_term')
-        ->condition('vid', $vocab)
-        ->sort('weight');
-      $tids = $query->execute();
-      $terms = \Drupal\taxonomy\Entity\Term::loadMultiple($tids);
 
-      foreach ($terms as $term) {
-        $series_info = explode("\n", strip_tags($term->get('description')->value));
-        $series = $term->get('name')->value;
-        $query = \Drupal::entityQuery('node')
-          ->condition('type', 'sg_badge')
-          ->condition('status', 1)
-          ->condition('field_sg_2018_badge_series', $term->id());
-        $nodes = $query->execute();
-        if (count($nodes)) {
-          $badges[$vocab][$series]['description'] = $series_info[0];
-          $series_level = (int) $series_info[2];
-          $max_level = 4;
-          $level_diff = $max_level - $series_level;
-          $level_output = '';
-          for ($i = 0; $i < $series_level; $i++) {
-            $level_output .= '&starf;';
-          }
-          for ($i = 0; $i < $level_diff; $i++) {
-            $level_output .= '&star;';
-          }
-          $badges[$vocab][$series]['level'] = $level_output;
-          foreach ($nodes as $nid) {
-            $node = entity_load('node', $nid);
-            if ($player['pid'] &&
-                isset($player['bids'][$nid])) {
-              $node->badge_earned = true;
+    $query = \Drupal::entityQuery('taxonomy_term')
+      ->condition('vid', $vocab)
+      ->sort('weight');
+    $tids = $query->execute();
+    $terms = \Drupal\taxonomy\Entity\Term::loadMultiple($tids);
+
+    foreach ($terms as $term) {
+      // Check if Play Tester term and not a play tester, skip rest of loop if so
+      if ($term->id() == $play_test_term_id && !$play_tester) {
+        continue;
+      }
+
+      $series_info = explode("\n", strip_tags($term->get('description')->value));
+      $series = $term->get('name')->value;
+
+      $query = \Drupal::entityQuery('node')
+        ->condition('type', 'sg_badge')
+        ->condition('status', 1)
+        ->condition('field_sg_badge_series', $term->id());
+      $nodes = $query->execute();
+      if (count($nodes)) {
+        foreach ($nodes as $nid) {
+          $node = entity_load('node', $nid);
+          $game_term = $node->field_badge_game_term->value;
+
+          // Set Series info if not set yet
+          if (!isset($badges[$game_term][$series]['description'])) {
+            $badges[$game_term][$series]['description'] = $series_info[0];
+
+            $series_level = (int) $series_info[2];
+            $max_level = 4;
+            $level_diff = $max_level - $series_level;
+            $level_output = '';
+            for ($i = 0; $i < $series_level; $i++) {
+              $level_output .= '&starf;';
             }
+            for ($i = 0; $i < $level_diff; $i++) {
+              $level_output .= '&star;';
+            }
+            $badges[$game_term][$series]['level'] = $level_output;
+          }
 
-            // Hidden Badges
-            if ($reveal = $node->field_badge_reveal->value) {
-              if ($player['pid']) {
-                $required_parts = explode(',', $reveal);
-                foreach ($required_parts as $required_part) {
-                  if (strpos($required_part, 'gamecode:') === 0) {
-                    // Required Game Code, search player ledger
-                    $ledger = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND metadata LIKE :metadata AND game_term = :term LIMIT 1",
-                                                       [':pid' => $player['pid'], ':metadata' => $required_part, ':term' => $node->field_badge_game_term->value])->fetch();
-                    if (!$ledger->lid) {
-                      $node->hide_badge = TRUE;
-                      break;
-                    }
+          if ($player['pid'] &&
+              isset($player['bids'][$nid])) {
+            $node->badge_earned = true;
+          }
+
+          // Hidden Badges
+          if ($reveal = $node->field_badge_reveal->value) {
+            if ($player['pid']) {
+              $required_parts = explode(',', $reveal);
+              foreach ($required_parts as $required_part) {
+                if (strpos($required_part, 'gamecode:') === 0) {
+                  // Required Game Code, search player ledger
+                  $ledger = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND metadata LIKE :metadata AND game_term = :term LIMIT 1",
+                                                     [':pid' => $player['pid'], ':metadata' => $required_part, ':term' => $game_term])->fetch();
+                  if (!$ledger->lid) {
+                    $node->hide_badge = TRUE;
+                    break;
                   }
-                  else {
-                    // Required Badge
-                    if (!$player['bids'][$required_part]) {
-                      $node->hide_badge = TRUE;
-                      break;
-                    }
+                }
+                else {
+                  // Required Badge
+                  if (!$player['bids'][$required_part]) {
+                    $node->hide_badge = TRUE;
+                    break;
                   }
                 }
               }
-              else {
-                $node->hide_badge = TRUE;
-              }
             }
-
-            $badges[$vocab][$series]['nodes'][] = $node;
+            else {
+              $node->hide_badge = TRUE;
+            }
           }
+
+          $badges[$game_term][$series]['nodes'][] = $node;
         }
       }
     }

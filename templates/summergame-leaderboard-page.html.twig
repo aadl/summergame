@@ -51,7 +51,7 @@
       <tr>
         <td>{{ loop.index }}</td>
         <td>
-          {% if row.pid %}
+          {% if row.show_myscore or sg_admin %}
             <a href="/summergame/player/{{ row.pid }}">{{ row.player }}</a>
           {% else %}
             {{ row.player }}
