@@ -23,7 +23,9 @@ class SummerGamePlayerSearchForm extends FormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state, $term = '') {
-    $form = [];
+    $form = [
+      '#attributes' => ['class' => 'form-width-exception']
+    ];
 
     $form['inline'] = [
       '#prefix' => '<div class="container-inline">',
