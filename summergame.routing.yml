@@ -42,6 +42,13 @@ summergame.admin.gamecode.delete:
     _form: '\Drupal\summergame\Form\SummerGameGameCodeDeleteForm'
   requirements:
     _permission: 'administer summergame'
+summergame.admin.gamecode.batch:
+  path: '/summergame/admin/gamecode/batch'
+  defaults:
+    _title: 'Batch Create Summer Game Code'
+    _form: '\Drupal\summergame\Form\SummerGameGameCodeBatchForm'
+  requirements:
+    _permission: 'administer summergame'
 # summergame.admin.badge:
 #   path: '/summergame/admin/badge'
 #   defaults:
