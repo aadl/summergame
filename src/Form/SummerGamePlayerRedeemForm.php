@@ -102,7 +102,8 @@ class SummerGamePlayerRedeemForm extends FormBase {
     }
 
     foreach ($pids as $pid) {
-      $status = summergame_redeem_code($pid, $form_state->getValue('code_text'));
+      $player = summergame_player_load(['pid' => $pid]);
+      $status = summergame_redeem_code($player, $form_state->getValue('code_text'));
       if ($status['error']) {
         drupal_set_message($status['error'], 'error');
       }

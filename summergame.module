@@ -310,7 +310,7 @@ function summergame_twilio_respond($incoming) {
       }
       else {
         // Try to redeem text as a game code
-        $status = summergame_redeem_code($player['pid'], $incoming['text']);
+        $status = summergame_redeem_code($player, $incoming['text']);
 
         if ($status['success'] || $status['error']) {
           $response = $response_template;
@@ -768,9 +768,10 @@ function summergame_player_delete($player_info) {
 /**
  * UTILITY: Redeem a game code for a player
  */
-function summergame_redeem_code($pid, $code_text) {
+function summergame_redeem_code($player, $code_text) {
   $db = \Drupal::database();
   $config = \Drupal::config('summergame.settings');
+
   // Remove non-alphanumerics from Game Code text and convert to upper case
   $code_text = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $code_text));
 
@@ -793,7 +794,7 @@ function summergame_redeem_code($pid, $code_text) {
     else {
       // check if player has already redeemed this code
       $existing = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND metadata LIKE :metadata",
-                            [':pid' => $pid, ':metadata' => 'gamecode:' . $code->text])->fetchObject();
+                            [':pid' => $player['pid'], ':metadata' => 'gamecode:' . $code->text])->fetchObject();
       if ($existing->lid) {
         $existing_date = date('F j, Y, g:i a', $existing->timestamp);
         return ['error' => "Code \"$code->text\" already redeemed on $existing_date"];
@@ -816,8 +817,9 @@ function summergame_redeem_code($pid, $code_text) {
       $code->game_term = $code->game_term_override;
     }
 
-    $points = summergame_player_points($pid, $code->points, 'Game Code', $code->description, 'gamecode:' . $code->text, $code->game_term);
-    $message = "Redeemed code \"$code->text\" for $points $code->game_term points";
+    $points = summergame_player_points($player['pid'], $code->points, 'Game Code', $code->description, 'gamecode:' . $code->text, $code->game_term);
+    $message = ($player['nickname'] ? $player['nickname'] : $player['name']) .
+               " redeemed code \"$code->text\" for $points $code->game_term points";
     if ($code->description) {
       $message .= ': ' . $code->description;
     }
