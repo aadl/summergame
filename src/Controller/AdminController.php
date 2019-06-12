@@ -100,6 +100,11 @@ class AdminController extends ControllerBase {
       }
     }
     $render[] = [
+      '#attached' => [
+        'library' => [
+          'summergame/summergame-lib'
+        ]
+      ],
       '#cache' => [
         'max-age' => 0, // Don't cache, always get fresh data
       ],

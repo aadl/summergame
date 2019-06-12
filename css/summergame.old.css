@@ -1,0 +1,369 @@
+td.digits {
+  text-align: right;
+}
+
+#summergame-player-page .active-player {
+  text-shadow: 1px 1px #99FF99;
+  font-weight: bold;
+}
+
+#summergame-player-page #player-tabs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  line-height: 24px;
+  border-bottom: 1px solid #999;
+}
+#summergame-player-page #player-tabs li {
+  margin: 0 10px -1px 0;
+  padding: 0 10px;
+  display: inline-block;
+  border-radius: 10px 10px 0 0;
+}
+#summergame-player-page #player-tabs a {
+  text-decoration: none;
+}
+#summergame-player-page #player-tabs #main-player {
+  font-size: 2em;
+  font-weight: bold;
+  border: 1px solid #999;
+  background: #FFF;
+  color: #000;
+  border-bottom: none;
+  padding: 10px;
+}
+#summergame-player-page #player-tabs .other-player {
+  border: 1px solid #999;
+  background: #ECECEC;
+  padding-bottom: .4em;
+}
+
+#summergame-player-page #player-card {
+  padding: 10px 10px 0 10px;
+  margin-bottom: 10px;
+  border: 1px solid #999;
+  border-top: 0;
+  overflow: auto;
+}
+
+#summergame-player-page .no-padding-left {
+  padding-left: 0;
+}
+
+#summergame-player-page table {
+  width: 100%;
+}
+
+#summergame-player-page #player-info-table {
+  margin-right: 380px;
+}
+
+#summergame-player-page #player-earn-links {
+  float: right;
+  width: 180px;
+}
+
+#summergame-player-page #player-earn-links h2 {
+  /* margin-top: 0; */
+}
+
+#summergame-player-page #player-points-summary {
+  float: right;
+  width: 180px;
+  margin-right: 10px;
+}
+
+#summergame-player-page #player-points-summary .sg-points {
+  font-weight: bolder;
+}
+
+#summergame-player-page #player-points-summary h2 {
+  /* margin-top: 0; */
+}
+
+#friend-code {
+  clear: both;
+}
+
+#friend-code #friend-title {
+  border-bottom: 1px solid #999;
+  padding-bottom: 0.5em;
+}
+#friend-code #friend-title h2 {
+  display: inline;
+  padding-right: 10px;
+}
+
+#friend-code table {
+  width: 31%;
+  float: left;
+  margin-right: 2%;
+}
+
+#summergame-player-page .scorecard {
+  padding: 10px;
+  background-color: #EEE;
+  border: 1px solid #000;
+  margin-bottom: 10px;
+}
+
+#summergame-player-page .scorecard .player-points {
+  float: left;
+  margin: 0 10px 10px 0;
+  width: 200px;
+}
+
+#summergame-player-page .scorecard .player-points .scorecard-buttons {
+  padding-left: 0;
+}
+
+#summergame-player-page .scorecard .player-badges {
+  margin-left: 210px;
+}
+
+img.summergame-badge {
+  padding-right: 10px;
+  padding-bottom: 10px;
+  width: 100px;
+}
+
+#summergame-badges-page img.not-earned {
+  opacity: 0.33;
+  filter: alpha(opacity = 33); /* For IE8 and earlier */
+}
+
+#summergame-badges-page img.not-earned:hover {
+  opacity: 1.0;
+  filter: alpha(opacity = 100); /* For IE8 and earlier */
+}
+
+#summergame-player-page #scorecard-total {
+  text-align: right;
+}
+
+#summergame-player-page #summergame-extra-player {
+  background-color: #EEE;
+  padding: 10px;
+  border: 1px solid #CCC;
+  margin-top: 10px;
+}
+
+#summergame-admin-page .print-game-cards {
+}
+
+#summergame-admin-page #summergame-player-search-form {
+  font-size: 1.5em;
+  line-height: 1.5em;
+  text-align: center;
+}
+
+#summergame-admin-page .create-new-code {
+  clear: left;
+  float: right;
+  padding: 0;
+  margin: 0;
+}
+
+#summergame-admin-page .create-new-code .button {
+  margin-bottom: 0;
+}
+
+#summergame-admin-page #summergame-admin-gamecode-search-form {
+  text-align: center;
+}
+
+#summergame-admin-page table {
+  width: 100%;
+}
+
+#summergame-admin-page h2.game-codes {
+  clear: left;
+  padding-top: .5em;
+}
+
+#summergame-admin-page p.more {
+  text-align: right;
+}
+
+#summergame-player-search-results {
+  width: 100%;
+}
+
+#summergame-player-form {
+  max-width: 900px;
+}
+
+#summergame-redeem-form .container-inline {
+  margin-bottom: 1em;
+}
+
+.summergame-player-edit-buttons {
+  padding: 5px;
+  background-color: #EEEEEE;
+  border: 1px solid #999999;
+}
+
+.summergame-player-edit-buttons .form-submit {
+  margin-right: 10px;
+}
+
+.summergame-player-delete-link {
+  float: right;
+  padding: 6px;
+}
+
+.summergame-player-delete-link a:link {
+  color: #FF0000;
+}
+
+div#block-summergame-0 div.content {
+  background-color: #FFF3A5;
+  padding-bottom: 1em;
+}
+
+div#block-summergame-0 div.content h3 {
+  color: #000;
+  font-size: 1em;
+  font-weight: bold;
+  padding: 1.75em 0 0.75em 10px;
+  margin: 0;
+}
+
+div#block-summergame-0 div.content ul {
+  list-style-type: none;
+  margin: 0 10px;
+}
+
+div#block-summergame-0 div.content ul li a.active {
+  color: #6AA670;
+}
+
+.summergame-team-buttons {
+  float: right;
+  width: 160px;
+}
+
+.summergame-badge-detail img {
+  height: 200px;
+  width: 200px;
+  float: left;
+  margin: 0 10px 10px 0;
+}
+
+.summergame-badge-detail h1 {
+  margin-bottom: 0;
+}
+
+.summergame-badge-detail p.caption {
+  margin-top: 0;
+}
+
+.summergame-badge-detail h2 {
+  clear: both;
+  text-align: center;
+}
+
+.summergame-badge-detail p.player-badge-status {
+  text-align: center;
+}
+
+.summergame-badge-detail .share-links {
+  display: table;
+  margin: auto;
+}
+.summergame-badge-detail .share-links > div {
+  display: table-cell;
+  vertical-align: middle;
+  padding-right: 10px;
+  padding-left: 10px;
+}
+
+.summergame-badge-detail table {
+  margin: auto;
+}
+
+.summergame-badge-detail .meter {
+  clear: both;
+  height: 20px;  /* Can be anything */
+  position: relative;
+  background: #555;
+  -moz-border-radius: 25px;
+  -webkit-border-radius: 25px;
+  border-radius: 25px;
+  padding: 10px;
+  margin: 0 10px;
+  -webkit-box-shadow: inset 0 -1px 1px rgba(255,255,255,0.3);
+  -moz-box-shadow   : inset 0 -1px 1px rgba(255,255,255,0.3);
+  box-shadow        : inset 0 -1px 1px rgba(255,255,255,0.3);
+}
+
+.summergame-badge-detail .meter > span {
+  display: block;
+  height: 100%;
+  -moz-border-radius: 20px;
+  -webkit-border-radius: 20px;
+  border-radius: 20px;
+/*
+     -webkit-border-top-right-radius: 8px;
+  -webkit-border-bottom-right-radius: 8px;
+         -moz-border-radius-topright: 8px;
+      -moz-border-radius-bottomright: 8px;
+             border-top-right-radius: 8px;
+          border-bottom-right-radius: 8px;
+      -webkit-border-top-left-radius: 20px;
+   -webkit-border-bottom-left-radius: 20px;
+          -moz-border-radius-topleft: 20px;
+       -moz-border-radius-bottomleft: 20px;
+              border-top-left-radius: 20px;
+           border-bottom-left-radius: 20px;
+*/
+  background-color: rgb(43,194,83);
+  background-image: -webkit-gradient(
+    linear,
+    left bottom,
+    left top,
+    color-stop(0, rgb(43,194,83)),
+    color-stop(1, rgb(84,240,84))
+   );
+  background-image: -webkit-linear-gradient(
+    center bottom,
+    rgb(43,194,83) 37%,
+    rgb(84,240,84) 69%
+   );
+  background-image: -moz-linear-gradient(
+    center bottom,
+    rgb(43,194,83) 37%,
+    rgb(84,240,84) 69%
+   );
+  background-image: -ms-linear-gradient(
+    center bottom,
+    rgb(43,194,83) 37%,
+    rgb(84,240,84) 69%
+   );
+  background-image: -o-linear-gradient(
+    center bottom,
+    rgb(43,194,83) 37%,
+    rgb(84,240,84) 69%
+   );
+  -webkit-box-shadow:
+    inset 0 2px 9px  rgba(255,255,255,0.3),
+    inset 0 -2px 6px rgba(0,0,0,0.4);
+  -moz-box-shadow:
+    inset 0 2px 9px  rgba(255,255,255,0.3),
+    inset 0 -2px 6px rgba(0,0,0,0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.summergame-badge-detail .badge-collection-list {
+  text-align: center;
+}
+
+.summergame-badge-detail .badge-collection-list #summergame-badges-page {
+  display: inline-block;
+}
+
+.summergame-badge-detail .badge-collection-list #summergame-badges-page img {
+  width: 100px;
+  height: 100px;
+}
