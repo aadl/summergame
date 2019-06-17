@@ -55,13 +55,15 @@ class SummerGamePlayerForm extends FormBase {
         // Check if existing player
         if (summergame_player_load(['uid' => $uid])) {
           // Website user, existing player, set up empty player record
-          drupal_set_message("Use the form below to add an extra player to your website account for another person in your household. " .
-                             "You will be able to enter game codes and report reading / listening / " .
-                             "watching activities for points. You will be able to switch the active player on your " .
-                             "website account to specify which player receives points for online activities such as " .
-                             "commenting, tagging, or writing reviews. If you wish this " .
-                             "player to have a separate website identity for these online activites, please log " .
-                             "out and create a new website account before signing up for the Summer Game.");
+          $extra_player_message = "Use the form below to add an extra player to your website account for another person in your household. " .
+                                  "You will be able to enter game codes and report reading / listening / " .
+                                  "watching activities for points. You will be able to switch the active player on your " .
+                                  "website account to specify which player receives points for online activities such as " .
+                                  "commenting, tagging, or writing reviews. If you wish this " .
+                                  "player to have a separate website identity for these online activites, please log " .
+                                  "out and create a new website account before signing up for the Summer Game.<br><br>" .
+                                  "<b>Each player on your account must be a real person who lives in your home.</b>";
+          drupal_set_message(['#markup' => $extra_player_message]);
           $player = ['uid' => $uid];
         }
         else {
