@@ -533,6 +533,7 @@ FBL;
       $query = \Drupal::entityQuery('node')
         ->condition('type', 'sg_badge')
         ->condition('status', 1)
+        ->condition('field_badge_game_term', 'SummerGame2019') // TODO: Abstract out into config value?
         ->condition('field_sg_badge_series', $term->id());
       $nodes = $query->execute();
       if (count($nodes)) {
