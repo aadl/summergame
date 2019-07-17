@@ -246,8 +246,8 @@ class AdminController extends ControllerBase {
 
       if (is_numeric($search_term)) {
         // Search phone numbers
-        $sql .= " AND sg_players.phone LIKE '%:phone%'";
-        $params[':phone'] = $search_term;
+        $sql .= " AND sg_players.phone LIKE :phone";
+        $params[':phone'] = "%$search_term%";
         $new_player['phone'] = $search_term;
       }
       else if (preg_match('/^S?[ART]G[\d]{5}$/', $search_term)) { //SRG12345, TG12345, AG12345
