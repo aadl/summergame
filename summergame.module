@@ -267,6 +267,31 @@ function summergame_twilio_respond($incoming) {
       $new_player_needed = TRUE;
     }
   }
+  else if (strtolower($incoming['text']) == 'shopbalance' ||
+           strtolower($incoming['text']) == 'shop balance') {
+    if (!$player['pid']) {
+      $new_player_needed = TRUE;
+    }
+    else {
+      $response = $response_template;
+      $response['text'] = ($player['nickname'] ? $player['nickname'] : $player['name']) . "'s Summer Game Shop Balance: ";
+
+      if (\Drupal::moduleHandler()->moduleExists('uc_summergame')) {
+        $game_term = \Drupal::config('summergame.settings')->get('summergame_current_game_term');
+
+        $balances = uc_summergame_get_player_balances($player['pid']);
+        $response['text'] .= $balances[$game_term] . ' ' . $game_term  . ' points';
+        if ($balances['SummerGameClassic']) {
+          $response['text'] .= ', ' . $balances['SummerGameClassic'] . ' SummerGameClassic points';
+        }
+      }
+      else {
+        $response['text'] .= 'Sorry, Shop is Currently Disabled';
+      }
+
+      $responses[] = $response;
+    }
+  }
   else {
     // check if it's a game code OR friend code
     $text = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $incoming['text']));
