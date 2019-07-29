@@ -72,8 +72,9 @@
                     {% for badge in player_game_points.badges %}
                       {# TODO Replicate theme_summergame_badge function in Drupal 8 #}
                       {% if badge.nid %}
+                        {% set badge_img = badge.img|split('/')|last %}
                         <a href="/node/{{ badge.nid }}">
-                          <img class="summergame-badge" title="{{ badge.title }}" src="{{ badge.img }}">
+                          <img class="summergame-badge" title="{{ badge.title }}" src="/files/badge-derivs/100/{{ badge_img }}">
                         </a>
                       {% else %}
                         <img class="summergame-badge" title="{{ badge.title }}" src="{{ badge.img }}">
