@@ -93,6 +93,13 @@ summergame.admin.legoresults:
     _title: 'Lego Results'
   requirements:
     _permission: 'administer summergame'
+summergame.admin.legoformtest:
+  path: '/summergame/admin/legoaddform'
+  defaults:
+    _title: 'Lego Add Form'
+    _form: '\Drupal\summergame\Form\SummerGameLegoResultsAddForm'
+  requirements:
+    _permission: 'administer summergame'
 summergame.admin.stats:
   path: '/summergame/admin/stats/{game_term}/{year}/{month}'
   defaults:

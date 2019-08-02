@@ -404,8 +404,8 @@ class AdminController extends ControllerBase {
     $content .= "<p>Execution time: $time seconds</p>";
 
     return [
-      '#summergame_lego_results_add_form' => \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGameLegoResultsAddForm'),
-      '#markup' => $content,
+      \Drupal::formBuilder()->getForm('\Drupal\summergame\Form\SummerGameLegoResultsAddForm'),
+      ['#markup' => $content],
     ];
   }
 
