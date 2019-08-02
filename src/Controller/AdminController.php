@@ -403,7 +403,10 @@ class AdminController extends ControllerBase {
     $time = microtime(true) - $time_start;
     $content .= "<p>Execution time: $time seconds</p>";
 
-    return ['#markup' => $content];
+    return [
+      \Drupal::formBuilder()->getForm('\Drupal\summergame\Form\SummerGameLegoResultsAddForm'),
+      ['#markup' => $content],
+    ];
   }
 
   public function stats($game_term = '', $year = 0, $month = 0) {
