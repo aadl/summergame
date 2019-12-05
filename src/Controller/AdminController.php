@@ -453,4 +453,83 @@ class AdminController extends ControllerBase {
       $table,
     ];
   }
+
+  public function badgestats($game_term = '') {
+    $game_term = (empty($game_term) ? \Drupal::config('summergame.settings')->get('summergame_current_game_term') : $game_term);
+    $output = "<h1>Badge Stats for $game_term</h1>";
+
+    $db = \Drupal::database();
+    $vocab = 'sg_badge_series';
+    $badges = [];
+
+    $query = \Drupal::entityQuery('taxonomy_term')
+      ->condition('vid', $vocab)
+      ->sort('weight');
+    $tids = $query->execute();
+    $terms = \Drupal\taxonomy\Entity\Term::loadMultiple($tids);
+
+    foreach ($terms as $term) {
+      $series_info = explode("\n", strip_tags($term->get('description')->value));
+      $series = $term->get('name')->value;
+
+      $query = \Drupal::entityQuery('node')
+        ->condition('type', 'sg_badge')
+        ->condition('status', 1)
+        ->condition('field_badge_game_term', $game_term)
+        ->condition('field_sg_badge_series', $term->id());
+      $nodes = $query->execute();
+
+      if (count($nodes)) {
+        $output .= '<h2>' . $series . ' :: ' . count($nodes) . ' Badges</h2>';
+        foreach ($nodes as $nid) {
+          $badge = entity_load('node', $nid);
+
+          $awarded = $db->query("SELECT COUNT(pid) AS pcount FROM sg_players_badges WHERE bid=:bid", [':bid' => $badge->id()])->fetch();
+          $title = $badge->get('title')->value;
+          $formula = $badge->get('field_badge_formula')->value;
+
+          $output .= '<p><a href="/node/' . $badge->id() . '"><strong>' . $title . '</strong></a> : ' . $awarded->pcount . '<br>';
+          $output .= "Formula: <em>$formula</em><br>";
+
+          if (preg_match('/^{([\d,]+)}$/', $formula, $matches)) {
+            // Badge collection badge
+            $output .= 'BADGE COLLECTION BADGE';
+          }
+          else if (strpos($badge->formula, '::')) {
+            // Multiple of a ledger type formula
+            $output .= 'LEDGER MULTIPLE BADGE';
+          }
+          else {
+            // Collection badge
+            $output .= 'COLLECTION BADGE<br><ul>';
+            foreach (explode(',', $formula) as $text_pattern) {
+              $query = "SELECT COUNT(lid) AS ledger_count FROM sg_ledger WHERE 1 AND (";
+              $args = [];
+
+              $text_patterns = explode('|', $text_pattern);
+              foreach ($text_patterns as $i => &$pattern) {
+                $args[':type_' . $i] = $pattern;
+                $args[':metadata_' . $i] = 'gamecode:' . $pattern;
+                $pattern = "(type LIKE :type_$i OR metadata LIKE :metadata_$i)";
+              }
+              $query .= implode(' OR ', $text_patterns);
+
+              $query .= ") AND game_term = :game_term";
+              $args[':game_term'] = $game_term;
+              $ledger_count = $db->query($query, $args)->fetchObject();
+
+              $output .= '<li>' . $text_pattern . ' :: ' . $ledger_count->ledger_count . '</li>';
+            }
+            $output .= '</ul>';
+          }
+
+          $output .= "</p>";
+        }
+      }
+    }
+
+    return [
+      '#markup' => $output,
+    ];
+  }
 }

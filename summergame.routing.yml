@@ -110,6 +110,14 @@ summergame.admin.stats:
     month: 0
   requirements:
     _permission: 'administer summergame'
+summergame.admin.badgestats:
+  path: '/summergame/admin/badgestats/{game_term}'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\AdminController::badgestats'
+    _title: 'Summer Game Badge Stats'
+    game_term: ''
+  requirements:
+    _permission: 'administer summergame'
 summergame.player:
   path: '/summergame/player/{pid}'
   defaults:
