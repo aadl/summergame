@@ -80,6 +80,14 @@ class SummerGameAdminForm extends ConfigFormBase {
       '#maxlength' => 32,
       '#description' => t("Default Game Term to apply to earned points (e.g. SummerGame2011)"),
     ];
+    $form['summergame_badgelist_game_term'] = [
+      '#type' => 'textfield',
+      '#title' => t("Badge List Game Term"),
+      '#default_value' => $summergame_settings->get('summergame_badgelist_game_term'),
+      '#size' => 32,
+      '#maxlength' => 32,
+      '#description' => t("Game Term for badges displayed on the Badge List page (/badgelist)"),
+    ];
     $form['summergame_gamecode_default_end'] = [
       '#type' => 'textfield',
       '#title' => t("Default Game Code End"),

@@ -511,6 +511,7 @@ FBL;
     }
 
     $vocab = 'sg_badge_series';
+    $badgelist_game_term = $summergame_settings->get('summergame_badgelist_game_term');
     $play_test_term_id = $summergame_settings->get('summergame_play_test_term_id');
     $play_tester = $user->hasPermission('play test summergame');
     $badges = [];
@@ -533,7 +534,7 @@ FBL;
       $query = \Drupal::entityQuery('node')
         ->condition('type', 'sg_badge')
         ->condition('status', 1)
-        ->condition('field_badge_game_term', 'SummerGame2019') // TODO: Abstract out into config value?
+        ->condition('field_badge_game_term', $badgelist_game_term)
         ->condition('field_sg_badge_series', $term->id());
       $nodes = $query->execute();
       if (count($nodes)) {
