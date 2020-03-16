@@ -54,6 +54,12 @@ class SummerGameAdminForm extends ConfigFormBase {
       '#default_value' => $summergame_settings->get('summergame_points_enabled'),
       '#description' => t('Allow players to earn points?'),
     ];
+    $form['summergame_show_gamecodes_in_catalog'] = [
+      '#type' => 'checkbox',
+      '#title' => t('Show Gamecodes in Catalog'),
+      '#default_value' => $summergame_settings->get('summergame_show_gamecodes_in_catalog'),
+      '#description' => t('Display Gamecodes in the Catalog?'),
+    ];
     $form['summergame_lego_enabled'] = [
       '#type' => 'checkbox',
       '#title' => t('Summergame Lego Contest Voting Enabled'),
