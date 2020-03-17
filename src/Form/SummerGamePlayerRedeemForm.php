@@ -33,7 +33,7 @@ class SummerGamePlayerRedeemForm extends FormBase {
       '#value' => $player['pid'],
     ];
     $form['explaination'] = [
-      '#markup' => '<p>You can find game codes for attending events, or by finding them around the library.</p>' .
+      '#markup' => '<p>You can find game codes to help complete badges or as standalone points awards.</p>' .
       '<h3>Enter a code for ' . ($player['nickname'] ? $player['nickname'] : $player['name']) . '</h3>'
     ];
     $form['code_text'] = [
