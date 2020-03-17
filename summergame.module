@@ -342,7 +342,9 @@ function summergame_twilio_respond($incoming) {
           $response['text'] .= $status['success'] . $status['error'];
           $responses[] = $response;
           if (isset($status['clue'])) {
-            $responses[] = 'New Clue: ' . $status['clue'];
+            $response = $response_template;
+            $response['text'] = 'New Clue: ' . $status['clue'];
+            $responses[] = $response;
           }
         }
 /* No Do or Diag mode for now
