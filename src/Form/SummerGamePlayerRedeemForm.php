@@ -25,7 +25,9 @@ class SummerGamePlayerRedeemForm extends FormBase {
   public function buildForm(array $form, FormStateInterface $form_state, $pid = 0) {
     $player = summergame_player_load($pid);
 
-    $form = [];
+    $form = [
+      '#attributes' => ['class' => 'form-width-exception']
+    ];
     $form['pid'] = [
       '#type' => 'value',
       '#value' => $player['pid'],
