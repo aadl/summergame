@@ -187,6 +187,12 @@ class SummerGameAdminForm extends ConfigFormBase {
       '#default_value' => $summergame_settings->get('summergame_shop_message'),
       '#description' => 'Message to be displayed under the player shop balance when current points is greater than current point threshold',
     ];
+    $form['game_display_name'] = [
+        '#type' => 'textfield',
+        '#title' => 'Game Display Name',
+        '#default_value' => $summergame_settings->get('game_display_name'),
+        '#description' => 'The name to be displayed throughout the SummerGame UI',
+    ];
 
     return parent::buildForm($form, $form_state);
   }

@@ -183,6 +183,7 @@ class PlayerController extends ControllerBase {
         '#summergame_shop_message' => $summergame_settings->get('summergame_shop_message'),
         '#completed_classic' => $completed_classic,
         '#website_user' => $website_user,
+        '#game_display_name' => $summergame_settings->get('game_display_name'),
       ];
     }
     else {

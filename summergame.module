@@ -157,6 +157,7 @@ function summergame_theme() {
         'summergame_shop_message' => NULL,
         'completed_classic' => NULL,
         'website_user' => NULL,
+        'game_display_name' => null,
       ],
     ],
     'summergame_player_ledger' => [
@@ -274,7 +275,8 @@ function summergame_twilio_respond($incoming) {
     }
     else {
       $response = $response_template;
-      $response['text'] = ($player['nickname'] ? $player['nickname'] : $player['name']) . "'s Summer Game Shop Balance: ";
+      $gameDisplayName = \Drupal::config('summergame.settings')->get('game_display_name');
+      $response['text'] = ($player['nickname'] ? $player['nickname'] : $player['name']) . "'s $gameDisplayName Shop Balance: ";
 
       if (\Drupal::moduleHandler()->moduleExists('uc_summergame')) {
         $game_term = \Drupal::config('summergame.settings')->get('summergame_current_game_term');
@@ -310,13 +312,14 @@ function summergame_twilio_respond($incoming) {
     $new_player = array('phone' => $incoming['phone']);
     $player = summergame_player_save($new_player);
     $response = $response_template;
-    $response['text'] = "New Summer Game player #" . $player['pid'] . " created for this phone.";
+    $gameDisplayName = \Drupal::config('summergame.settings')->get('game_display_name');
+    $response['text'] = "New $gameDisplayName player #" . $player['pid'] . " created for this phone.";
     $responses[] = $response;
     // Signup bonus
     $points = summergame_player_points($player['pid'], 100, 'Signup',
                                        'Signed Up for the Summer Game', 'via:txt');
     $response = $response_template;
-    $response['text'] = "Earned $points Summer Game points for signing up!";
+    $response['text'] = "Earned $points $gameDisplayName points for signing up!";
     $responses[] = $response;
   }
 
