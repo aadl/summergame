@@ -120,7 +120,6 @@ class SummerGamePlayerRedeemForm extends FormBase {
         }
       }
     }
-    $form_state->setRedirect('summergame.player', ['pid' => $form_state->getValue('pid')]);
 
     return;
   }
