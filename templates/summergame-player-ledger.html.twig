@@ -1,7 +1,7 @@
 {% spaceless %}
-<h1 class="t-center ruled-heading large-heading"><span>My Summer Game Ledger</span></h1>
+<h1 class="t-center ruled-heading large-heading"><span>{{ game_display_name }} Game Ledger</span></h1>
 <div>
-  <a href="/summergame/player">Return to My Summer Game</a>
+  <a href="/summergame/player">Return to {{ game_display_name }} Game</a>
   {{ pager }}
   <table class="not-fixed-table">
     <thead>
@@ -28,4 +28,3 @@
   {{ pager }}
 </div>
 {% endspaceless %}
-  
