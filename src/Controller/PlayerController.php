@@ -183,6 +183,7 @@ class PlayerController extends ControllerBase {
         '#summergame_shop_message' => $summergame_settings->get('summergame_shop_message'),
         '#completed_classic' => $completed_classic,
         '#website_user' => $website_user,
+        '#game_display_name' => $summergame_settings->get('game_display_name'),
       ];
     }
     else {
@@ -208,7 +209,8 @@ class PlayerController extends ControllerBase {
 
   private function auth_redemptions($pid, $type) {
     $user = \Drupal::currentUser();
-    if ($user->isAuthenticated()) {
+    $gameDisplayName = \Drupal::config('summergame.settings')->get('game_display_name');
+   if ($user->isAuthenticated()) {
       $pid = (int) $pid;
       if ($pid) {
         $player = summergame_player_load($pid);
@@ -232,13 +234,13 @@ class PlayerController extends ControllerBase {
           }
           return new RedirectResponse($redirect_uri);
         } else {
-          drupal_set_message('Add a player to your account to play the Summer Game');
+          drupal_set_message('Add a player to your account to play the $gameDisplayName');
           return new RedirectResponse('/summergame/player/new');
         }
 
       }
     } else {
-      drupal_set_message('You must be logged in to redeem a Summer Game code.');
+      drupal_set_message('You must be logged in to redeem a $gameDisplayName code.');
       return new RedirectResponse("/user/login?destination=" . $_SERVER['REQUEST_URI']);
     }
   }
@@ -583,7 +585,8 @@ class PlayerController extends ControllerBase {
       '#ledger' => $ledger,
       '#pager' => [
         '#type' => 'pager',
-        '#quantity' => 5
+        '#quantity' => 5,
+        '#game_display_name' => $summergame_settings->get('game_display_name'),
       ]
     ];
   }

@@ -26,6 +26,7 @@ class SummerGamePlayerForm extends FormBase {
     $route = \Drupal::routeMatch()->getRouteName();
     $db = \Drupal::database();
     $summergame_settings = \Drupal::config('summergame.settings');
+    $gameDisplayName = $summergame_settings->get('game_display_name');
     $user = \Drupal::currentUser();
 
     $submit_text = 'Save Player Changes';
@@ -61,7 +62,7 @@ class SummerGamePlayerForm extends FormBase {
                                   "website account to specify which player receives points for online activities such as " .
                                   "commenting, tagging, or writing reviews. If you wish this " .
                                   "player to have a separate website identity for these online activites, please log " .
-                                  "out and create a new website account before signing up for the Summer Game.<br><br>" .
+                                  "out and create a new website account before signing up for the $gameDisplayName.<br><br>" .
                                   "<b>Each player on your account must be a real person who lives in your home.</b>";
           drupal_set_message(['#markup' => $extra_player_message]);
           $player = ['uid' => $uid];
@@ -101,7 +102,7 @@ class SummerGamePlayerForm extends FormBase {
         '#value' => '<p style="float: right">' .
                     '<a href="/summergame/player/' . $player['pid'] . '">Back to Player Score Card page</a>' .
                     '</p>' .
-                    '<h1>Edit Summer Game Player Information</h1>',
+                    '<h1>Edit $gameDisplayName Player Information</h1>',
       ];
     }
 
@@ -219,11 +220,11 @@ class SummerGamePlayerForm extends FormBase {
       '#title' => 'Privacy Options',
       '#options' => [
         'show_leaderboard' => 'Show my nickname and total score on the public leaderboard',
-        'show_myscore' => 'Allow others to see my summer game scores and awards page',
+        'show_myscore' => 'Allow others to see my $gameDisplayName scores and awards page',
         'show_titles' => 'Display the titles of Books/Movies/Music on my Score Card for others to see',
       ],
       '#default_value' => $privacy_defaults,
-      '#description' => 'Select what other people can see about your Summer Game progress',
+      '#description' => 'Select what other people can see about your $gameDisplayName progress',
     ];
     $form['agegroup'] = [
       '#type' => 'select',
@@ -320,7 +321,9 @@ class SummerGamePlayerForm extends FormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    // Check for merge ID
+    $summergame_settings = \Drupal::config('summergame.settings');
+    $gameDisplayName = $summergame_settings->get('game_display_name');
+  // Check for merge ID
     if ($form_state->getValue('pid') && $form_state->getValue('merge_id')) {
       $form_state->setRedirect('summergame.admin.players.merge',
                               ['pid1' => $form_state->getValue('merge_id'), 'pid2' => $form_state->getValue('pid')]);
