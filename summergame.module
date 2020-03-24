@@ -318,9 +318,9 @@ function summergame_twilio_respond($incoming) {
     $responses[] = $response;
     // Signup bonus
     $points = summergame_player_points($player['pid'], 100, 'Signup',
-                                       'Signed Up for the $gameDisplayName', 'via:txt');
+                                       'Signed Up for the Summer Game', 'via:txt');
     $response = $response_template;
-    $response['text'] = "Earned $points $gameDisplayName points for signing up!";
+    $response['text'] = "Earned $points Summer Game points for signing up!";
     $responses[] = $response;
   }
 
