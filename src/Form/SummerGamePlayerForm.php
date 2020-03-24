@@ -377,8 +377,8 @@ class SummerGamePlayerForm extends FormBase {
       if (\Drupal::config('summergame.settings')->get('summergame_points_enabled')) {
         if ($signup_bonus) {
           $points = summergame_player_points($player['pid'], 100, 'Signup',
-                                             'Signed Up for the $gameDisplayName');
-          drupal_set_message("Earned $points $gameDisplayName points for signing up!");
+                                             'Signed Up for the Summer Game');
+          drupal_set_message("Earned $points Summer Game points for signing up!");
         }
     /*
         // Check for referral bonus
