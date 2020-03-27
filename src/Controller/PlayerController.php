@@ -472,6 +472,7 @@ class PlayerController extends ControllerBase {
   }
 
   public function ledger($pid) {
+    $summergame_settings = \Drupal::config('summergame.settings');
     $pid = intval($pid);
 
     if ($pid) {
