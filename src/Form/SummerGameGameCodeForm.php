@@ -242,6 +242,7 @@ class SummerGameGameCodeForm extends FormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $db = \Drupal::database();
+    $messenger = \Drupal::messenger();
 
     // Set up fields
     $fields = [
@@ -270,14 +271,14 @@ class SummerGameGameCodeForm extends FormBase {
     if ($code_id = $form_state->getValue('code_id')) {
       // Update existing code
       $db->update('sg_game_codes')->fields($fields)->condition('code_id', $code_id)->execute();
-      drupal_set_message('Game Code ' . $values['text'] . ' Updated');
+      $messenger->addMessage('Game Code ' . $values['text'] . ' Updated');
     }
     else {
       $fields['creator_uid'] = \Drupal::currentUser()->id();
       $fields['created'] = time();
 
       $db->insert('sg_game_codes')->fields($fields)->execute();
-      drupal_set_message('Game Code ' . $fields['text'] . ' Created');
+      $messenger->addMessage('Game Code ' . $fields['text'] . ' Created');
     }
 
     // Add tag to catalog if selected
@@ -285,9 +286,16 @@ class SummerGameGameCodeForm extends FormBase {
       $tag_bib = trim($tag_bib);
       $result = summergame_tag_bib($tag_bib, $fields['text'], $fields['game_term']);
       if (isset($result['error'])) {
-        drupal_set_message('Game Code Tag ERROR ' . $result['error']);
+        $messenger->addError('Game Code Tag ERROR ' . $result['error']);
       } else {
-        drupal_set_message('Added Game Code Tag to Catalog for ' . $result['success']->title);
+        $guzzle = \Drupal::httpClient();
+        $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+        try {
+          $guzzle->get("$api_url/record/$tag_bib/harvest");
+        } catch (\Exception $e) {
+          $messenger->addError('Error reharvesting record for new code. Try again by clicking here.');
+        }
+        $messenger->addMessage('Added Game Code Tag to Catalog for ' . $result['success']->title);
       }
     }
 
