@@ -535,7 +535,8 @@ FBL;
         ->condition('type', 'sg_badge')
         ->condition('status', 1)
         ->condition('field_badge_game_term', $badgelist_game_term)
-        ->condition('field_sg_badge_series', $term->id());
+        ->condition('field_sg_badge_series', $term->id())
+        ->sort('created' , 'ASC'); 
       $nodes = $query->execute();
       if (count($nodes)) {
         foreach ($nodes as $nid) {
