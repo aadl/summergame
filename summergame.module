@@ -198,6 +198,22 @@ function summergame_theme() {
 }
 
 /**
+ * HOOK: Add game tag to node on load
+ */
+function summergame_entity_storage_load(array $entities, $entity_type) {
+  if ($entity_type == 'node') {
+    $db = \Drupal::database();
+    foreach ($entities as $entity) {
+      // Search for node id in game code table
+      $game_code = $db->query("SELECT text FROM sg_game_codes WHERE link = :link", [':link' => 'nid:'. $entity->id()])->fetchField();
+      if ($game_code) {
+        $entity->sg_game_code = $game_code;
+      }
+    }
+  }
+}
+
+/**
  * UTILITY: Get array of all Game Terms
  */
 function summergame_get_game_terms() {

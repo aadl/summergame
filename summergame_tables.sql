@@ -196,3 +196,10 @@ ALTER TABLE `sg_badges` ADD `type` VARCHAR( 64 ) NOT NULL AFTER `level`;
 UPDATE `sg_badges` SET `level` = 1 WHERE `difficulty` = 'Beginner';
 UPDATE `sg_badges` SET `level` = 2 WHERE `difficulty` = 'Advanced';
 UPDATE `sg_badges` SET `level` = 3 WHERE `difficulty` = 'Expert';
+
+-- ---------------------------------------------------------
+--
+-- Game Code Table Alter for 2020
+--
+
+ALTER TABLE `sg_game_codes` ADD `link` VARCHAR(255) NOT NULL, ADD INDEX (`link`);
