@@ -49,7 +49,7 @@ class AdminController extends ControllerBase {
       else if (isset($game_code['link']) && strpos($game_code['link'], 'bnum:') === 0) {
         $game_code['link'] = '/catalog/record/' . substr($game_code['link'], 5);
       }
-dpm($game_code);
+
       $valid_start = $game_code['valid_start'] ? date('n/d/Y H:i:s', $game_code['valid_start']) : 'Now';
       $valid_end = date('n/d/Y H:i:s', $game_code['valid_end']);
       $gc_rows[] = [
