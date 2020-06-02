@@ -313,7 +313,7 @@ class SummerGameGameCodeForm extends FormBase {
         \Drupal::entityTypeManager()->getStorage('node')->resetCache([$nid]);
       }
       // check if link is a catalog reference
-      else if (preg_match('/bnum:([a-zA-Z0-9_-]+)/', $fields['link'], $matches) {
+      else if (preg_match('/bnum:([a-zA-Z0-9_-]+)/', $fields['link'], $matches)) {
         $bib_id = $matches[1];
 
         $result = summergame_tag_bib($bib_id, $fields['text'], $fields['game_term']);
