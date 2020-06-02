@@ -42,6 +42,14 @@ class AdminController extends ControllerBase {
         $game_code['text'] = preg_replace('/\B\w/', '*', $game_code['text']);
       }
 
+      // reformat link
+      if (isset($game_code['link']) && strpos($game_code['link'], 'nid:') === 0) {
+        $game_code['link'] = '/node/' . substr($game_code['link'], 4);
+      }
+      else if (isset($game_code['link']) && strpos($game_code['link'], 'bnum:') === 0) {
+        $game_code['link'] = '/catalog/record/' . substr($game_code['link'], 5);
+      }
+dpm($game_code);
       $valid_start = $game_code['valid_start'] ? date('n/d/Y H:i:s', $game_code['valid_start']) : 'Now';
       $valid_end = date('n/d/Y H:i:s', $game_code['valid_end']);
       $gc_rows[] = [
@@ -56,7 +64,8 @@ class AdminController extends ControllerBase {
         'CreatedBy' => ($admin_users ? '<a href="/user/' . $creator_uid . '">' . $creator_name . '</a>' : $creator_name),
         'ValidDates' => $valid_start . '-<br>' . $valid_end,
         'GameTerm' => $game_code['game_term'],
-        'Redemptions' => $game_code['num_redemptions'] . ' of ' . $game_code['max_redemptions']
+        'Redemptions' => $game_code['num_redemptions'] . ' of ' . $game_code['max_redemptions'],
+        'Link' => $game_code['link'],
       ];
     }
 

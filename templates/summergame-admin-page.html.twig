@@ -39,6 +39,9 @@
       <tr>
         <td>
           <a href="/summergame/admin/gamecode/{{ gc_row.id }}">{{ gc_row.Text }} <i class="fa fa-pencil-square-o"></i></a><br><br>
+          {% if gc_row.Link %}
+            Linked Page: <a href="{{gc_row.Link}}">{{gc_row.Link}}</a><br><br>
+          {% endif %}
           <a href="/summergame/pdf/gamecode/{{ gc_row.id }}">Print Sign</a>
         </td>
         <td class="column-max-width-100">{{ gc_row.Description|length > 50 ? gc_row.Description|slice(0, 50) ~ '...' : gc_row.Description  }}</td>
