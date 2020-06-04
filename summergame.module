@@ -205,9 +205,11 @@ function summergame_entity_storage_load(array $entities, $entity_type) {
     $db = \Drupal::database();
     foreach ($entities as $entity) {
       // Search for node id in game code table
-      $game_code = $db->query("SELECT text FROM sg_game_codes WHERE link = :link", [':link' => 'nid:'. $entity->id()])->fetchField();
-      if ($game_code) {
-        $entity->sg_game_code = $game_code;
+      $res = $db->query("SELECT * FROM sg_game_codes WHERE link = :link", [':link' => 'nid:'. $entity->id()]);
+      while ($sg_game_code = $res->fetchObject()) {
+        $game_term = $sg_game_code->game_term;
+        $game_code = $sg_game_code->text;
+        $entity->gamecodes[$game_term][] = $game_code;
       }
     }
   }
