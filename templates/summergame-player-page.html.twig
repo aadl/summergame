@@ -4,21 +4,6 @@
  */
 #}
 
-  {# <ul id="player-tabs">
-    <li id="main-player">Player: {{ playername }}</li>
-  </ul> #}
-{#}
-<?php if ($player_access && $other_players) { ?>
-    <li><strong>Your Other Players: </strong></li>
-    <?php echo implode('', $others_links); ?>
-<?php } if ($player['uid'] == $user->uid) { ?>
-    <li><?php echo l('Sign up an extra player', 'summergame/player/extra'); ?>
-      <span class="hint--bottom" data-hint="Sign up an extra player in your household that doesn't need a separate website account.">[?]</span>
-    </li>
-<?php } ?>
-  </ul>
-#}
-
 <h1 class="t-center ruled-heading large-heading"><span>My {{ game_display_name }}</span></h1>
 <div class="sidebar-container">
   <div class="page-with-sidebar-content">

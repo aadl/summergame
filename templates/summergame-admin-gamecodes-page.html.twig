@@ -22,6 +22,9 @@
       <tr>
         <td>
           <a href="/summergame/admin/gamecode/{{ row.id }}">{{ row.Text }} <i class="fa fa-pencil-square-o"></i></a><br><br>
+          {% if row.Link %}
+            Linked Page: <a href="{{row.Link}}">{{row.Link}}</a><br><br>
+          {% endif %}
           <a href="/summergame/pdf/gamecode/{{ row.id }}">Print Sign</a>
         </td>
         <td class="column-max-width-100">{{ row.Description|length > 50 ? row.Description|slice(0, 50) ~ '...' : row.Description  }}</td>

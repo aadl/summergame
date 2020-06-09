@@ -176,12 +176,22 @@ class SummerGameGameCodeForm extends FormBase {
         '#required' => TRUE,
       ];
     }
-    $form['tag_bib'] = [
+
+    $link_description = 'Link this code to another page. Plain ID will be interpreted as catalog record ID. ' .
+      'Accepted formats:<ul>' .
+      '<li>nid:12345</li>' .
+      '<li>https://.../node/12345</li>' .
+      '<li>bnum:12345</li>' .
+      '<li>https://.../catalog/record/12345<li>' .
+      '<li>12345<li>' .
+      '</ul>';
+    $form['link'] = [
       '#type' => 'textfield',
-      '#title' => t('Tag Bib Number'),
+      '#title' => t('Link Code'),
+      '#default_value' => $game_code['link'],
       '#size' => 32,
-      '#description' => t('Enter a Bib Number/ID to automatically add this game code as a tag to that Bib record in the catalog'),
-      '#suffix' => $gc_bibs,
+      '#maxlength' => 255,
+      '#description' => t($link_description),
     ];
 
     $form['inline'] = [
@@ -258,7 +268,20 @@ class SummerGameGameCodeForm extends FormBase {
       'valid_end' => strtotime($form_state->getValue('valid_end')),
       'game_term' => trim($form_state->getValue('game_term')),
       'everlasting' => $form_state->getValue('everlasting'),
+      'link' => trim($form_state->getValue('link')),
     ];
+
+    // reformat link text if node url or catalog url to id format
+    if (preg_match('/aadl.org\/node\/([0-9]+)/', $fields['link'], $matches)) {
+      $fields['link'] = 'nid:' . $matches[1];
+    }
+    else if (preg_match('/aadl.org\/catalog\/record\/([a-zA-Z0-9_-]+)/', $fields['link'], $matches)) {
+      $fields['link'] = 'bnum:' . $matches[1];
+    }
+    // reformat link text if plain ID to assume bib number
+    else if (preg_match('/^([a-zA-Z0-9_-]+)$/', $fields['link'])) {
+      $fields['link'] = 'bnum:' . $fields['link'];
+    }
 
     // Set end time if blank to default end date, otherwise one month out
     if (empty($fields['valid_end'])) {
@@ -281,21 +304,31 @@ class SummerGameGameCodeForm extends FormBase {
       $messenger->addMessage('Game Code ' . $fields['text'] . ' Created');
     }
 
-    // Add tag to catalog if selected
-    if ($tag_bib = $form_state->getValue('tag_bib')) {
-      $tag_bib = trim($tag_bib);
-      $result = summergame_tag_bib($tag_bib, $fields['text'], $fields['game_term']);
-      if (isset($result['error'])) {
-        $messenger->addError('Game Code Tag ERROR ' . $result['error']);
-      } else {
-        $guzzle = \Drupal::httpClient();
-        $api_url = \Drupal::config('arborcat.settings')->get('api_url');
-        try {
-          $guzzle->get("$api_url/record/$tag_bib/harvest");
-        } catch (\Exception $e) {
-          $messenger->addError('Error reharvesting record for new code. Try again by clicking here.');
+    // Link code if entered
+    if ($fields['link']) {
+      // Check if link is a node reference
+      if (preg_match('/nid:([0-9]+)/', $fields['link'], $matches)) {
+        // Reset node cache
+        $nid = $matches[1];
+        \Drupal::entityTypeManager()->getStorage('node')->resetCache([$nid]);
+      }
+      // check if link is a catalog reference
+      else if (preg_match('/bnum:([a-zA-Z0-9_-]+)/', $fields['link'], $matches)) {
+        $bib_id = $matches[1];
+
+        $result = summergame_tag_bib($bib_id, $fields['text'], $fields['game_term']);
+        if (isset($result['error'])) {
+          $messenger->addError('Game Code Tag ERROR ' . $result['error']);
+        } else {
+          $guzzle = \Drupal::httpClient();
+          $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+          try {
+            $guzzle->get("$api_url/record/$tag_bib/harvest");
+          } catch (\Exception $e) {
+            $messenger->addError('Error reharvesting record for new code. Try again by clicking here.');
+          }
+          $messenger->addMessage('Added Game Code Tag to Catalog for ' . $result['success']->title);
         }
-        $messenger->addMessage('Added Game Code Tag to Catalog for ' . $result['success']->title);
       }
     }
 
