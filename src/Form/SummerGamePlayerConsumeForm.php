@@ -33,11 +33,19 @@ class SummerGamePlayerConsumeForm extends FormBase {
     foreach ($player_log as $log_row) {
       $log_rows[] = [$log_row->description, date('F j', $log_row->timestamp)];
     }
+    if (count($log_rows) >= 10) {
+      // Completed, display the completion code
+      $completion_code = \Drupal::config('summergame.settings')->get('summergame_completion_gamecode');
+      $log_text = "You've completed the Classic Reading Game! Enter code $completion_code to receive the Badge";
+    }
+    else {
+      $log_text = 'Read/Listen to 10 items and mark them finished to complete the Classic Reading Game!';
+    }
 
     $form = [
       '#attributes' => ['class' => 'form-width-exception'],
       'log_listing' => [
-        '#prefix' => '<h2>Summer Game Log</h2>',
+        '#prefix' => "<h2>Summer Game Log</h2><p>$log_text</p>",
         '#type' => 'table',
         '#header' => ['Title', 'Date'],
         '#rows' => $log_rows,
