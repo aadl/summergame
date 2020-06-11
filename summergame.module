@@ -152,6 +152,7 @@ function summergame_theme() {
         'other_players' => NULL,
         'points' => NULL,
         'balances' => NULL,
+        'progress' => NULL,
         'summergame_current_game_term' => NULL,
         'summergame_shop_message_threshold' => NULL,
         'summergame_shop_message' => NULL,
@@ -916,29 +917,36 @@ function summergame_get_ledger_count($pid, $filter = '') {
  */
 function summergame_player_points($pid, $points, $type, $description = '', $metadata = '', $game_term = '') {
   $db = \Drupal::database();
+  $summergame_settings = \Drupal::config('summergame.settings');
+
+  // Set game_term
+  if (empty($game_term)) {
+    $game_term = $summergame_settings->get('summergame_current_game_term');
+  }
+
+  // Check for game limit for this type of scoring
+  $game_limits = json_decode($summergame_settings->get('summergame_game_limits'), TRUE);
+  if (isset($game_limits[$type])) {
+    $limit = $game_limits[$type];
+    $sql = "SELECT SUM(points) AS total FROM sg_ledger " .
+       "WHERE pid = :pid " .
+       "AND type = :type " .
+       "AND game_term = :game_term";
+    $row = $db->query($sql, [':pid' => $pid, ':type' => $type, ':game_term' => $game_term])->fetchObject();
+
+    $total = $row->total + $points;
+    if ($total > $limit) {
+      // If over the limit, cap the point total at the daily limit
+      $overage = $total - $limit;
+      drupal_set_message("Sorry, your score of $points brings you over the $game_term limit of $limit by $overage.", 'warning');
+      $points -= $overage;
+    }
+    else {
+      drupal_set_message("You have earned $total points of your $game_term limit of $limit for $type scoring");
+    }
+  }
 
   if (is_array($metadata)) {
-    if ($limit = $metadata['daily_limit']) {
-      $day_start = mktime(0, 0, 0);
-
-      $sql = "SELECT SUM(points) AS total FROM sg_ledger " .
-             "WHERE pid = :pid " .
-             "AND timestamp > %d " .
-             "AND metadata LIKE '%:limit%'";
-      $row = $db->query($sql, [':pid' => $pid, ':timestamp' => $day_start, ':limit' => 'daily_limit:' . $limit])->fetchObject();
-
-      $total = $row->total + $points;
-      if ($total > $limit) {
-        // If over the limit, cap the point total at the daily limit
-        $overage = $total - $limit;
-        drupal_set_message("Sorry, your score of $points brings you over the daily limit of $limit by $overage. You may report those additional points tomorrow.", 'warning');
-        $points -= $overage;
-      }
-      else {
-        drupal_set_message("You have earned $total points of your daily limit of $limit for this type of scoring");
-      }
-    }
-
     // Convert metadata to string
     $md_string = '';
     if (count($metadata)) {
@@ -952,11 +960,6 @@ function summergame_player_points($pid, $points, $type, $description = '', $meta
       }
     }
     $metadata = trim($md_string);
-  }
-
-  // Set game_term
-  if (empty($game_term)) {
-    $game_term = \Drupal::config('summergame.settings')->get('summergame_current_game_term');
   }
 
   $db->insert('sg_ledger')->fields([
