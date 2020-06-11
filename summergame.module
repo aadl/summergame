@@ -771,6 +771,30 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
 }
 
 /**
+ * UTILITY: Get a player's reading log
+ */
+function summergame_get_player_log($pid, $game_term = '') {
+  $db = \Drupal::database();
+  $log = [];
+
+  // Set game_term
+  if (empty($game_term)) {
+    $game_term = \Drupal::config('summergame.settings')->get('summergame_current_game_term');
+  }
+
+  $res = $db->query("SELECT * FROM sg_ledger " .
+                    "WHERE pid = :pid " .
+                    "AND metadata LIKE '%logged:1%' " .
+                    "AND game_term = :game_term", [':pid' => $pid, ':game_term' => $game_term]);
+
+  while ($row = $res->fetchObject()) {
+    $log[] = $row;
+  }
+
+  return $log;
+}
+
+/**
  * UTILITY: Save a player record
  */
 function summergame_player_save($player) {

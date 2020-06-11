@@ -71,7 +71,7 @@ class SummerGamePlayerRedeemForm extends FormBase {
     ];
     $form['cancel'] = [
       '#type' => 'link',
-      '#title' => 'Cancel',
+      '#title' => 'Return to Player Page',
       '#url' => \Drupal\Core\Url::fromRoute('summergame.player'),
       '#suffix' => '</div>'
     ];

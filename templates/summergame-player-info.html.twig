@@ -44,9 +44,19 @@
         {% endif %}
       {% endif %}
       {% if progress|length %}
-        <h2>Game Point Limit Progress</h2>
+        <h2>Game Point Limits</h2>
         <table class="account-summary not-fixed-table">
           <tr><td><strong>Point Type</strong></td><td><strong>Progress</strong></td></tr>
+          <tr>
+            <td>Classic Reading Game</td>
+            <td>
+              {% if completed_classic %}
+                Completed on {{ completed_classic }}
+              {% else %}
+                <a href="/summergame/player/{{ player.pid }}/consume">Log 10 items to complete!</a>
+              {% endif %}
+            </td>
+          </tr>
           {% for row in progress %}
             <tr><td>{{ row.type }}</td><td>{{ row.total }} / {{ row.limit }}</td></tr>
           {% endfor %}
