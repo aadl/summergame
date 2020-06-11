@@ -10,6 +10,9 @@
 </h1>
 <div class="sidebar-container">
   <div class="page-with-sidebar-content">
+    {% if type == 'gamecode' %}
+      <p>You can find game codes to help complete badges or as standalone points awards.</p>
+    {% endif %}
     {{ redeem_form }}
   </div>
   {% include directory ~ "/templates/base/nodes/sidebars/summergame.html.twig" %}
