@@ -104,6 +104,12 @@ class SummerGameAdminForm extends ConfigFormBase {
       '#maxlength' => 32,
       '#description' => t("Game Code awarded for completion of the Classic Reading Game (e.g. PUPPYLOVE13)"),
     ];
+    $form['summergame_game_limits'] = [
+      '#type' => 'textarea',
+      '#title' => 'Game Limits by Type',
+      '#default_value' => $summergame_settings->get('summergame_game_limits'),
+      '#description' => 'Set Game Limits for Types of scoring points. JSON array keyed by type and value with game long point limit',
+    ];
     $form['summergame_user_search_path'] = [
       '#type' => 'textfield',
       '#title' => t("User Search Path"),
