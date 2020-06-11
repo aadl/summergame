@@ -28,28 +28,8 @@ class SummerGamePlayerConsumeForm extends FormBase {
     $api_url = \Drupal::config('arborcat.settings')->get('api_url');
     $finished_default = 0;
 
-    $log_rows = [];
-    $player_log = summergame_get_player_log($pid);
-    foreach ($player_log as $log_row) {
-      $log_rows[] = [$log_row->description, date('F j', $log_row->timestamp)];
-    }
-    if (count($log_rows) >= 10) {
-      // Completed, display the completion code
-      $completion_code = \Drupal::config('summergame.settings')->get('summergame_completion_gamecode');
-      $log_text = "You've completed the Classic Reading Game! Enter code $completion_code to receive the Badge";
-    }
-    else {
-      $log_text = 'Read/Listen to 10 items and mark them finished to complete the Classic Reading Game!';
-    }
-
     $form = [
       '#attributes' => ['class' => 'form-width-exception'],
-      'log_listing' => [
-        '#prefix' => "<h2>Summer Game Log</h2><p>$log_text</p>",
-        '#type' => 'table',
-        '#header' => ['Title', 'Date'],
-        '#rows' => $log_rows,
-      ],
     ];
 
     if ($_GET['bnum']) {
@@ -75,9 +55,9 @@ class SummerGamePlayerConsumeForm extends FormBase {
       '#value' => $pid,
     ];
     $form['message'] = [
-      '#markup' => '<p>Logging points for <strong>' .
-                   ($player['nickname'] ? $player['nickname'] : $player['name']) . '</strong></p>' .
-                   '<p>Earn 50 points for each day that you log something!</p>'
+      '#markup' => '<p>Logging points for player: <strong>' .
+                   ($player['nickname'] ? $player['nickname'] : $player['name']) . '</strong>. ' .
+                   'Earn 50 points for each day that you log something!</p>'
     ];
     $form['consume_type'] = [
       '#type' => 'select',
@@ -113,6 +93,28 @@ class SummerGamePlayerConsumeForm extends FormBase {
       '#title' => 'Cancel',
       '#url' => \Drupal\Core\Url::fromRoute('summergame.player'),
       '#suffix' => '</div>'
+    ];
+
+    // Display Classic Reading Game Log
+    $log_rows = [];
+    $player_log = summergame_get_player_log($pid);
+    foreach ($player_log as $log_row) {
+      $log_rows[] = [++$row_number, $log_row->description, date('F j', $log_row->timestamp)];
+    }
+    if (count($log_rows) >= 10) {
+      // Completed, display the completion code
+      $completion_code = \Drupal::config('summergame.settings')->get('summergame_completion_gamecode');
+      $log_text = "You've completed the Classic Reading Game! Enter code $completion_code to receive the Badge";
+    }
+    else {
+      $log_text = 'Read/Listen to 10 items and mark them finished to complete the Classic Reading Game!';
+    }
+
+    $form['log_listing'] = [
+      '#prefix' => "<h2>Summer Game Log</h2><p>$log_text</p>",
+      '#type' => 'table',
+      '#header' => ['', 'Title', 'Finished Date'],
+      '#rows' => $log_rows,
     ];
 
     return $form;
