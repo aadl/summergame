@@ -53,8 +53,10 @@ class PlayerController extends ControllerBase {
     }
 
     if ($player) {
+      $db = \Drupal::database();
       $summergame_settings = \Drupal::config('summergame.settings');
       $player_access = summergame_player_access($player['pid']);
+      $current_game_term = $summergame_settings->get('summergame_current_game_term');
 
       // Check if player's score card is private and we don't have access
       if (!$player['show_myscore'] && !$player_access) {
@@ -132,7 +134,6 @@ class PlayerController extends ControllerBase {
 */
       // Determine Classic Reading Game status
       $completion_gamecode = $summergame_settings->get('summergame_completion_gamecode');
-      $db = \Drupal::database();
       $row = $db->query("SELECT * FROM sg_ledger WHERE pid = " . $player['pid'] .
                         " AND metadata LIKE '%gamecode:$completion_gamecode%'")->fetchObject();
       if ($row->lid) {
@@ -165,6 +166,19 @@ class PlayerController extends ControllerBase {
         $balances = uc_summergame_get_player_balances($player['pid']);
       }
 
+      // Get player progress against limits
+      $progress = [];
+      $game_limits = json_decode($summergame_settings->get('summergame_game_limits'), TRUE);
+
+      foreach ($game_limits as $ledger_type => $game_limit) {
+        $sql = "SELECT SUM(points) AS total FROM sg_ledger " .
+               "WHERE pid = :pid " .
+               "AND type = :type " .
+               "AND game_term = :game_term";
+        $type_total = $db->query($sql, [':pid' => $pid, ':type' => $ledger_type, ':game_term' => $current_game_term])->fetchField();
+        $progress[] = ['type' => $ledger_type, 'total' => ($type_total ?? 0), 'limit' => $game_limit];
+      }
+
       // Prepare Scorecards
       $render[] = [
         '#cache' => [
@@ -178,7 +192,8 @@ class PlayerController extends ControllerBase {
         '#other_players' => $other_players,
         '#points' => summergame_get_player_points($player['pid']),
         '#balances' => $balances,
-        '#summergame_current_game_term' => $summergame_settings->get('summergame_current_game_term'),
+        '#progress' => $progress,
+        '#summergame_current_game_term' => $current_game_term,
         '#summergame_shop_message_threshold' => $summergame_settings->get('summergame_shop_message_threshold'),
         '#summergame_shop_message' => $summergame_settings->get('summergame_shop_message'),
         '#completed_classic' => $completed_classic,

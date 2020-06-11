@@ -43,6 +43,18 @@
           <p>{{ summergame_shop_message|raw }}</p>
         {% endif %}
       {% endif %}
+      {% if progress|length %}
+        <h2>Game Point Limit Progress</h2>
+        <table class="account-summary not-fixed-table">
+          <tr><td><strong>Point Type</strong></td><td><strong>Progress</strong></td></tr>
+          {% for row in progress %}
+            <tr><td>{{ row.type }}</td><td>{{ row.total }} / {{ row.limit }}</td></tr>
+          {% endfor %}
+        </table>
+        {% if (summergame_shop_message_threshold > 0) and (attribute(points, summergame_current_game_term).total > summergame_shop_message_threshold) %}
+          <p>{{ summergame_shop_message|raw }}</p>
+        {% endif %}
+      {% endif %}
     </div>
     <div id="player-info-table">
       <h2>Player Details (<a href="/summergame/player/{{ player.pid }}/edit">Edit Player Info</a>)</h2>
