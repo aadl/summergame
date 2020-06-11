@@ -26,6 +26,8 @@ class SummerGamePlayerConsumeForm extends FormBase {
     $player = summergame_player_load($pid);
     $guzzle = \Drupal::httpClient();
     $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+    $db = \Drupal::database();
+
     $finished_default = 0;
 
     $form = [
@@ -90,7 +92,7 @@ class SummerGamePlayerConsumeForm extends FormBase {
     ];
     $form['cancel'] = [
       '#type' => 'link',
-      '#title' => 'Cancel',
+      '#title' => 'Return to Player Page',
       '#url' => \Drupal\Core\Url::fromRoute('summergame.player'),
       '#suffix' => '</div>'
     ];
@@ -101,10 +103,19 @@ class SummerGamePlayerConsumeForm extends FormBase {
     foreach ($player_log as $log_row) {
       $log_rows[] = [++$row_number, $log_row->description, date('F j', $log_row->timestamp)];
     }
-    if (count($log_rows) >= 10) {
+
+    // Determine Classic Reading Game status
+    $completion_gamecode = \Drupal::config('summergame.settings')->get('summergame_completion_gamecode');
+    $row = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND metadata LIKE :metadata",
+                      [':pid' => $pid, ':metadata' => "%gamecode:$completion_gamecode%"])->fetchObject();
+    if ($row->lid) {
+      $log_text = 'You completed the Classic Reading Game on ' . date('F j, Y', $row->timestamp);
+    }
+    else if (count($log_rows) >= 10) {
       // Completed, display the completion code
-      $completion_code = \Drupal::config('summergame.settings')->get('summergame_completion_gamecode');
-      $log_text = "You've completed the Classic Reading Game! Enter code $completion_code to receive the Badge";
+      $log_text = "You've completed the Classic Reading Game! " .
+                  '<a href="/summergame/player/' . $pid . '/gamecode?text=' . $completion_gamecode . '">' .
+                  "Enter code $completion_gamecode to receive the Badge</a>";
     }
     else {
       $log_text = 'Read/Listen to 10 items and mark them finished to complete the Classic Reading Game!';
@@ -158,8 +169,6 @@ class SummerGamePlayerConsumeForm extends FormBase {
 
     $points = summergame_player_points($pid, $points, $type, $title, $metadata);
     drupal_set_message("Earned $points points for $title");
-
-    $form_state->setRedirect('summergame.player', ['pid' => $pid]);
 
     return;
   }

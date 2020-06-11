@@ -137,7 +137,7 @@ class PlayerController extends ControllerBase {
       $row = $db->query("SELECT * FROM sg_ledger WHERE pid = " . $player['pid'] .
                         " AND metadata LIKE '%gamecode:$completion_gamecode%'")->fetchObject();
       if ($row->lid) {
-        $completed_classic = 'Yes, completed on ' . date('F j, Y', $row->timestamp);
+        $completed_classic = date('F j, Y', $row->timestamp);
       }
       else {
         $completed_classic = FALSE;
