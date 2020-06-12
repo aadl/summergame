@@ -43,7 +43,7 @@
           <p>{{ summergame_shop_message|raw }}</p>
         {% endif %}
       {% endif %}
-      {% if progress|length %}
+      {% if summergame_points_enabled and progress|length %}
         <h2>Game Point Limits</h2>
         <table class="account-summary not-fixed-table">
           <tr><td><strong>Point Type</strong></td><td><strong>Progress</strong></td></tr>
