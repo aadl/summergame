@@ -323,7 +323,7 @@ class SummerGameGameCodeForm extends FormBase {
           $guzzle = \Drupal::httpClient();
           $api_url = \Drupal::config('arborcat.settings')->get('api_url');
           try {
-            $guzzle->get("$api_url/record/$tag_bib/harvest");
+            $guzzle->get("$api_url/record/$bib_id/harvest");
           } catch (\Exception $e) {
             $messenger->addError('Error reharvesting record for new code. Try again by clicking here.');
           }
