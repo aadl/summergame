@@ -83,7 +83,7 @@ class SummerGamePlayerConsumeForm extends FormBase {
        '#type' => 'checkbox',
        '#title' => 'and I finished it!',
        '#default_value' => $finished_default,
-       '#description' => 'Add this title to your offical Summer Game log',
+       '#description' => 'If you read/listened, add this title to your offical Summer Game log',
     ];
     $form['submit'] = [
       '#type' => 'submit',
