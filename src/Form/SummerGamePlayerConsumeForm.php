@@ -101,7 +101,9 @@ class SummerGamePlayerConsumeForm extends FormBase {
     $log_rows = [];
     $player_log = summergame_get_player_log($pid);
     foreach ($player_log as $log_row) {
-      $log_rows[] = [++$row_number, $log_row->description, date('F j', $log_row->timestamp)];
+      $delete = ['data' => ['#markup' => '[ <a href="/summergame/player/' . $pid . '/ledger/' .
+                $log_row->lid . '/deletescore">X</a> ]']];
+      $log_rows[] = [++$row_number, $log_row->description, date('F j', $log_row->timestamp), $delete];
     }
 
     // Determine Classic Reading Game status
@@ -124,7 +126,7 @@ class SummerGamePlayerConsumeForm extends FormBase {
     $form['log_listing'] = [
       '#prefix' => "<h2>Summer Game Log</h2><p>$log_text</p>",
       '#type' => 'table',
-      '#header' => ['', 'Title', 'Finished Date'],
+      '#header' => ['', 'Title', 'Finished Date', ''],
       '#rows' => $log_rows,
     ];
 
