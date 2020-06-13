@@ -1195,6 +1195,39 @@ function summergame_check_all_player_badges($game_term = '') {
   }
 }
 
+function summergame_check_completion_bonuses() {
+  $db = \Drupal::database();
+  $summergame_settings = \Drupal::config('summergame.settings');
+  $current_game_term = $summergame_settings->get('summergame_current_game_term');
+  $completion_gamecode = $summergame_settings->get('summergame_completion_gamecode');
+
+  // Find all players who have redeemed Completion code
+  $pids = [];
+  $res = $db->query("SELECT * FROM sg_ledger WHERE game_term = :game_term AND metadata = :data",
+                    [':game_term' => $current_game_term, ':data' => 'gamecode:' . $completion_gamecode]);
+  while ($row = $res->fetchObject()) {
+    $pids[] = $row->pid;
+  }
+
+  // Check if each has received the completion bonus
+  foreach ($pids as $pid) {
+    $row = $db->query("SELECT * FROM sg_ledger WHERE game_term = :game_term AND type = 'Completion Bonus'",
+                      [':game_term' => $current_game_term])->fetchObject();
+    if (!isset($row->lid)) {
+      // Award Bonus
+      $player = summergame_player_load($pid);
+      if ($player['agegroup'] == 'youth' || $player['agegroup'] == 'teen') {
+        // Award Book Token
+        summergame_player_points($pid, 1, 'Completion Bonus', 'Book Token Bonus for completing the Classic Reading Game', 'delete:no', 'BookPrizeToken');
+      }
+      else {
+        // Default to point bonus
+        summergame_player_points($pid, 1000, 'Completion Bonus', 'Point Bonus for completing the Classic Reading Game', 'delete:no');
+      }
+    }
+  }
+}
+
 /**
  * UTILITY: Merge Two Player Records
  * Additional info from player 2 is added to player 1
