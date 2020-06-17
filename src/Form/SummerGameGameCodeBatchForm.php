@@ -122,6 +122,7 @@ class SummerGameGameCodeBatchForm extends FormBase {
         'valid_end' => isset($csv_row['valid_end']) ? strtotime($csv_row['valid_end']) : '',
         'game_term' => isset($csv_row['game_term']) ? trim($csv_row['game_term']) : $summergame_settings->get('summergame_current_game_term'),
         'everlasting' => isset($csv_row['everlasting']) ? $csv_row['everlasting'] : 0,
+        'link' => isset($csv_row['link']) ? $csv_row['link'] : '',
       ];
 
       // Set end time if blank to default end date, otherwise one month out
