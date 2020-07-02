@@ -115,6 +115,7 @@ class SummerGameHomeCodeForm extends FormBase {
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
     $db = \Drupal::database();
+    $summergame_settings = \Drupal::config('summergame.settings');
 
     // Remove non-alphanumerics from Game Code text
     $text = preg_replace('/[^A-Za-z0-9]/', '', $form_state->getValue('text'));
@@ -129,7 +130,8 @@ class SummerGameHomeCodeForm extends FormBase {
     // Check geocode of address
     $street = trim($form_state->getValue('street'));
     $guzzle = \Drupal::httpClient();
-$geocode_search_url = "https://nominatim.openstreetmap.org/search";
+    $geocode_search_url = $summergame_settings->get('summergame_homecode_geocode_url');
+
     $query = [
       'street' => $street,
       'postalcode' => $form_state->getValue('zip'),
