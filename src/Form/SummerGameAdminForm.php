@@ -199,6 +199,12 @@ class SummerGameAdminForm extends ConfigFormBase {
         '#default_value' => $summergame_settings->get('game_display_name'),
         '#description' => 'The name to be displayed throughout the SummerGame UI',
     ];
+    $form['summergame_homecode_notify_email'] = [
+        '#type' => 'textfield',
+        '#title' => 'Home Code Notify Email',
+        '#default_value' => $summergame_settings->get('summergame_homecode_notify_email'),
+        '#description' => 'Email address to send notifications of new home codes',
+    ];
 
     return parent::buildForm($form, $form_state);
   }

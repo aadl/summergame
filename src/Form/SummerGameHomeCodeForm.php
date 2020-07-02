@@ -183,8 +183,16 @@ $geocode_search_url = "https://nominatim.openstreetmap.org/search";
       'link' => '',
     ];
 
-    $db->insert('sg_game_codes')->fields($fields)->execute();
+    $code_id = $db->insert('sg_game_codes')->fields($fields)->execute();
     $messenger->addMessage('Game Code ' . $fields['text'] . ' Created');
+
+    // Send notification email to moderate
+    $notify_email = $summergame_settings->get('summergame_homecode_notify_email');
+    mail($notify_email,
+      'New Home Code: ' . $fields['text'],
+      \Drupal\Core\Url::fromRoute('summergame.admin.gamecode', ['code_id' => $code_id], ['absolute' => TRUE])->toString() . "\n\n" .
+      $fields['text'] . ' created by User ID #' . $fields['creator_uid'] . "\n\nAddress Info:\n" . str_replace('<br>', "\n", $clue['homecode'])
+    );
 
     return;
   }
