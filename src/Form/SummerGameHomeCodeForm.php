@@ -24,79 +24,88 @@ class SummerGameHomeCodeForm extends FormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state, $uid = 0) {
-    $uid = (int) $uid;
-    if ($uid) {
-      $db = \Drupal::database();
-      $form = [
-        '#attributes' => ['class' => 'form-width-exception'],
-      ];
+    // Check access to Account
+    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+    if ($user->get('uid')->value == $uid ||
+        $user->hasPermission('manage summergame')) {
+      $account = \Drupal\user\Entity\User::load($uid);
+      if (isset($account)) {
+        $db = \Drupal::database();
+        $form = [
+          '#attributes' => ['class' => 'form-width-exception'],
+        ];
 
-      // Check for existing home code for this user
-      $row = $db->query("SELECT * FROM sg_game_codes WHERE creator_uid = $uid AND clue LIKE '%\"homecode\"%'")->fetchObject();
-      if (isset($row->code_id)) {
-        $geocode_data = json_decode($row->clue);
-        $form['display'] = [
-          '#markup' => '<p>Your Home Code is:</p>' .
-          '<h1>' . $row->text . '</h1>' .
-          '<p><a href="/summergame/pdf/gamecode/' . $row->code_id . '">Download a sign</a> or Make Your Own!</p>' .
-          '<p>Make sure to display the code where it is visible at:<br>' . $geocode_data->homecode . '</p>'
-        ];
-        $form['cancel'] = [
-          '#type' => 'link',
-          '#title' => 'Return to Player Page',
-          '#url' => \Drupal\Core\Url::fromRoute('summergame.player'),
-          '#suffix' => '</div>'
-        ];
+        // Check for existing home code for this user
+        $row = $db->query("SELECT * FROM sg_game_codes WHERE creator_uid = $uid AND clue LIKE '%\"homecode\"%'")->fetchObject();
+        if (isset($row->code_id)) {
+          $geocode_data = json_decode($row->clue);
+          $form['display'] = [
+            '#markup' => '<p>Your Home Code is:</p>' .
+            '<h1>' . $row->text . '</h1>' .
+            '<p><a href="/summergame/pdf/gamecode/' . $row->code_id . '">Download a sign</a> or Make Your Own!</p>' .
+            '<p>Make sure to display the code where it is visible at:<br>' . $geocode_data->homecode . '</p>'
+          ];
+          $form['cancel'] = [
+            '#type' => 'link',
+            '#title' => 'Return to Player Page',
+            '#url' => \Drupal\Core\Url::fromRoute('summergame.player'),
+            '#suffix' => '</div>'
+          ];
+        }
+        else {
+          $form['uid'] = [
+            '#type' => 'value',
+            '#value' => $uid,
+          ];
+          $form['text'] = [
+            '#type' => 'textfield',
+            '#title' => t('Home Code Text for User ' . $account->get('name')->value),
+            '#default_value' => '',
+            '#size' => 20,
+            '#maxlength' => 12,
+            '#description' => t('Game Code Text for your address (letters and numbers only, maximum 12 characters)'),
+            '#required' => TRUE,
+          ];
+          $form['street'] = [
+            '#type' => 'textfield',
+            '#title' => t('Street Address'),
+            '#default_value' => '',
+            '#size' => 64,
+            '#maxlength' => 128,
+            '#description' => t('Street Address where the Game Code will be displayed (example "343 S. Fifth Ave")'),
+            '#required' => TRUE,
+          ];
+          $form['zip'] = [
+            '#type' => 'number',
+            '#title' => t('Zip Code'),
+            '#min' => 10000,
+            '#max' => 99999,
+            '#size' => 5,
+            '#description' => t('5 digit Zip Code where the Game Code will be displayed (example "48103")'),
+            '#required' => TRUE,
+          ];
+          $form['submit'] = [
+            '#type' => 'submit',
+            '#value' => t('Submit Code'),
+            '#prefix' => '<div class="sg-form-actions">'
+          ];
+          $form['cancel'] = [
+            '#type' => 'link',
+            '#title' => 'Return to Player Page',
+            '#url' => \Drupal\Core\Url::fromRoute('summergame.player'),
+            '#suffix' => '</div>'
+          ];
+        }
+
+        return $form;
       }
       else {
-        $form['uid'] = [
-          '#type' => 'value',
-          '#value' => $uid,
-        ];
-        $form['text'] = [
-          '#type' => 'textfield',
-          '#title' => t('Home Code Text'),
-          '#default_value' => '',
-          '#size' => 20,
-          '#maxlength' => 12,
-          '#description' => t('Game Code Text for your address (letters and numbers only, maximum 12 characters)'),
-          '#required' => TRUE,
-        ];
-        $form['street'] = [
-          '#type' => 'textfield',
-          '#title' => t('Street Address'),
-          '#default_value' => '',
-          '#size' => 64,
-          '#maxlength' => 128,
-          '#description' => t('Street Address where the Game Code will be displayed (example "343 S. Fifth Ave")'),
-          '#required' => TRUE,
-        ];
-        $form['zip'] = [
-          '#type' => 'number',
-          '#title' => t('Zip Code'),
-          '#min' => 10000,
-          '#max' => 99999,
-          '#size' => 5,
-          '#description' => t('5 digit Zip Code where the Game Code will be displayed (example "48103")'),
-          '#required' => TRUE,
-        ];
-        $form['submit'] = [
-          '#type' => 'submit',
-          '#value' => t('Submit Code'),
-          '#prefix' => '<div class="sg-form-actions">'
-        ];
-        $form['cancel'] = [
-          '#type' => 'link',
-          '#title' => 'Return to Player Page',
-          '#url' => \Drupal\Core\Url::fromRoute('summergame.player'),
-          '#suffix' => '</div>'
-        ];
+        drupal_set_message("Unable to load user from User ID", 'warning');
+        return new RedirectResponse('/summergame/player');
       }
-
-      return $form;
     }
     else {
-      drupal_set_message("Unable to load user from User ID", 'warning');
+      drupal_set_message("You do not have access to User ID", 'warning');
       return new RedirectResponse('/summergame/player');
     }
   }
