@@ -230,7 +230,7 @@ summergame.homecodes:
     _controller: '\Drupal\summergame\Controller\DefaultController::homecodes'
     _title: 'Summer Game Home Codes Map'
   requirements:
-    _permission: 'access content'
+    _permission: 'access summergame'
 summergame.homecodes.markerdata:
   path: '/summergame/homecodes/markerdata'
   defaults:
