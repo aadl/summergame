@@ -42,6 +42,7 @@ class SummerGameHomeCodeForm extends FormBase {
           $form['display'] = [
             '#markup' => '<p>Your Home Code is:</p>' .
             '<h1>' . $row->text . '</h1>' .
+            '<p>It has been redeemed ' . $row->num_redemptions . ' time' . ($row->num_redemptions == 1 ? '' : 's') . '!</p>' .
             '<p><a href="/summergame/pdf/gamecode/' . $row->code_id . '">Download a sign</a> or Make Your Own!</p>' .
             '<p>Make sure to display the code where it is visible at:<br>' . $geocode_data->homecode . '</p>'
           ];
