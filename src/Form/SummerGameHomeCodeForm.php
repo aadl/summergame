@@ -59,12 +59,20 @@ class SummerGameHomeCodeForm extends FormBase {
           ];
           $form['text'] = [
             '#type' => 'textfield',
-            '#title' => t('Home Code Text for User ' . $account->get('name')->value),
+            '#title' => t('Home Code Text for User') . ' ' . $account->get('name')->value,
             '#default_value' => '',
             '#size' => 20,
             '#maxlength' => 12,
             '#description' => t('Game Code Text for your address (letters and numbers only, maximum 12 characters)'),
             '#required' => TRUE,
+          ];
+          $form['message'] = [
+            '#type' => 'textfield',
+            '#title' => t('Code Message'),
+            '#default_value' => '',
+            '#size' => 32,
+            '#maxlength' => 64,
+            '#description' => t('A short message to display to players who redeem your Game Code (optional)'),
           ];
           $form['street'] = [
             '#type' => 'textfield',
@@ -164,7 +172,10 @@ class SummerGameHomeCodeForm extends FormBase {
 
     // Format code description
     $geocode_data = $form_state->getValue('geocode_data');
-    $description = "You found a Home Code on " . $geocode_data->address->road;
+    $description = "You found a Home Code on " . $geocode_data->address->road . '.';
+    if ($message = $form_state->getValue('message')) {
+      $description .= ' ' . trim($message);
+    }
 
     $city = $geocode_data->address->municipality ?? $geocode_data->address->city ?? $geocode_data->address->town ?? $geocode_data->address->village;
     $clue = [
@@ -202,7 +213,9 @@ class SummerGameHomeCodeForm extends FormBase {
     mail($notify_email,
       'New Home Code: ' . $fields['text'],
       \Drupal\Core\Url::fromRoute('summergame.admin.gamecode', ['code_id' => $code_id], ['absolute' => TRUE])->toString() . "\n\n" .
-      $fields['text'] . ' created by User ID #' . $fields['creator_uid'] . "\n\nAddress Info:\n" . str_replace('<br>', "\n", $clue['homecode'])
+      $fields['text'] . ' created by User ID #' . $fields['creator_uid'] . "\n" .
+      ($message ? 'User message: ' . $message . "\n" : '') .
+      "\nAddress Info:\n" . str_replace('<br>', "\n", $clue['homecode'])
     );
 
     return;
