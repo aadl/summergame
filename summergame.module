@@ -158,6 +158,7 @@ function summergame_theme() {
         'summergame_shop_message' => NULL,
         'completed_classic' => NULL,
         'website_user' => NULL,
+        'homecode' => NULL,
         'game_display_name' => null,
       ],
     ],
@@ -792,6 +793,15 @@ function summergame_get_player_log($pid, $game_term = '') {
   }
 
   return $log;
+}
+
+/**
+ * UTILITY: Get a user's Home Code
+ */
+function summergame_get_homecode($uid) {
+  $db = \Drupal::database();
+  $row = $db->query("SELECT * FROM sg_game_codes WHERE creator_uid = $uid AND clue LIKE '%\"homecode\"%'")->fetchObject();
+  return $row;
 }
 
 /**

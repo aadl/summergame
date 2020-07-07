@@ -151,10 +151,17 @@ class PlayerController extends ControllerBase {
 
       // Lookup drupal user if admin
       $website_user = '';
-      if ($user->hasPermission('administer summergame')) {
-        if ($account = \Drupal\user\Entity\User::load($player['uid'])) {
+      $homecode = '';
+      if ($account = \Drupal\user\Entity\User::load($player['uid'])) {
+        if ($user->id() == $account->id() || $user->hasPermission('administer summergame')) {
           $website_user = $account->get('name')->value;
-          if ($user->hasPermission('administer users')) {
+
+          // Lookup home code for player
+          $homecode = summergame_get_homecode($account->id());
+          $homecode_text = (isset($homecode->text) ? $homecode->text : 'Create a Home Code');
+          $homecode = '<a href="/summergame/user/' . $account->id() . '/homecode">' . $homecode_text . '</a>';
+
+          if ($user->id() == $account->id() || $user->hasPermission('administer users')) {
             $website_user = '<a href="/user/' . $account->id() . '">' . $website_user . '</a>';
           }
         }
@@ -198,6 +205,7 @@ class PlayerController extends ControllerBase {
         '#summergame_shop_message' => $summergame_settings->get('summergame_shop_message'),
         '#completed_classic' => $completed_classic,
         '#website_user' => $website_user,
+        '#homecode' => $homecode,
         '#game_display_name' => $summergame_settings->get('game_display_name'),
       ];
     }

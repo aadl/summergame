@@ -30,20 +30,20 @@ class SummerGameHomeCodeForm extends FormBase {
         $user->hasPermission('manage summergame')) {
       $account = \Drupal\user\Entity\User::load($uid);
       if (isset($account)) {
-        $db = \Drupal::database();
         $form = [
           '#attributes' => ['class' => 'form-width-exception'],
         ];
 
         // Check for existing home code for this user
-        $row = $db->query("SELECT * FROM sg_game_codes WHERE creator_uid = $uid AND clue LIKE '%\"homecode\"%'")->fetchObject();
-        if (isset($row->code_id)) {
-          $geocode_data = json_decode($row->clue);
+        $homecode = summergame_get_homecode($uid);
+
+        if (isset($homecode->code_id)) {
+          $geocode_data = json_decode($homecode->clue);
           $form['display'] = [
             '#markup' => '<p>Your Home Code is:</p>' .
-            '<h1>' . $row->text . '</h1>' .
-            '<p>It has been redeemed ' . $row->num_redemptions . ' time' . ($row->num_redemptions == 1 ? '' : 's') . '!</p>' .
-            '<p><a href="/summergame/pdf/gamecode/' . $row->code_id . '">Download a sign</a> or Make Your Own!</p>' .
+            '<h1>' . $homecode->text . '</h1>' .
+            '<p>It has been redeemed ' . $homecode->num_redemptions . ' time' . ($homecode->num_redemptions == 1 ? '' : 's') . '!</p>' .
+            '<p><a href="/summergame/pdf/gamecode/' . $homecode->code_id . '">Download a sign</a> or Make Your Own!</p>' .
             '<p>Make sure to display the code where it is visible at:<br>' . $geocode_data->homecode . '</p>'
           ];
           $form['cancel'] = [

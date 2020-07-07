@@ -93,6 +93,9 @@
         {% if website_user %}
           <tr><th>Website User:</th><td>{{ website_user|raw }}</td></tr>
         {% endif %}
+        {% if homecode %}
+          <tr><th>Home Code:</th><td>{{ homecode|raw }}</td></tr>
+        {% endif %}
       </table>
     </div>
     <div id="player-other-players">
