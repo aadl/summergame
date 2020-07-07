@@ -38,6 +38,9 @@
             <td>{{ attribute(balances, summergame_current_game_term) }}</td>
           </tr>
           <tr><td>- Classic Shop</td><td>{{ balances.SummerGameClassic }}</td></tr>
+          {% if balances.BookPrizeToken %}
+            <tr><td>- Book Prize Token</td><td>{{ balances.BookPrizeToken }}</td></tr>
+          {% endif %}
         </table>
         {% if (summergame_shop_message_threshold > 0) and (attribute(points, summergame_current_game_term).total > summergame_shop_message_threshold) %}
           <p>{{ summergame_shop_message|raw }}</p>
