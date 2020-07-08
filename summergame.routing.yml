@@ -168,6 +168,13 @@ summergame.player.edit:
     _title: 'Summer Game Player Edit'
   requirements:
     _permission: 'access summergame'
+summergame.player.homecode:
+  path: '/summergame/user/{uid}/homecode'
+  defaults:
+    _form: '\Drupal\summergame\Form\SummerGameHomeCodeForm'
+    _title: 'Summer Game Home Code Form'
+  requirements:
+    _permission: 'access summergame'
 summergame.player.setactive:
   path: '/summergame/player/{pid}/setactive'
   defaults:
@@ -215,6 +222,20 @@ summergame.leaderboard:
   defaults:
     _controller: '\Drupal\summergame\Controller\DefaultController::leaderboard'
     _title: 'Summer Game Leaderboard'
+  requirements:
+    _permission: 'access content'
+summergame.homecodes:
+  path: '/summergame/homecodes'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\DefaultController::homecodes'
+    _title: 'Summer Game Home Codes Map'
+  requirements:
+    _permission: 'access summergame'
+summergame.homecodes.markerdata:
+  path: '/summergame/homecodes/markerdata'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\DefaultController::homecodes_markerdata'
+    _title: 'Summer Game Home Codes Marker Data'
   requirements:
     _permission: 'access content'
 summergame.badgelist:

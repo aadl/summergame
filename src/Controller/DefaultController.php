@@ -7,6 +7,7 @@ namespace Drupal\summergame\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
 use Predis\Client;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use setasign\Fpdi;
 
 
@@ -147,6 +148,32 @@ class DefaultController extends ControllerBase {
     ];
 
     return $render;
+  }
+
+  public function homecodes() {
+    return [
+      '#attached' => [
+        'library' => [
+          'summergame/summergame-homecodes-lib'
+        ]
+      ],
+      '#markup' => '<h1>Home Codes Map</h1><div id="mapid" style="height: 180px;"></div>',
+    ];
+  }
+
+  public function homecodes_markerdata() {
+    // Build JSON array of home code marker data
+    $response = [];
+    $db = \Drupal::database();
+
+    // Find all home codes
+    $res = $db->query("SELECT * FROM sg_game_codes WHERE clue LIKE '%\"homecode\"%'");
+    while ($row = $res->fetchObject()) {
+      $geocode_data = json_decode($row->clue);
+      $response[] = $geocode_data;
+    }
+
+    return new JsonResponse($response);
   }
 /*
   public function badge() {
@@ -536,7 +563,7 @@ FBL;
         ->condition('status', 1)
         ->condition('field_badge_game_term', $badgelist_game_term)
         ->condition('field_sg_badge_series', $term->id())
-        ->sort('created' , 'ASC'); 
+        ->sort('created' , 'ASC');
       $nodes = $query->execute();
       if (count($nodes)) {
         foreach ($nodes as $nid) {
