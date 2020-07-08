@@ -38,7 +38,7 @@
             <td>{{ attribute(balances, summergame_current_game_term) }}</td>
           </tr>
           <tr><td>- Classic Shop</td><td>{{ balances.SummerGameClassic }}</td></tr>
-          {% if balances.BookPrizeToken %}
+          {% if balances.BookPrizeToken is defined %}
             <tr><td>- Book Prize Token</td><td>{{ balances.BookPrizeToken }}</td></tr>
           {% endif %}
         </table>
