@@ -93,6 +93,11 @@ class SummerGameHomeCodeForm extends FormBase {
             '#description' => t('5 digit Zip Code where the Game Code will be displayed (example "48103")'),
             '#required' => TRUE,
           ];
+          $form['display'] = [
+            '#type' => checkbox,
+            '#title' => 'Display Address on Map',
+            '#description' => t('Display a marker for this address on the public Home Codes map for players to find your code. No additional personal information will be displayed.'),
+          ];
           $form['submit'] = [
             '#type' => 'submit',
             '#value' => t('Submit Code'),
@@ -185,6 +190,7 @@ class SummerGameHomeCodeForm extends FormBase {
                     $geocode_data->address->postcode,
       'lat' => $geocode_data->lat,
       'lon' => $geocode_data->lon,
+      'display' => $form_state->getValue('display'),
     ];
 
     // Set up fields
