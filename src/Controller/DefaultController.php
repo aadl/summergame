@@ -170,7 +170,9 @@ class DefaultController extends ControllerBase {
     $res = $db->query("SELECT * FROM sg_game_codes WHERE clue LIKE '%\"homecode\"%'");
     while ($row = $res->fetchObject()) {
       $geocode_data = json_decode($row->clue);
-      $response[] = $geocode_data;
+      if ($geocode_data->display) {
+        $response[] = $geocode_data;
+      }
     }
 
     return new JsonResponse($response);
