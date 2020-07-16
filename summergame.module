@@ -1309,7 +1309,7 @@ function summergame_players_merge($pid1, $pid2) {
     $db->query("DELETE FROM sg_ledger WHERE pid = :pid AND type = 'Completed'", [':pid' => $pid2]);
   }
 
-  // Remove duplicate badges and bonuses
+  // Remove OLD duplicate badges and bonuses
   $badges = [];
   $res = $db->query("SELECT * FROM sg_badges, sg_players_badges WHERE sg_badges.bid = sg_players_badges.bid AND sg_players_badges.pid = :pid", [':pid' => $pid1]);
   while ($badge = $res->fetchObject()) {
@@ -1318,7 +1318,20 @@ function summergame_players_merge($pid1, $pid2) {
   foreach ($badges as $badge) {
     $db->query("DELETE FROM sg_players_badges WHERE pid = :pid and bid = :bid", [':pid' => $pid2, ':bid' => $badge->bid]);
     $badge_description = "Earned the $badge->title Badge";
-    $db->query("DELETE FROM sg_ledger WHERE pid = :pid AND metadata = 'Badge Bonus' AND description = :description", [':pid' => $pid2, ':description' => $badge_description]);
+    $db->query("DELETE FROM sg_ledger WHERE pid = :pid AND type = 'Badge Bonus' AND description = :description", [':pid' => $pid2, ':description' => $badge_description]);
+  }
+
+  // Remove NEW duplicate badges and bonuses
+  $badges = [];
+  $res = $db->query("SELECT * FROM node_field_data, sg_players_badges WHERE node_field_data.type = 'sg_badge' " .
+                    "AND node_field_data.nid = sg_players_badges.bid AND sg_players_badges.pid = :pid", [':pid' => $pid1]);
+  while ($badge = $res->fetchObject()) {
+    $badges[] = $badge;
+  }
+  foreach ($badges as $badge) {
+    $db->query("DELETE FROM sg_players_badges WHERE pid = :pid and bid = :bid", [':pid' => $pid2, ':bid' => $badge->bid]);
+    $badge_description = "Earned the $badge->title Badge";
+    $db->query("DELETE FROM sg_ledger WHERE pid = :pid AND type = 'Badge Bonus' AND description = :description", [':pid' => $pid2, ':description' => $badge_description]);
   }
 
   // FRIEND CODE CLEANUP ///////////////////////////////////////////////////////
