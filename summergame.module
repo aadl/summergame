@@ -156,6 +156,7 @@ function summergame_theme() {
         'summergame_current_game_term' => NULL,
         'summergame_shop_message_threshold' => NULL,
         'summergame_shop_message' => NULL,
+        'summergame_shop_game_term' => NULL,
         'completed_classic' => NULL,
         'website_user' => NULL,
         'homecode' => NULL,
