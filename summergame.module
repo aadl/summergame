@@ -687,6 +687,7 @@ function summergame_get_active_player() {
  * UTILITY: Load player points
  */
 function summergame_get_player_points($pid, $game_term = '', $type = '') {
+  $term_filter = FALSE;
   $player_points = [
     'career' => 0,
   ];
@@ -696,6 +697,7 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
   if ($game_term) {
     $query .= " AND game_term = :game_term";
     $args[':game_term'] = $game_term;
+    $term_filter = TRUE;
   }
   if ($type) {
     $query .= " AND type = :type";
@@ -709,7 +711,12 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
   while ($row = $res->fetchAssoc()) {
     $game_term = $row['game_term'];
     $type = $row['type'];
-    $player_points[$game_term]['ledger'][] = $row;
+
+    // Only include ledger rows if filtered to a game term
+    if ($term_filter) {
+      $player_points[$game_term]['ledger'][] = $row;
+    }
+
     $player_points[$game_term]['balance'] += $row['points'];
     $player_points[$game_term]['types'][$type] += $row['points'];
     if ($row['points'] > 0 && strpos($row['metadata'], 'leaderboard:no') === FALSE) {
