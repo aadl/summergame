@@ -173,12 +173,23 @@ EOT;
     // Build JSON array of home code marker data
     $response = [];
     $db = \Drupal::database();
+    $player = summergame_get_active_player();
 
     // Find all home codes
     $res = $db->query("SELECT * FROM sg_game_codes WHERE clue LIKE '%\"homecode\"%'");
-    while ($row = $res->fetchObject()) {
-      $geocode_data = json_decode($row->clue);
+    while ($game_code = $res->fetchObject()) {
+      $geocode_data = json_decode($game_code->clue);
       if ($geocode_data->display) {
+        if ($player) {
+          // see if player has redeemed this code
+          $ledger_row = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND metadata LIKE :metadata",
+                                   [':pid' => $player['pid'], ':metadata' => 'gamecode:' . $game_code->text])->fetchObject();
+          if ($ledger_row) {
+            $geocode_data->homecode = 'REDEEMED: ' . $geocode_data->homecode;
+            $geocode_data->redeemed = 1;
+          }
+        }
+
         $response[] = $geocode_data;
       }
     }
