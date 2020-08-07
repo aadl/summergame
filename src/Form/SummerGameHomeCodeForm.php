@@ -98,6 +98,9 @@ class SummerGameHomeCodeForm extends FormBase {
             '#title' => 'Display Address on Map',
             '#description' => t('Display a marker for this address on the public Home Codes map for players to find your code. No additional personal information will be displayed.'),
           ];
+          $form['guidelines'] = [
+            '#markup' => '<p><strong>Please avoid messages that are commercial, religious, or political. Thank you!</strong></p>'
+          ];
           $form['submit'] = [
             '#type' => 'submit',
             '#value' => t('Submit Code'),
