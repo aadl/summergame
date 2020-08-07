@@ -158,6 +158,15 @@ class DefaultController extends ControllerBase {
 <p><strong>NOTE: If you make a home code for your home, PLEASE make sure the code is displayed where it can easily be seen from the curb / sidewalk / parking lot / driveway / what have you. If you visit a home and can't find the code, please <a href="http://aadl.org/contactus">contact us</a> and let us know the address, and we'll deactivate that code and check in with the player! Thanks for your help with this!</strong></p>
 EOT;
 
+    $player_legend_markup = '';
+    if ($player = summergame_get_active_player()) {
+      $player_name = ($player['nickname'] ? $player['nickname'] : $player['name']);
+      $player_legend_markup = '<p>Showing redemption status for player <strong>' . $player_name . '</strong>: ' .
+        '<img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png"> = Code Redeemed ' .
+        '<img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png"> = Code Available ' .
+        '</p>';
+    }
+
     return [
       '#attached' => [
         'library' => [
@@ -165,7 +174,9 @@ EOT;
         ]
       ],
       '#markup' => $homecode_explaination_markup .
-        '<h1>Home Codes Map</h1><div id="mapid" style="height: 180px;"></div>',
+        '<h1>Home Codes Map</h1>' .
+        $player_legend_markup .
+        '<div id="mapid" style="height: 180px;"></div>',
     ];
   }
 
