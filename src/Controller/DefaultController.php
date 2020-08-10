@@ -158,6 +158,15 @@ class DefaultController extends ControllerBase {
 <p><strong>NOTE: If you make a home code for your home, PLEASE make sure the code is displayed where it can easily be seen from the curb / sidewalk / parking lot / driveway / what have you. If you visit a home and can't find the code, please <a href="http://aadl.org/contactus">contact us</a> and let us know the address, and we'll deactivate that code and check in with the player! Thanks for your help with this!</strong></p>
 EOT;
 
+    $player_legend_markup = '';
+    if ($player = summergame_get_active_player()) {
+      $player_name = ($player['nickname'] ? $player['nickname'] : $player['name']);
+      $player_legend_markup = '<p>Showing redemption status for player <strong>' . $player_name . '</strong>: ' .
+        '<img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png"> = Code Redeemed ' .
+        '<img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png"> = Code Available ' .
+        '</p>';
+    }
+
     return [
       '#attached' => [
         'library' => [
@@ -165,7 +174,9 @@ EOT;
         ]
       ],
       '#markup' => $homecode_explaination_markup .
-        '<h1>Home Codes Map</h1><div id="mapid" style="height: 180px;"></div>',
+        '<h1>Home Codes Map</h1>' .
+        $player_legend_markup .
+        '<div id="mapid" style="height: 180px;"></div>',
     ];
   }
 
@@ -173,12 +184,23 @@ EOT;
     // Build JSON array of home code marker data
     $response = [];
     $db = \Drupal::database();
+    $player = summergame_get_active_player();
 
     // Find all home codes
     $res = $db->query("SELECT * FROM sg_game_codes WHERE clue LIKE '%\"homecode\"%'");
-    while ($row = $res->fetchObject()) {
-      $geocode_data = json_decode($row->clue);
+    while ($game_code = $res->fetchObject()) {
+      $geocode_data = json_decode($game_code->clue);
       if ($geocode_data->display) {
+        if ($player) {
+          // see if player has redeemed this code
+          $ledger_row = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND metadata LIKE :metadata",
+                                   [':pid' => $player['pid'], ':metadata' => 'gamecode:' . $game_code->text])->fetchObject();
+          if ($ledger_row) {
+            $geocode_data->homecode = 'REDEEMED: ' . $geocode_data->homecode;
+            $geocode_data->redeemed = 1;
+          }
+        }
+
         $response[] = $geocode_data;
       }
     }
