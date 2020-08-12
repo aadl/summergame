@@ -162,7 +162,7 @@ EOT;
     if ($player = summergame_get_active_player()) {
       $player_name = ($player['nickname'] ? $player['nickname'] : $player['name']);
       $player_legend_markup = '<p>Showing redemption status for player <strong>' . $player_name . '</strong>: ' .
-        '<img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png"> = Code Redeemed ' .
+        '<img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png"> = Code Redeemed ' .
         '<img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png"> = Code Available ' .
         '</p>';
     }
@@ -172,6 +172,9 @@ EOT;
         'library' => [
           'summergame/summergame-homecodes-lib'
         ]
+      ],
+      '#cache' => [
+        'max-age' => 0, // Don't cache, always get fresh data
       ],
       '#markup' => $homecode_explaination_markup .
         '<h1>Home Codes Map</h1>' .
