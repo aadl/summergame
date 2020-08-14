@@ -53,7 +53,7 @@ class SummerGameHomeCodeForm extends FormBase {
             '#suffix' => '</div>'
           ];
         }
-        else {
+        else if (\Drupal::config('summergame.settings')->get('summergame_homecode_form_enabled')) {
           $form['uid'] = [
             '#type' => 'value',
             '#value' => $uid,
@@ -105,6 +105,19 @@ class SummerGameHomeCodeForm extends FormBase {
             '#type' => 'submit',
             '#value' => t('Submit Code'),
             '#prefix' => '<div class="sg-form-actions">'
+          ];
+          $form['cancel'] = [
+            '#type' => 'link',
+            '#title' => 'Return to Player Page',
+            '#url' => \Drupal\Core\Url::fromRoute('summergame.player'),
+            '#suffix' => '</div>'
+          ];
+        }
+        else {
+          // No home code, but home code creation is not enabled
+          $form['display'] = [
+            '#markup' => '<p>Sorry, Home Code creation is not currently available.</p>' .
+                         '<p><a href="/summergame/homecodes">View the current Home Codes map</a> to see what home codes are available.</p>',
           ];
           $form['cancel'] = [
             '#type' => 'link',

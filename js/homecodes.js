@@ -1,5 +1,13 @@
 (function ($, Drupal) {
-  var mymap = L.map("mapid").setView([42.2781734, -83.74570792114082], 13);
+  // Build marker layers
+  var availableLayerGroup = new L.layerGroup();
+  var redeemedLayerGroup = new L.layerGroup();
+
+  var myMap = L.map('mapid', {
+      center: [42.2781734, -83.74570792114082],
+      zoom: 13,
+      layers: [availableLayerGroup, redeemedLayerGroup]
+  });
 
   var redIcon = new L.Icon({
     iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
@@ -12,7 +20,7 @@
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-  }).addTo(mymap);
+  }).addTo(myMap);
 
   // Load marker data from json source
   $.ajax({
@@ -20,14 +28,34 @@
     url: '/summergame/homecodes/markerdata',
     dataType: 'json',
     success: function (data) {
-        $.each(data, function(index, element) {
-          if (element.redeemed) {
-            L.marker([element.lat, element.lon], {icon: redIcon}).bindPopup(element.homecode).addTo(mymap);
-          }
-          else {
-            L.marker([element.lat, element.lon]).bindPopup(element.homecode).addTo(mymap);
-          }
-        });
+      var redeemedData = false;
+
+      // Loop through data and create markers
+      $.each(data, function(index, element) {
+        if (element.redeemed) {
+          redeemedData = true;
+          L.marker([element.lat, element.lon], {icon: redIcon}).bindPopup(element.homecode).addTo(redeemedLayerGroup);
+        }
+        else {
+          L.marker([element.lat, element.lon]).bindPopup(element.homecode).addTo(availableLayerGroup);
+        }
+      });
+
+      // Only show layer control if redeemed data has been returned
+      if (redeemedData) {
+        // Add layers to map
+        var overlayMaps = {
+            "Available": availableLayerGroup,
+            "Redeemed": redeemedLayerGroup
+        };
+
+        L.control.layers(null, overlayMaps, {collapsed:false}).addTo(myMap);
+
+        $(".leaflet-control-layers-overlays").prepend("<label>Show Codes:</label>");
+      }
+      else {
+        availableLayerGroup.addTo(myMap);
+      }
     }
   });
 })(jQuery, Drupal);
