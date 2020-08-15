@@ -159,8 +159,15 @@ class PlayerController extends ControllerBase {
 
           // Lookup home code for player
           $homecode = summergame_get_homecode($account->id());
-          $homecode_text = (isset($homecode->text) ? $homecode->text : 'Create a Home Code');
-          $homecode = '<a href="/summergame/user/' . $account->id() . '/homecode">' . $homecode_text . '</a>';
+          if (isset($homecode->text)) {
+            $homecode = '<a href="/summergame/user/' . $account->id() . '/homecode">' . $homecode->text . '</a>';
+          }
+          else if ($summergame_settings->get('summergame_homecode_form_enabled')) {
+            $homecode = '<a href="/summergame/user/' . $account->id() . '/homecode">Create a Home Code</a>';
+          }
+          else {
+            $homecode = '';
+          }
 
           if ($user->id() == $account->id() || $user->hasPermission('administer users')) {
             $website_user = '<a href="/user/' . $account->id() . '">' . $website_user . '</a>';
