@@ -153,9 +153,9 @@ class DefaultController extends ControllerBase {
   public function homecodes() {
     $homecode_explaination_markup = <<<EOT
 <h1>Summer Game Home Codes</h1>
-<p>The thought may be DWELLING in your mind, "What's a HOME CODE?" Well that's a great question! A Home Code is your VERY OWN PERSONALIZED code for your HOME!</p>
-<p>The way HOME CODES work is simple! You create your code by clicking "My Players". Then scroll down your My Summer Game page until you see "Player Details". You'll see the words, "Create a Home Code", click that and... well... CREATE A HOME CODE! Your Home Code is 100% created BY you FOR other passerby! You can choose whether or not you want your Home Code displayed on the map of ALL THE HOME CODES (A serious, no puns note: No personal information is given on the map. Just the address linked to the code!) Once your Home Code is created, you can MAKE a sign or PRINT a sign to put in your window! WHAT FUN!</p>
-<p><strong>NOTE: If you make a home code for your home, PLEASE make sure the code is displayed where it can easily be seen from the curb / sidewalk / parking lot / driveway / what have you. If you visit a home and can't find the code, please <a href="http://aadl.org/contactus">contact us</a> and let us know the address, and we'll deactivate that code and check in with the player! Thanks for your help with this!</strong></p>
+<p>Summer Game 2020 has ended and all Home Codes have expired! If you put up a home code this Summer, please take it down!</p>
+<p>This map will stay up through September and will then be taken down until next summer. If you have any questions or concerns, as always, <a href="http://aadl.org/contactus">contact us</a>.</p>
+<p>Thanks to everyone who posted or found a home code! Rest assured this feature will be back for SG2021!</p>
 EOT;
 
     $player_legend_markup = '';
