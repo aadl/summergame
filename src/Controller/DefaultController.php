@@ -223,7 +223,7 @@ EOT;
           $ledger_row = $db->query("SELECT * FROM sg_ledger WHERE metadata LIKE :metadata ORDER BY timestamp ASC LIMIT 1",
                                    [':metadata' => 'gamecode:' . $game_code->text])->fetchObject();
           if ($ledger_row) {
-            $geocode_data->homecode = "Redeemed $game_code->num_redemptions times,<br>starting " . date('F j, Y');
+            $geocode_data->homecode = "Redeemed $game_code->num_redemptions times,<br>starting " . date('F j, Y', $ledger_row->timestamp);
           }
           else {
             $geocode_data->homecode = 'Never redeemed';
