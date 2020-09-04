@@ -158,13 +158,25 @@ class DefaultController extends ControllerBase {
 <p>Thanks to everyone who posted or found a home code! Rest assured this feature will be back for SG2021!</p>
 EOT;
 
-    $player_legend_markup = '';
-    if ($player = summergame_get_active_player()) {
-      $player_name = ($player['nickname'] ? $player['nickname'] : $player['name']);
-      $player_legend_markup = '<p>Showing redemption status for player <strong>' . $player_name . '</strong>: ' .
-        '<img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png"> = Code Redeemed ' .
-        '<img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png"> = Code Available ' .
-        '</p>';
+    $legend_markup = '';
+    if (\Drupal::config('summergame.settings')->get('summergame_points_enabled')) {
+      // Display current player redemption status while game is running
+      if ($player = summergame_get_active_player()) {
+        $player_name = ($player['nickname'] ? $player['nickname'] : $player['name']);
+        $legend_markup = '<p>Showing redemption status for player <strong>' . $player_name . '</strong>: ' .
+          '<img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png"> = Code Redeemed ' .
+          '<img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png"> = Code Available ' .
+          '</p>';
+      }
+    }
+    else {
+      $legend_markup = '<p>Showing number of redemptions during the game.</p>' .
+          '<img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png"> = 0-49 ' .
+          '<img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png"> = 50-99 ' .
+          '<img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-gold.png"> = 100-199 ' .
+          '<img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png"> = 200-299 ' .
+          '<img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png"> = 300+ ' .
+          '</p>';
     }
 
     return [
@@ -178,7 +190,7 @@ EOT;
       ],
       '#markup' => $homecode_explaination_markup .
         '<h1>Home Codes Map</h1>' .
-        $player_legend_markup .
+        $legend_markup .
         '<div id="mapid" style="height: 180px;"></div>',
     ];
   }
@@ -188,21 +200,38 @@ EOT;
     $response = [];
     $db = \Drupal::database();
     $player = summergame_get_active_player();
+    $summergame_points_enabled = \Drupal::config('summergame.settings')->get('summergame_points_enabled');
 
     // Find all home codes
     $res = $db->query("SELECT * FROM sg_game_codes WHERE clue LIKE '%\"homecode\"%'");
     while ($game_code = $res->fetchObject()) {
       $geocode_data = json_decode($game_code->clue);
       if ($geocode_data->display) {
-        if ($player) {
-          // see if player has redeemed this code
-          $ledger_row = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND metadata LIKE :metadata",
-                                   [':pid' => $player['pid'], ':metadata' => 'gamecode:' . $game_code->text])->fetchObject();
-          if ($ledger_row) {
-            $geocode_data->homecode = 'REDEEMED: ' . $geocode_data->homecode;
-            $geocode_data->redeemed = 1;
+        if ($summergame_points_enabled) {
+          if ($player) {
+            // see if player has redeemed this code
+            $ledger_row = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND metadata LIKE :metadata",
+                                     [':pid' => $player['pid'], ':metadata' => 'gamecode:' . $game_code->text])->fetchObject();
+            if ($ledger_row) {
+              $geocode_data->homecode = 'REDEEMED: ' . $geocode_data->homecode;
+              $geocode_data->redeemed = 1;
+            }
           }
         }
+        else {
+          // Off-season, remove address and replace with first redepmtion date
+          $ledger_row = $db->query("SELECT * FROM sg_ledger WHERE metadata LIKE :metadata ORDER BY timestamp ASC LIMIT 1",
+                                   [':metadata' => 'gamecode:' . $game_code->text])->fetchObject();
+          if ($ledger_row) {
+            $geocode_data->homecode = "Redeemed $game_code->num_redemptions times,<br>starting " . date('F j, Y');
+          }
+          else {
+            $geocode_data->homecode = 'Never redeemed';
+          }
+        }
+
+        // Add number of redemptions
+        $geocode_data->num_redemptions = $game_code->num_redemptions;
 
         $response[] = $geocode_data;
       }
