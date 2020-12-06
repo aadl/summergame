@@ -717,6 +717,20 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
       $player_points[$game_term]['ledger'][] = $row;
     }
 
+    // if game term is not set, initialize point values
+    if (!isset($player_points[$game_term])) {
+      $player_points[$game_term] = [
+        'balance' => 0,
+        'total' => 0,
+        'prize_count' => 0,
+      ];
+    }
+
+    // if type for this game term is not set, initialize point value
+    if (!isset($player_points[$game_term]['types'][$type])) {
+      $player_points[$game_term]['types'][$type] = 0;
+    }
+
     $player_points[$game_term]['balance'] += $row['points'];
     $player_points[$game_term]['types'][$type] += $row['points'];
     if ($row['points'] > 0 && strpos($row['metadata'], 'leaderboard:no') === FALSE) {
@@ -734,7 +748,7 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
 
   // Sort type points
   foreach ($player_points as $game_term => &$details) {
-    if (is_array($details['types'])) {
+    if (isset($details['types'])) {
       arsort($details['types']);
     }
   }
