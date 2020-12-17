@@ -152,6 +152,7 @@ function summergame_theme() {
         'other_players' => NULL,
         'points' => NULL,
         'balances' => NULL,
+        'pointsomatic_weekly_totals' => NULL,
         'progress' => NULL,
         'summergame_current_game_term' => NULL,
         'summergame_shop_message_threshold' => NULL,
