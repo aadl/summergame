@@ -137,7 +137,7 @@ class PlayerController extends ControllerBase {
       $completion_gamecode = $summergame_settings->get('summergame_completion_gamecode');
       $row = $db->query("SELECT * FROM sg_ledger WHERE pid = " . $player['pid'] .
                         " AND metadata LIKE '%gamecode:$completion_gamecode%'")->fetchObject();
-      if ($row->lid) {
+      if (isset($row->lid)) {
         $completed_classic = date('F j, Y', $row->timestamp);
       }
       else {
@@ -181,6 +181,12 @@ class PlayerController extends ControllerBase {
         $balances = uc_summergame_get_player_balances($player['pid']);
       }
 
+      // Get Points-o-Matic weekly scores
+      $pointsomatic_weekly_totals = [];
+      if (\Drupal::moduleHandler()->moduleExists('pointsomatic')) {
+        $pointsomatic_weekly_totals = pointsomatic_get_player_weekly_totals($player['pid']);
+      }
+
       // Get player progress against limits
       $progress = [];
       $game_limits = json_decode($summergame_settings->get('summergame_game_limits'), TRUE);
@@ -207,6 +213,7 @@ class PlayerController extends ControllerBase {
         '#other_players' => $other_players,
         '#points' => summergame_get_player_points($player['pid']),
         '#balances' => $balances,
+        '#pointsomatic_weekly_totals' => $pointsomatic_weekly_totals,
         '#progress' => $progress,
         '#summergame_current_game_term' => $current_game_term,
         '#summergame_shop_message_threshold' => $summergame_settings->get('summergame_shop_message_threshold'),
