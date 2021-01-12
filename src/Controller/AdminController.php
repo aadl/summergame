@@ -494,7 +494,7 @@ class AdminController extends ControllerBase {
         ->condition('type', 'sg_badge')
         ->condition('status', 1)
         ->condition('field_badge_game_term', $game_term)
-        ->condition('field_sg_badge_series', $term->id());
+        ->condition('field_sg_badge_series_multiple', $term->id());
       $nodes = $query->execute();
 
       if (count($nodes)) {

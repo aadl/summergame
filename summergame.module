@@ -779,8 +779,13 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
     $badge['nid'] = $badge['bid'];
     $node = entity_load('node', $badge['bid']);
 
-    if ($node->field_sg_badge_series->target_id == $play_test_term_id && !$play_tester) {
-      continue;
+    // If badge is in the play tester series and user is not a play tester, skip it
+    if (!$play_tester) {
+      foreach ($node->field_sg_badge_series_multiple as $badge_series) {
+        if ($badge_series->target_id == $play_test_term_id) {
+          continue 2;
+        }
+      }
     }
 
     $fid = \Drupal\file\Entity\File::load($node->get('field_badge_image')->target_id);

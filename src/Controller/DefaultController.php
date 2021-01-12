@@ -626,12 +626,22 @@ FBL;
         ->condition('type', 'sg_badge')
         ->condition('status', 1)
         ->condition('field_badge_game_term', $badgelist_game_term)
-        ->condition('field_sg_badge_series', $term->id())
+        ->condition('field_sg_badge_series_multiple', $term->id())
         ->sort('created' , 'ASC');
       $nodes = $query->execute();
       if (count($nodes)) {
         foreach ($nodes as $nid) {
-          $node = entity_load('node', $nid);
+          $node = \Drupal\node\Entity\Node::load($nid);
+
+          // If badge is in the play tester series and user is not a play tester, skip it
+          if (!$play_tester) {
+            foreach ($node->field_sg_badge_series_multiple as $badge_series) {
+              if ($badge_series->target_id == $play_test_term_id) {
+                continue 2;
+              }
+            }
+          }
+
           $game_term = $node->field_badge_game_term->value;
 
           // Set Series info if not set yet
