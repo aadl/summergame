@@ -91,10 +91,10 @@ class SummerGameInterventionForm extends FormBase {
           summergame_player_points($to_pid, $points, 'Geekly Intervention',
                                    "Transfer from Player #$from_pid" . ($description ? ', ' . $description : ''),
                                    '', $game_term);
-          drupal_set_message(['#markup' => "Transferred $points $game_term points from $from_player_link to $player_link"]);
+          \Drupal::messenger()->addMessage(['#markup' => "Transferred $points $game_term points from $from_player_link to $player_link"]);
         }
         else {
-          drupal_set_message("No player with ID #$from_pid could be found", 'error');
+          \Drupal::messenger()->addError("No player with ID #$from_pid could be found");
         }
       }
       else {
@@ -102,11 +102,11 @@ class SummerGameInterventionForm extends FormBase {
         summergame_player_points($to_pid, $points, 'Geekly Intervention',
                                  "Points awarded" . ($description ? ', ' . $description : ''),
                                  '', $game_term);
-        drupal_set_message(['#markup' => "Awarded $points $game_term points to $player_link"]);
+        \Drupal::messenger()->addMessage(['#markup' => "Awarded $points $game_term points to $player_link"]);
       }
     }
     else {
-      drupal_set_message("No player with ID #$to_pid could be found", 'error');
+      \Drupal::messenger()->addError("No player with ID #$to_pid could be found");
     }
 
     $form_state->setRedirect('summergame.admin');

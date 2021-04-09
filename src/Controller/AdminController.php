@@ -7,6 +7,8 @@ namespace Drupal\summergame\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
 use Predis\Client;
+use \Drupal\node\Entity\Node;
+
 //use Drupal\Core\Database\Database;
 //use Drupal\Core\Url;
 
@@ -311,7 +313,7 @@ class AdminController extends ControllerBase {
 
       if ($count == 0) {
         // No matches, create a new player
-        drupal_set_message("No existing players to match your search \"$search_term\". Create a new player with that information below:");
+        \Drupal::messenger()->addMessage("No existing players to match your search \"$search_term\". Create a new player with that information below:");
         return \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerForm'); // TODO Add new $new_player
       }
       else if ($count > 100) {
@@ -350,7 +352,7 @@ class AdminController extends ControllerBase {
   public function players_merge($pid1 = 0, $pid2 = 0, $confirm = FALSE) {
     if ($confirm) {
       summergame_players_merge($pid1, $pid2);
-      drupal_set_message("Player #$pid2 merged into Player #$pid1");
+      \Drupal::messenger()->addMessage("Player #$pid2 merged into Player #$pid1");
       return $this->redirect('summergame.player', ['pid' => $pid1]);
     }
 
@@ -389,7 +391,7 @@ class AdminController extends ControllerBase {
       ];
     }
     else {
-      drupal_set_message('Invalid Player IDs', 'error');
+      \Drupal::messenger()->addError('Invalid Player IDs');
       return $this->redirect('summergame.admin');
     }
   }
@@ -500,7 +502,7 @@ class AdminController extends ControllerBase {
       if (count($nodes)) {
         $output .= '<h2>' . $series . ' :: ' . count($nodes) . ' Badges</h2>';
         foreach ($nodes as $nid) {
-          $badge = entity_load('node', $nid);
+          $badge = Node::load($nid);
 
           $awarded = $db->query("SELECT COUNT(pid) AS pcount FROM sg_players_badges WHERE bid=:bid", [':bid' => $badge->id()])->fetch();
           $title = $badge->get('title')->value;

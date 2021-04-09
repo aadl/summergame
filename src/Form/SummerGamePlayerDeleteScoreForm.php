@@ -33,7 +33,7 @@ class SummerGamePlayerDeleteScoreForm extends FormBase {
       if ($ledger->lid) {
         // Cannot delete points that are protected (e.g. Shop points)
         if (strpos($ledger->metadata, 'delete:no') === 0) {
-          drupal_set_message('Sorry, these points are protected and cannot be deleted', 'error');
+          \Drupal::messenger()->addError('Sorry, these points are protected and cannot be deleted');
           $form_state->setRedirect('summergame.player', ['pid' => $pid]);
         }
         else {
@@ -71,13 +71,13 @@ class SummerGamePlayerDeleteScoreForm extends FormBase {
       }
       else {
         // No ledger ID
-        drupal_set_message("Unable to find ledger entry", 'error');
+        \Drupal::messenger()->addError("Unable to find ledger entry");
         return $this->redirect('summergame.player', ['pid' => $pid]);
       }
     }
     else {
       // No access to Player
-      drupal_set_message("Unable to access player", 'error');
+      \Drupal::messenger()->addError("Unable to access player");
       return $this->redirect('summergame.player');
     }
   }
@@ -89,7 +89,7 @@ class SummerGamePlayerDeleteScoreForm extends FormBase {
     $db = \Drupal::database();
     $db->delete('sg_ledger')->condition('lid', $form_state->getValue('lid'))->execute();
 
-    drupal_set_message('Score has been deleted.');
+    \Drupal::messenger()->addMessage('Score has been deleted.');
 
     $form_state->setRedirect('summergame.player', ['pid' => $form_state->getValue('pid')]);
 

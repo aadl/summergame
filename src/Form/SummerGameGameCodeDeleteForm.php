@@ -57,7 +57,7 @@ class SummerGameGameCodeDeleteForm extends FormBase {
       ];
     }
     else {
-      drupal_set_message('Invalid Game Code ID', 'error');
+      \Drupal::messenger()->addError('Invalid Game Code ID');
       return $this->redirect('summergame.admin');
     }
 
@@ -71,7 +71,7 @@ class SummerGameGameCodeDeleteForm extends FormBase {
     $db = \Drupal::database();
     $db->delete('sg_game_codes')->condition('code_id', $form_state->getValue('code_id'))->execute();
 
-    drupal_set_message('Game Code has been deleted.');
+    \Drupal::messenger()->addMessage('Game Code has been deleted.');
 
     $form_state->setRedirect('summergame.admin');
 

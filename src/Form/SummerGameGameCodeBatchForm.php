@@ -102,7 +102,7 @@ class SummerGameGameCodeBatchForm extends FormBase {
       // Check whether new game code is unique
       $code = $db->query("SELECT code_id FROM sg_game_codes WHERE text LIKE :text", [':text' =>  $csv_row['text']])->fetchObject();
       if ($code->code_id) {
-        drupal_set_message('Code ' . $csv_row['text'] . ' is already in use. Please select another code.', 'error');
+        \Drupal::messenger()->addError('Code ' . $csv_row['text'] . ' is already in use. Please select another code.');
         continue;
       }
 
@@ -134,7 +134,7 @@ class SummerGameGameCodeBatchForm extends FormBase {
       }
 
       $db->insert('sg_game_codes')->fields($fields)->execute();
-      drupal_set_message('Game Code ' . $fields['text'] . ' Created');
+      \Drupal::messenger()->addMessage('Game Code ' . $fields['text'] . ' Created');
     }
 
     $form_state->setRedirect('summergame.admin');

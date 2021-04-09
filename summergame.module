@@ -2,6 +2,7 @@
 
 use PHPOnCouch\CouchClient;
 use Predis\Client;
+use \Drupal\node\Entity\Node;
 
 function summergame_leaderboard_update() {
   $summergame_settings = \Drupal::config('summergame.settings');
@@ -777,7 +778,7 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
   while ($badge = $res->fetchAssoc()) {
     $game_term = $badge['game_term'];
     $badge['nid'] = $badge['bid'];
-    $node = entity_load('node', $badge['bid']);
+    $node = Node::load($badge['bid']);
 
     // If badge is in the play tester series and user is not a play tester, skip it
     if (!$play_tester) {
@@ -1005,11 +1006,11 @@ function summergame_player_points($pid, $points, $type, $description = '', $meta
     if ($total > $limit) {
       // If over the limit, cap the point total at the daily limit
       $overage = $total - $limit;
-      drupal_set_message("Sorry, your score of $points brings you over the $game_term limit of $limit by $overage.", 'warning');
+      \Drupal::messenger()->addWarning("Sorry, your score of $points brings you over the $game_term limit of $limit by $overage.");
       $points -= $overage;
     }
     else {
-      drupal_set_message("You have earned $total points of your $game_term limit of $limit for $type scoring");
+      \Drupal::messenger()->addMessage("You have earned $total points of your $game_term limit of $limit for $type scoring");
     }
   }
 
@@ -1042,7 +1043,7 @@ function summergame_player_points($pid, $points, $type, $description = '', $meta
   // Check if the new points affect any badges
   if ($messages = summergame_player_check_badges($pid, $game_term)) {
     foreach ($messages as $message) {
-      drupal_set_message($message);
+      \Drupal::messenger()->addMessage($message);
     }
   }
 
@@ -1273,12 +1274,12 @@ function summergame_check_completion_bonus($pid) {
       if ($player['agegroup'] == 'youth' || $player['agegroup'] == 'teen') {
         // Award Book Token
         summergame_player_points($pid, 1, 'Completion Bonus', 'Book Token Bonus for completing the Classic Reading Game', 'delete:no', 'BookPrizeToken');
-        drupal_set_message('Received a Book Token Bonus for completing the Classic Reading Game');
+        \Drupal::messenger()->addMessage('Received a Book Token Bonus for completing the Classic Reading Game');
       }
       else {
         // Default to point bonus
         summergame_player_points($pid, 1000, 'Completion Bonus', 'Point Bonus for completing the Classic Reading Game', 'delete:no');
-        drupal_set_message('Received a Point Bonus for completing the Classic Reading Game');
+        \Drupal::messenger()->addMessage('Received a Point Bonus for completing the Classic Reading Game');
       }
     }
   }
@@ -1497,14 +1498,14 @@ function summergame_badgeifier_form_submit($form, &$form_state) {
     $player_link = l('Player #' . $pid, 'summergame/player/' . $pid);
     // Award badge to the player
     if (summergame_player_award_badge($pid, $badge_id)) {
-      drupal_set_message("Awarded Badge #$badge_id to $player_link");
+      \Drupal::messenger()->addMessage("Awarded Badge #$badge_id to $player_link");
     }
     else {
-      drupal_set_message("Badge #$badge_id NOT awarded to $player_link. Already awarded?", 'error');
+      \Drupal::messenger()->addError("Badge #$badge_id NOT awarded to $player_link. Already awarded?");
     }
   }
   else {
-    drupal_set_message("No player with ID #$pid could be found", 'error');
+    \Drupal::messenger()->addError("No player with ID #$pid could be found");
   }
 
   drupal_goto('summergame/admin');

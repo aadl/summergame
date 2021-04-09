@@ -36,7 +36,7 @@ class SummerGamePlayerForm extends FormBase {
       if ($uid = $user->id()) {
         // Check if existing player
         if ($player = summergame_player_load(['uid' => $uid])) {
-          drupal_set_message('Redirecting to your existing player');
+          \Drupal::messenger()->addMessage('Redirecting to your existing player');
           return $this->redirect('summergame.player', ['pid' => $player['pid']]);
         }
         else {
@@ -46,7 +46,7 @@ class SummerGamePlayerForm extends FormBase {
         }
       }
       else {
-        drupal_set_message('You need to log in to the website before you can sign up a player');
+        \Drupal::messenger()->addMessage('You need to log in to the website before you can sign up a player');
         return $this->redirect('<front>')->send();
       }
     }
@@ -64,7 +64,7 @@ class SummerGamePlayerForm extends FormBase {
                                   "player to have a separate website identity for these online activites, please log " .
                                   "out and create a new website account before signing up for the $gameDisplayName.<br><br>" .
                                   "<b>Each player on your account must be a real person who lives in your home.</b>";
-          drupal_set_message(['#markup' => $extra_player_message]);
+          \Drupal::messenger()->addMessage(['#markup' => $extra_player_message]);
           $player = ['uid' => $uid];
         }
         else {
@@ -73,7 +73,7 @@ class SummerGamePlayerForm extends FormBase {
         }
       }
       else {
-        drupal_set_message('You need to log in to the website before you can sign up a player');
+        \Drupal::messenger()->addMessage('You need to log in to the website before you can sign up a player');
         return $this->redirect('summergame.player');
       }
     }
@@ -378,7 +378,7 @@ class SummerGamePlayerForm extends FormBase {
         if ($signup_bonus) {
           $points = summergame_player_points($player['pid'], 100, 'Signup',
                                              'Signed Up for the Summer Game');
-          drupal_set_message("Earned $points Summer Game points for signing up!");
+          \Drupal::messenger()->addMessage("Earned $points Summer Game points for signing up!");
         }
     /*
         // Check for referral bonus
@@ -389,18 +389,18 @@ class SummerGamePlayerForm extends FormBase {
             // Make sure no one has already gotten points for this player
             $existing_bonus = db_fetch_object(db_query("SELECT * FROM sg_ledger WHERE metadata LIKE '%referred:%s%'", $player['pid']));
             if ($existing_bonus->points) {
-              drupal_set_message('Sorry, you entered a Referral Code, but your player has already been awarded points for a referral.');
+              \Drupal::messenger()->addMessage('Sorry, you entered a Referral Code, but your player has already been awarded points for a referral.');
             }
             else {
               summergame_player_points($player['pid'], 500, 'Referral',
                                        'Referred by Player #' . $referring_player['pid'], 'referred_by:' . $referring_player['pid']);
               summergame_player_points($referring_player['pid'], 500, 'Referral',
                                        'Referral Bonus for Player #' . $player['pid'], 'referred:' . $player['pid']);
-              drupal_set_message('You were referred by Player #' . $referring_player['pid'] . ' and you each earned a 500 point bonus!');
+              \Drupal::messenger()->addMessage('You were referred by Player #' . $referring_player['pid'] . ' and you each earned a 500 point bonus!');
             }
           }
           else {
-            drupal_set_message('Sorry, you entered a referral code, but no player with that code exists');
+            \Drupal::messenger()->addMessage('Sorry, you entered a referral code, but no player with that code exists');
           }
         }
     */
