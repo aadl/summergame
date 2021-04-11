@@ -40,10 +40,9 @@ function summergame_trivia_update() {
   }
   $html .= '</h1>';
 
-  $res = $db->query("SELECT * FROM sg_trivia_guesses ORDER BY id DESC LIMIT 25")->fetchAll(PDO::FETCH_ASSOC);
-
+  $sg_trivia_guesses = $db->query("SELECT * FROM sg_trivia_guesses ORDER BY id DESC LIMIT 25")->fetchAll(PDO::FETCH_ASSOC);
   $rows = [];
-  while ($sg_trivia_guesses as $row) {
+  foreach ($sg_trivia_guesses as $row) {
     $rows[] = $row;
   }
   $html .= theme('table', array_keys($rows[0]), $rows);
