@@ -160,7 +160,7 @@ class AdminController extends ControllerBase {
                          ':game_term_override' => $wild_term]);
     }
     else {
-      $res = db_query("SELECT * FROM sg_game_codes ORDER BY created DESC");
+      $res = $db->query("SELECT * FROM sg_game_codes ORDER BY created DESC");
     }
     while ($game_code = $res->fetchAssoc()) {
       // Load creator info

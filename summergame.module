@@ -514,6 +514,7 @@ function summergame_twilio_respond($incoming) {
 
 function summergame_dod_response($text, $pid) {
   $response = '';
+  $db = \Drupal::database();
 
   // Grab DoD Data from Couch
   $libphp_path = variable_get('summergame_libphp_path', '');
@@ -537,9 +538,8 @@ function summergame_dod_response($text, $pid) {
 
   if ($new_track = $track_lookup[$text]) {
     // check if they've already received points for this track
-    $row = db_fetch_array(db_query("SELECT * FROM sg_ledger WHERE pid = %d " .
-                                   "AND metadata LIKE '%%track:%s%%' AND points > 0",
-                                   $pid, $new_track));
+    $row = db_fetch_array($db->query("SELECT * FROM sg_ledger WHERE pid = $pid " .
+                                   "AND metadata LIKE '%%track:$new_track%%' AND points > 0"));
     $points = ($row['lid'] ? 0 : 500);
 
     summergame_player_points($pid, $points, 'New Track', "Started the $new_track Track",
@@ -550,8 +550,8 @@ function summergame_dod_response($text, $pid) {
     $questions = $couch->getDoc($text);
 
     // Determine player track
-    $res = db_query("SELECT * FROM sg_ledger WHERE pid = %d AND game_term = 'DoOrDiag' " .
-                    "AND metadata LIKE '%track:%' ORDER BY timestamp DESC LIMIT 1", $pid);
+    $res = $db->query("SELECT * FROM sg_ledger WHERE pid = $pid AND game_term = 'DoOrDiag' " .
+                    "AND metadata LIKE '%track:%' ORDER BY timestamp DESC LIMIT 1");
     $row = db_fetch_array($res);
     preg_match('/track:([\w]+)/', $row['metadata'], $matches);
     $track = $matches[1];
