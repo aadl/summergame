@@ -527,7 +527,8 @@ class PlayerController extends ControllerBase {
       }
 
       // build the pager
-      $page = pager_find_page();
+      $pager_manager = \Drupal::service('pager.manager');
+      $page = $pager_manager->findPage();
       $per_page = 100;
       $offset = $per_page * $page;
 
@@ -546,7 +547,7 @@ class PlayerController extends ControllerBase {
           [':pid' => $pid]);
       }
 
-      $pager = pager_default_initialize($total, $per_page);
+      $pager = $pager_manager->defaultInitialize($total, $per_page);
 
       while ($row = $result->fetchAssoc()) {
         // Change bnum: code to a link to the bib record
@@ -579,7 +580,7 @@ class PlayerController extends ControllerBase {
         // link to nodes
         if (preg_match('/nid:([\d]+)/', $row['metadata'], $matches)) {
           if ($row['type'] != 'Download of the Day' || $player_access) { // Don't link to DotD records
-            $node = node_load($matches[1]);
+            $node = \Drupal\node\Entity\Node::load($matches[1]);
             $node_title = $node->get('title')->value;
             $nid = $node->get('nid')->value;
             $row['description'] .= ": <a href=\"/node/$nid\">$node_title</a>";
