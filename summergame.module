@@ -539,7 +539,7 @@ function summergame_dod_response($text, $pid) {
   if ($new_track = $track_lookup[$text]) {
     // check if they've already received points for this track
     $row = db_fetch_array($db->query("SELECT * FROM sg_ledger WHERE pid = $pid " .
-                                   "AND metadata LIKE '%%track:$new_track%%' AND points > 0"));
+                                   "AND metadata LIKE '%%track:$new_track%%' AND points > 0")->fetchAssoc());
     $points = ($row['lid'] ? 0 : 500);
 
     summergame_player_points($pid, $points, 'New Track', "Started the $new_track Track",
@@ -550,9 +550,8 @@ function summergame_dod_response($text, $pid) {
     $questions = $couch->getDoc($text);
 
     // Determine player track
-    $res = $db->query("SELECT * FROM sg_ledger WHERE pid = $pid AND game_term = 'DoOrDiag' " .
-                    "AND metadata LIKE '%track:%' ORDER BY timestamp DESC LIMIT 1");
-    $row = db_fetch_array($res);
+    $row = $db->query("SELECT * FROM sg_ledger WHERE pid = $pid AND game_term = 'DoOrDiag' " .
+                    "AND metadata LIKE '%track:%' ORDER BY timestamp DESC LIMIT 1")->fetchAssoc();
     preg_match('/track:([\w]+)/', $row['metadata'], $matches);
     $track = $matches[1];
 
