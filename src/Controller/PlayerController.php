@@ -528,7 +528,7 @@ class PlayerController extends ControllerBase {
 
       // build the pager
       $pager_manager = \Drupal::service('pager.manager');
-      $page = $pager_manager->findPage();
+      $page = \Drupal::service('pager.parameters')->findPage();
       $per_page = 100;
       $offset = $per_page * $page;
 
@@ -547,7 +547,7 @@ class PlayerController extends ControllerBase {
           [':pid' => $pid]);
       }
 
-      $pager = $pager_manager->defaultInitialize($total, $per_page);
+      $pager =\Drupal::service('pager.manager')->createPager($total, $per_page);
 
       while ($row = $result->fetchAssoc()) {
         // Change bnum: code to a link to the bib record
