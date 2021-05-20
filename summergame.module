@@ -538,8 +538,10 @@ function summergame_dod_response($text, $pid) {
 
   if ($new_track = $track_lookup[$text]) {
     // check if they've already received points for this track
-    $row = db_fetch_array($db->query("SELECT * FROM sg_ledger WHERE pid = $pid " .
-                                   "AND metadata LIKE '%%track:$new_track%%' AND points > 0")->fetchAssoc());
+    $row = $db->query("SELECT * FROM sg_ledger WHERE pid = $pid " .
+                      "AND metadata LIKE '%%track:$new_track%%' " .
+                      "AND points > 0"
+                    )->fetchAssoc();
     $points = ($row['lid'] ? 0 : 500);
 
     summergame_player_points($pid, $points, 'New Track', "Started the $new_track Track",
