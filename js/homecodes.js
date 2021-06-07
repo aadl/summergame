@@ -52,36 +52,41 @@
   // Load marker data from json source
   $.ajax({
     type: 'GET',
-    url: '/summergame/homecodes/markerdata',
+    url: '/summergame/homecodes/markerdata/' + drupalSettings.hc_game_term,
     dataType: 'json',
     success: function (data) {
       var redeemedData = false;
 
       // Loop through data and create markers
       $.each(data, function(index, element) {
-/* NO REDEEMED DATA IN OFFSEASON
-        if (element.redeemed) {
-          redeemedData = true;
-          L.marker([element.lat, element.lon], {icon: redIcon}).bindPopup(element.homecode).addTo(redeemedLayerGroup);
+        if (drupalSettings.hc_points_enabled) {
+          if (element.redeemed) {
+            redeemedData = true;
+            L.marker([element.lat, element.lon], {icon: redIcon}).bindPopup(element.homecode).addTo(redeemedLayerGroup);
+          }
+          else {
+            // Add report link to homecode text
+            element.homecode += '<br>[ <a href="/summergame/homecodes/report/' + element.code_id + '">Can\'t find it?</a> ]';
+            L.marker([element.lat, element.lon]).bindPopup(element.homecode).addTo(availableLayerGroup);
+          }
         }
         else {
-          L.marker([element.lat, element.lon]).bindPopup(element.homecode).addTo(availableLayerGroup);
-        }
-*/
-        if (element.num_redemptions >= 300) {
-          L.marker([element.lat, element.lon], {icon: redIcon}).bindPopup(element.homecode).addTo(availableLayerGroup);
-        }
-        else if (element.num_redemptions >= 200) {
-          L.marker([element.lat, element.lon], {icon: orangeIcon}).bindPopup(element.homecode).addTo(availableLayerGroup);
-        }
-        else if (element.num_redemptions >= 100) {
-          L.marker([element.lat, element.lon], {icon: yellowIcon}).bindPopup(element.homecode).addTo(availableLayerGroup);
-        }
-        else if (element.num_redemptions >= 50) {
-          L.marker([element.lat, element.lon], {icon: greenIcon}).bindPopup(element.homecode).addTo(availableLayerGroup);
-        }
-        else {
-          L.marker([element.lat, element.lon]).bindPopup(element.homecode).addTo(availableLayerGroup);
+          // Offseason, show number of redemptions
+          if (element.num_redemptions >= 300) {
+            L.marker([element.lat, element.lon], {icon: redIcon}).bindPopup(element.homecode).addTo(availableLayerGroup);
+          }
+          else if (element.num_redemptions >= 200) {
+            L.marker([element.lat, element.lon], {icon: orangeIcon}).bindPopup(element.homecode).addTo(availableLayerGroup);
+          }
+          else if (element.num_redemptions >= 100) {
+            L.marker([element.lat, element.lon], {icon: yellowIcon}).bindPopup(element.homecode).addTo(availableLayerGroup);
+          }
+          else if (element.num_redemptions >= 50) {
+            L.marker([element.lat, element.lon], {icon: greenIcon}).bindPopup(element.homecode).addTo(availableLayerGroup);
+          }
+          else {
+            L.marker([element.lat, element.lon]).bindPopup(element.homecode).addTo(availableLayerGroup);
+          }
         }
       });
 

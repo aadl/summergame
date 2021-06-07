@@ -225,19 +225,29 @@ summergame.leaderboard:
   requirements:
     _permission: 'access content'
 summergame.homecodes:
-  path: '/summergame/homecodes'
+  path: '/summergame/homecodes/{game_term}'
   defaults:
     _controller: '\Drupal\summergame\Controller\DefaultController::homecodes'
     _title: 'Summer Game Home Codes Map'
+    game_term: ''
   requirements:
     _permission: 'access summergame'
 summergame.homecodes.markerdata:
-  path: '/summergame/homecodes/markerdata'
+  path: '/summergame/homecodes/markerdata/{game_term}'
   defaults:
     _controller: '\Drupal\summergame\Controller\DefaultController::homecodes_markerdata'
     _title: 'Summer Game Home Codes Marker Data'
+    game_term: ''
   requirements:
     _permission: 'access content'
+summergame.homecodes.report:
+  path: '/summergame/homecodes/report/{code_id}'
+  defaults:
+    _title: 'Report Summer Game Home Code'
+    _form: '\Drupal\summergame\Form\SummerGameHomeCodeReportForm'
+    code_id: 0
+  requirements:
+    _permission: 'access summergame'
 summergame.badgelist:
   path: '/summergame/badgelist'
   defaults:
