@@ -94,7 +94,7 @@ class SummerGameHomeCodeForm extends FormBase {
             '#required' => TRUE,
           ];
           $form['display'] = [
-            '#type' => checkbox,
+            '#type' => 'checkbox',
             '#title' => 'Display Address on Map',
             '#description' => t('Display a marker for this address on the public Home Codes map for players to find your code. No additional personal information will be displayed.'),
           ];

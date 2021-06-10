@@ -59,6 +59,7 @@ class DefaultController extends ControllerBase {
 
     //drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
     $args = [];
+    $lb_title = '';
 
     // Switch for staff
     $staff_rid = $summergame_settings->get('summergame_staff_role_id');
@@ -119,6 +120,7 @@ class DefaultController extends ControllerBase {
                       'ORDER BY lb_total DESC ' .
                       'LIMIT ' . $rows, $args);
 
+    $place = 0;
     while ($row = $res->fetchAssoc()) {
       $lb_player = summergame_player_load($row['pid']);
       if ($lb_player['show_leaderboard']) {
@@ -150,16 +152,22 @@ class DefaultController extends ControllerBase {
     return $render;
   }
 
-  public function homecodes() {
-    $homecode_explaination_markup = <<<EOT
-<h1>Summer Game Home Codes</h1>
-<p>Summer Game 2020 has ended and all Home Codes have expired! If you put up a home code this Summer, please take it down!</p>
-<p>This map will stay up through September and will then be taken down until next summer. If you have any questions or concerns, as always, <a href="http://aadl.org/contactus">contact us</a>.</p>
-<p>Thanks to everyone who posted or found a home code! Rest assured this feature will be back for SG2021!</p>
+  public function homecodes($game_term = '') {
+    // Set default Game Term
+    if (empty($game_term)) {
+      $game_term = \Drupal::config('summergame.settings')->get('summergame_current_game_term');
+    }
+    $summergame_points_enabled = \Drupal::config('summergame.settings')->get('summergame_points_enabled');
+    $homecode_explaination_markup = '<h1>Summer Game Home Codes</h1>';
+    $legend_markup = '';
+
+    if ($summergame_points_enabled) {
+      $homecode_explaination_markup .= <<<EOT
+<p>The thought may be DWELLING in your mind, "What's a HOME CODE?" Well that's a great question! A Home Code is your VERY OWN PERSONALIZED code for your HOME!</p>
+<p>The way HOME CODES work is simple! You create your code by clicking "My Players". Then scroll down your My Summer Game page until you see "Player Details". You'll see the words, "Create a Home Code", click that and... well... CREATE A HOME CODE! Your Home Code is 100% created BY you FOR other passerby! You can choose whether or not you want your Home Code displayed on the map of ALL THE HOME CODES (A serious, no puns note: No personal information is given on the map. Just the address linked to the code!) Once your Home Code is created, you can MAKE a sign or PRINT a sign to put in your window! WHAT FUN!</p>
+<p><strong>NOTE: If you make a home code for your home, PLEASE make sure the code is displayed where it can easily be seen from the curb / sidewalk / parking lot / driveway / what have you. If you visit an address and can't find the code, please click the "Can't find it?" link under the address on the map to report it to us and the code creator. Thanks for your help with this!</strong></p>
 EOT;
 
-    $legend_markup = '';
-    if (\Drupal::config('summergame.settings')->get('summergame_points_enabled')) {
       // Display current player redemption status while game is running
       if ($player = summergame_get_active_player()) {
         $player_name = ($player['nickname'] ? $player['nickname'] : $player['name']);
@@ -170,19 +178,28 @@ EOT;
       }
     }
     else {
+      $homecode_explaination_markup .= <<<EOT
+<p>Summer Game has ended and all Home Codes have expired! If you put up a home code this Summer, please take it down!</p>
+<p>This map will show total number of redemptions for each code during the offseason. If you have any questions or concerns, as always, <a href="http://aadl.org/contactus">contact us</a>.</p>
+<p>Thanks to everyone who posted or found a home code!</p>
+EOT;
+
       $legend_markup = '<p>Showing number of redemptions during the game.</p>' .
           '<img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png"> = 0-49 ' .
           '<img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png"> = 50-99 ' .
           '<img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-gold.png"> = 100-199 ' .
           '<img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png"> = 200-299 ' .
-          '<img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png"> = 300+ ' .
-          '</p>';
+          '<img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png"> = 300+ ';
     }
 
     return [
       '#attached' => [
+        'drupalSettings' => [
+          'hc_game_term' => $game_term,
+          'hc_points_enabled' => $summergame_points_enabled,
+        ],
         'library' => [
-          'summergame/summergame-homecodes-lib'
+          'summergame/summergame-homecodes-lib',
         ]
       ],
       '#cache' => [
@@ -195,15 +212,19 @@ EOT;
     ];
   }
 
-  public function homecodes_markerdata() {
+  public function homecodes_markerdata($game_term = '') {
     // Build JSON array of home code marker data
     $response = [];
     $db = \Drupal::database();
     $player = summergame_get_active_player();
     $summergame_points_enabled = \Drupal::config('summergame.settings')->get('summergame_points_enabled');
+    if (empty($game_term)) {
+      $game_term = \Drupal::config('summergame.settings')->get('summergame_current_game_term');
+    }
 
     // Find all home codes
-    $res = $db->query("SELECT * FROM sg_game_codes WHERE clue LIKE '%\"homecode\"%'");
+    $res = $db->query("SELECT * FROM sg_game_codes WHERE game_term = :game_term AND clue LIKE '%\"homecode\"%'",
+                      [':game_term' => $game_term]);
     while ($game_code = $res->fetchObject()) {
       $geocode_data = json_decode($game_code->clue);
       if ($geocode_data->display) {
@@ -215,6 +236,10 @@ EOT;
             if ($ledger_row) {
               $geocode_data->homecode = 'REDEEMED: ' . $geocode_data->homecode;
               $geocode_data->redeemed = 1;
+            }
+            else {
+              // Not redeemed, add code id to enable "unable to find code" report
+              $geocode_data->code_id = $game_code->code_id;
             }
           }
         }
@@ -565,11 +590,11 @@ FBL;
     }
     else if ($type == 'youth') {
       $redis->incr('ygpdfcounter');
-      drupal_goto($file_path . 'SG_Youth_2017.pdf');
+      // drupal_goto($file_path . 'SG_Youth_2017.pdf');
     }
     else { // default to the adult single player form
       $redis->incr('agpdfcounter');
-      drupal_goto($file_path . 'SG_Adult_Teen_2017.pdf');
+      // drupal_goto($file_path . 'SG_Adult_Teen_2017.pdf');
     }
 
     return $this->redirect('summergame.admin');
