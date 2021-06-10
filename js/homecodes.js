@@ -65,8 +65,10 @@
             L.marker([element.lat, element.lon], {icon: redIcon}).bindPopup(element.homecode).addTo(redeemedLayerGroup);
           }
           else {
-            // Add report link to homecode text
-            element.homecode += '<br>[ <a href="/summergame/homecodes/report/' + element.code_id + '">Can\'t find it?</a> ]';
+            if (element.code_id) {
+              // Add report link to homecode text
+              element.homecode += '<br>[ <a href="/summergame/homecodes/report/' + element.code_id + '">Can\'t find it?</a> ]';
+            }
             L.marker([element.lat, element.lon]).bindPopup(element.homecode).addTo(availableLayerGroup);
           }
         }
