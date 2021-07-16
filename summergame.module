@@ -1269,11 +1269,12 @@ function summergame_check_completion_bonus($pid) {
   $db = \Drupal::database();
   $summergame_settings = \Drupal::config('summergame.settings');
   $current_game_term = $summergame_settings->get('summergame_current_game_term');
+  $current_year_ts = strtotime(date('Y-01-01'));
 
   if ($player = summergame_player_load($pid)) {
     if ($player['agegroup'] == 'youth' || $player['agegroup'] == 'teen') {
-      $row = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND game_term = :game_term AND type = 'Completion Bonus'",
-                        [':pid' => $pid, ':game_term' => 'BookPrizeToken'])->fetchObject();
+      $row = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND game_term = :game_term AND type = 'Completion Bonus' AND timestamp > :year_ts",
+                        [':pid' => $pid, ':game_term' => 'BookPrizeToken', ':year_ts' => $current_year_ts])->fetchObject();
     }
     else {
       $row = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND game_term = :game_term AND type = 'Completion Bonus'",
