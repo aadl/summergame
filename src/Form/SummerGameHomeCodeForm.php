@@ -95,11 +95,16 @@ class SummerGameHomeCodeForm extends FormBase {
           ];
           $form['display'] = [
             '#type' => 'checkbox',
-            '#title' => 'Display Address on Map',
-            '#description' => t('Display a marker for this address on the public Home Codes map for players to find your code. No additional personal information will be displayed.'),
+            '#title' => 'Display my Address on Public Home Codes Map',
+            '#description' => t('This means summer game players will come to your home looking for this code!'),
+          ];
+          $form['permission'] = [
+            '#type' => 'checkbox',
+            '#title' => 'I am a grownup, or I have permission from one to make this home code and put up a code sign. (REQUIRED)',
+            '#required' => TRUE,
           ];
           $form['guidelines'] = [
-            '#markup' => '<p><strong>Please avoid messages that are commercial, religious, or political. Thank you!</strong></p>'
+            '#markup' => '<strong><p>Make sure your code is clearly visible from the sidewalk, street, or parking lot!</p><p>Please avoid messages that are commercial, religious, or political. Thank you!</p></strong>'
           ];
           $form['submit'] = [
             '#type' => 'submit',
