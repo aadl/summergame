@@ -107,18 +107,26 @@ class SummerGameHomeCodeReportForm extends FormBase {
     $geocode_data->reports->$player_pid = $player_pid;
     $db->update('sg_game_codes')->fields(['clue' => json_encode($geocode_data)])->condition('code_id', $code_id)->execute();
 
+    $homecode_email = \Drupal::config('summergame.settings')->get('summergame_homecode_notify_email');
+
     // Send email to Home Code owner
+    $headers = "From: $homecode_email" . "\r\n" .
+             "Reply-To: $homecode_email" . "\r\n" .
+             "X-Mailer: PHP/" . phpversion() .
+             "Content-Type: text/html; charset=\"us-ascii\"";
+
     mail($code_data->mail,
       'Your Summer Game Home Code has been reported',
       "Hello there, Summer Gamer!\n" .
       "We have received a report that a player was unable to find your Home Code at the following address:\n\n" .
       str_replace('<br>', "\n", $geocode_data->homecode) . "\n\n" .
       "Please make sure that your sign is displayed in an easily viewable location from the street or sidewalk.\n" .
-      "If you have any questions, please Contact Us for more information!\n\n-The Summer Game Team"
+      "If you have any questions, please Contact Us for more information!\n\n-The Summer Game Team",
+      $headers
     );
 
     // Send email to staff
-    mail(\Drupal::config('summergame.settings')->get('summergame_homecode_notify_email'),
+    mail($homecode_email,
       'Home Code Reported: ' . $code_data->text,
       "We have received a report of a Home Code that a player was unable to find.\n\n" .
       "Home Code Details:\n" .
