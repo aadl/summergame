@@ -165,7 +165,8 @@ class DefaultController extends ControllerBase {
       $homecode_explaination_markup .= <<<EOT
 <p>The thought may be DWELLING in your mind, "What's a HOME CODE?" Well that's a great question! A Home Code is your VERY OWN PERSONALIZED code for your HOME!</p>
 <p>The way HOME CODES work is simple! You create your code by clicking "My Players". Then scroll down your My Summer Game page until you see "Player Details". You'll see the words, "Create a Home Code", click that and... well... CREATE A HOME CODE! Your Home Code is 100% created BY you FOR other passerby! You can choose whether or not you want your Home Code displayed on the map of ALL THE HOME CODES (A serious, no puns note: No personal information is given on the map. Just the address linked to the code!) Once your Home Code is created, you can MAKE a sign or PRINT a sign to put in your window! WHAT FUN!</p>
-<p><strong>NOTE: If you make a home code for your home, PLEASE make sure the code is displayed where it can easily be seen from the curb / sidewalk / parking lot / driveway / what have you. If you visit an address and can't find the code, please click the "Can't find it?" link under the address on the map to report it to us and the code creator. Thanks for your help with this!</strong></p>
+<p><strong>MADE A CODE? PLEASE make sure the code is displayed where it can easily be seen from the curb / sidewalk / parking lot / driveway / what have you.</strong></p>
+<p><strong>CAN'T FIND A CODE? Just use the Can't Find It link on the pin you can't find below! PLEASE DON'T KNOCK ON ANY DOORS OR TRY TO ASK THE RESIDENT. You might be at the wrong house, or even if you're at the right one, FINDING HOME CODES DOESN'T INVOLVE KNOCKING ON ANY DOORS! Capisce? Let's not make the whole town mad at the Summer Game, ok? Thanks for your help!</strong></p>
 EOT;
 
       // Display current player redemption status while game is running
