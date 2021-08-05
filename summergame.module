@@ -822,7 +822,8 @@ function summergame_get_player_log($pid, $game_term = '') {
   $res = $db->query("SELECT * FROM sg_ledger " .
                     "WHERE pid = :pid " .
                     "AND metadata LIKE '%logged:1%' " .
-                    "AND game_term = :game_term", [':pid' => $pid, ':game_term' => $game_term]);
+                    "AND game_term = :game_term " .
+                    "ORDER BY timestamp DESC", [':pid' => $pid, ':game_term' => $game_term]);
 
   while ($row = $res->fetchObject()) {
     $log[] = $row;
