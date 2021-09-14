@@ -24,9 +24,13 @@ JST;
 
 function summergame_trivia_update() {
   // Check the Guessed Status
+  $db = \Drupal::database();
   $html .= '<h1>Answer: ';
-  $count = db_fetch_object(db_query("SELECT COUNT(id) AS count FROM sg_trivia_correct"));
-  $num_guessed = $count->count;
+
+  $query = $db->select('sg_trivia_correct', 'sg_trivia_correct')
+      ->fields('sg_trivia_correct', ['id']);
+  $num_guessed = $query->countQuery()->execute()->fetchField();
+
   if ($num_guessed) {
     $html .= variable_get('summergame_trivia_answer', '');
     $html .= " ($num_guessed Correct Answer" . ($num_guessed == 1 ? ')' : 's)');
@@ -36,9 +40,9 @@ function summergame_trivia_update() {
   }
   $html .= '</h1>';
 
-  $res = db_query("SELECT * FROM sg_trivia_guesses ORDER BY id DESC LIMIT 25");
-  $rows = array();
-  while ($row = db_fetch_array($res)) {
+  $sg_trivia_guesses = $db->query("SELECT * FROM sg_trivia_guesses ORDER BY id DESC LIMIT 25")->fetchAll(PDO::FETCH_ASSOC);
+  $rows = [];
+  foreach ($sg_trivia_guesses as $row) {
     $rows[] = $row;
   }
   $html .= theme('table', array_keys($rows[0]), $rows);
@@ -70,13 +74,14 @@ function summergame_trivia_settings() {
     '#maxlength' => 32,
     '#description' => t("Active Game Term for trivia (e.g. SpaceProgramTrivia)"),
   );
-  
+
   return system_settings_form($form);
 }
 
 function summergame_trivia_settings_validate($form, &$form_state) {
   if ($form_state['value']['summergame_trivia_answer'] != variable_get('summergame_trivia_answer', '')) {
     // Clear the trivia correct table
-    db_query("TRUNCATE TABLE sg_trivia_correct");
+    $db = \Drupal::database();
+    $db->query("TRUNCATE TABLE sg_trivia_correct");
   }
 }

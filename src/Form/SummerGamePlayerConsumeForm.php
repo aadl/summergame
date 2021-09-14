@@ -170,7 +170,7 @@ class SummerGamePlayerConsumeForm extends FormBase {
     }
 
     $points = summergame_player_points($pid, $points, $type, $title, $metadata);
-    drupal_set_message("Earned $points points for $title");
+    \Drupal::messenger()->addMessage("Earned $points points for $title");
 
     return;
   }

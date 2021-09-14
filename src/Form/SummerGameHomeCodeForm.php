@@ -135,12 +135,12 @@ class SummerGameHomeCodeForm extends FormBase {
         return $form;
       }
       else {
-        drupal_set_message("Unable to load user from User ID", 'warning');
+        \Drupal::messenger()->addWarning("Unable to load user from User ID");
         return new RedirectResponse('/summergame/player');
       }
     }
     else {
-      drupal_set_message("You do not have access to User ID", 'warning');
+      \Drupal::messenger()->addWarning("You do not have access to User ID");
       return new RedirectResponse('/summergame/player');
     }
   }
@@ -178,7 +178,7 @@ class SummerGameHomeCodeForm extends FormBase {
       $response = $guzzle->request('GET', $geocode_search_url, ['query' => $query]);
     }
     catch (\Exception $e) {
-      drupal_set_message('Unable to validate barcode for patron', 'error');
+      \Drupal::messenger()->addError('Unable to validate barcode for patron');
     }
     if ($response) {
       $response_body = json_decode($response->getBody()->getContents());

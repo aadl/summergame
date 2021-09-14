@@ -23,7 +23,7 @@ class PlayerController extends ControllerBase {
 /*
     if ($user->id() && $pid === 'extra') {
       if ($user->player['pid']) {
-        drupal_set_message("Use the form below to add an extra player to your website account for another person in your household. " .
+        \Drupal::messenger()->addMessage("Use the form below to add an extra player to your website account for another person in your household. " .
                            "You will be able to enter game codes and report reading / listening / " .
                            "watching activities for points. You will be able to switch the active player on your " .
                            "website account to specify which player receives points for online activities such as " .
@@ -61,7 +61,7 @@ class PlayerController extends ControllerBase {
 
       // Check if player's score card is private and we don't have access
       if (!$player['show_myscore'] && !$player_access) {
-        drupal_set_message("Player #$pid's Score Card is private", 'error');
+        \Drupal::messenger()->addError("Player #$pid's Score Card is private");
         $this->redirect('<front>');
       }
 
@@ -228,7 +228,7 @@ class PlayerController extends ControllerBase {
     else {
       // invalid PID or not authorized
       if ($pid) {
-        drupal_set_message('Invalid Player ID: ' . $pid, 'error');
+        \Drupal::messenger()->addError('Invalid Player ID: ' . $pid);
         return $this->redirect('<front>');
       }
       else {
@@ -236,7 +236,7 @@ class PlayerController extends ControllerBase {
           return $this->redirect('summergame.player.new');
         }
         else {
-          drupal_set_message('You must log into a website account in order to access your Player page');
+          \Drupal::messenger()->addMessage('You must log into a website account in order to access your Player page');
           return new RedirectResponse('/user/login?destination=summergame/player');
         }
       }
@@ -261,7 +261,7 @@ class PlayerController extends ControllerBase {
             return $redeem_form = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerConsumeForm', $pid);
           }
         } else {
-          drupal_set_message("Invalid ID or no access for player #$pid", 'error');
+          \Drupal::messenger()->addError("Invalid ID or no access for player #$pid");
           return new RedirectResponse('/summergame/player');
         }
       } else {
@@ -273,13 +273,13 @@ class PlayerController extends ControllerBase {
           }
           return new RedirectResponse($redirect_uri);
         } else {
-          drupal_set_message('Add a player to your account to play the $gameDisplayName');
+          \Drupal::messenger()->addMessage('Add a player to your account to play the $gameDisplayName');
           return new RedirectResponse('/summergame/player/new');
         }
 
       }
     } else {
-      drupal_set_message('You must be logged in to redeem a $gameDisplayName code.');
+      \Drupal::messenger()->addMessage('You must be logged in to redeem a $gameDisplayName code.');
       return new RedirectResponse("/user/login?destination=" . $_SERVER['REQUEST_URI']);
     }
   }
@@ -427,20 +427,20 @@ class PlayerController extends ControllerBase {
         if (isset($account)) {
           // Use the user data service to store active Player ID
           \Drupal::service('user.data')->set('summergame', $account->id(), 'sg_active_pid', $pid);
-          drupal_set_message(['#markup' => 'Player #' . $pid . ' (' . $player['nickname'] . ') is now the active player for the website account <em>' .
+          \Drupal::messenger()->addMessage(['#markup' => 'Player #' . $pid . ' (' . $player['nickname'] . ') is now the active player for the website account <em>' .
                              $account->get('name')->value . '</em>. Online activities that earn points (checkout history, reviews, etc.) will now be awarded ' .
                              'to this player.']);
         }
         else {
-          drupal_set_message('Cannot load the website account associated with Player #' . $pid, 'warning');
+          \Drupal::messenger()->addWarning('Cannot load the website account associated with Player #' . $pid);
         }
       }
       else {
-        drupal_set_message('No website user associated with Player #' . $pid, 'warning');
+        \Drupal::messenger()->addWarning('No website user associated with Player #' . $pid);
       }
     }
     else {
-      drupal_set_message('No player found with Player #' . $pid);
+      \Drupal::messenger()->addMessage('No player found with Player #' . $pid);
     }
     return new RedirectResponse('/summergame/player/' . $pid);
   }
@@ -462,7 +462,7 @@ class PlayerController extends ControllerBase {
         $player['phone'] = $code;
         summergame_player_save($player);
         $char = chr(($player['pid'] % 26) + 65);
-        drupal_set_message('TEXT ' . $char. $code . ' to 734-327-4200 (42235) to connect your phone');
+        \Drupal::messenger()->addMessage('TEXT ' . $char. $code . ' to 734-327-4200 (42235) to connect your phone');
       }
       return new RedirectResponse('/summergame/player/' . $player['pid']);
     }
@@ -478,7 +478,7 @@ class PlayerController extends ControllerBase {
         $fcount = $res->fetch();
         if ($fcount->fcount) {
           $followers = $fcount->fcount . ' follower' . ($fcount->fcount == 1 ? '' : 's');
-          drupal_set_message("Cannot regenerate Friend Code once it has been redeemed ($followers)", 'error');
+          \Drupal::messenger()->addError("Cannot regenerate Friend Code once it has been redeemed ($followers)");
           return new RedirectResponse('summergame/player/' . $player['pid']);
         }
       }
@@ -504,7 +504,7 @@ class PlayerController extends ControllerBase {
       }
       $player['friend_code'] = $code;
       summergame_player_save($player);
-      drupal_set_message("Your play.aadl.org Friend Code is $code. Earn bonus points when a friend enters that code as a Game Code.");
+      \Drupal::messenger()->addMessage("Your play.aadl.org Friend Code is $code. Earn bonus points when a friend enters that code as a Game Code.");
       return new RedirectResponse('summergame/player/' . $player['pid']);
     }
     return new RedirectResponse('summergame/player');
@@ -522,12 +522,13 @@ class PlayerController extends ControllerBase {
       $player_access = summergame_player_access($player['pid']);
 
       if (!$player['show_myscore'] && !$player_access) {
-        drupal_set_message("Player #$pid's Score Card is private", 'error');
+        \Drupal::messenger()->addError("Player #$pid's Score Card is private");
         return $this->redirect('<front>');
       }
 
       // build the pager
-      $page = pager_find_page();
+      $pager_manager = \Drupal::service('pager.manager');
+      $page = \Drupal::service('pager.parameters')->findPage();
       $per_page = 100;
       $offset = $per_page * $page;
 
@@ -546,7 +547,7 @@ class PlayerController extends ControllerBase {
           [':pid' => $pid]);
       }
 
-      $pager = pager_default_initialize($total, $per_page);
+      $pager =\Drupal::service('pager.manager')->createPager($total, $per_page);
 
       while ($row = $result->fetchAssoc()) {
         // Change bnum: code to a link to the bib record
@@ -579,7 +580,7 @@ class PlayerController extends ControllerBase {
         // link to nodes
         if (preg_match('/nid:([\d]+)/', $row['metadata'], $matches)) {
           if ($row['type'] != 'Download of the Day' || $player_access) { // Don't link to DotD records
-            $node = node_load($matches[1]);
+            $node = \Drupal\node\Entity\Node::load($matches[1]);
             $node_title = $node->get('title')->value;
             $nid = $node->get('nid')->value;
             $row['description'] .= ": <a href=\"/node/$nid\">$node_title</a>";

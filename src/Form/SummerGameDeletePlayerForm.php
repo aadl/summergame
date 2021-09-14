@@ -55,13 +55,13 @@ class SummerGameDeletePlayerForm extends FormBase {
       }
       else {
         // No Player ID
-        drupal_set_message("Unable to find player entry", 'error');
+        \Drupal::messenger()->addError("Unable to find player entry");
         return $this->redirect('summergame.player');
       }
     }
     else {
       // No access to Player
-      drupal_set_message("Unable to access player", 'error');
+      \Drupal::messenger()->addError("Unable to access player");
       return $this->redirect('summergame.player');
     }
   }
@@ -73,7 +73,7 @@ class SummerGameDeletePlayerForm extends FormBase {
     $player = $form_state->getValue('player');
     summergame_player_delete(['pid' => $player['pid']]);
     $player_name = ($player['nickname'] ? $player['nickname'] : $player['name']);
-    drupal_set_message("Deleted player $player_name and all associated points and badges");
+    \Drupal::messenger()->addMessage("Deleted player $player_name and all associated points and badges");
     $form_state->setRedirect('summergame.player');
 
     return;

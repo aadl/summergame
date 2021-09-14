@@ -58,14 +58,14 @@ class SummerGameBadgeifierForm extends FormBase {
       $player_link = "<a href=\"/summergame/player/$pid\">Player #$pid</a>";
       // Award badge to the player
       if (summergame_player_award_badge($pid, $badge_id)) {
-        drupal_set_message(['#markup' => "Awarded Badge #$badge_id to $player_link"]);
+        \Drupal::messenger()->addMessage(['#markup' => "Awarded Badge #$badge_id to $player_link"]);
       }
       else {
-        drupal_set_message(['#markup' => "Badge #$badge_id NOT awarded to $player_link. Already awarded?"], 'error');
+        \Drupal::messenger()->addError(['#markup' => "Badge #$badge_id NOT awarded to $player_link. Already awarded?"]);
       }
     }
     else {
-      drupal_set_message("No player with ID #$pid could be found", 'error');
+      \Drupal::messenger()->addError("No player with ID #$pid could be found");
     }
 
     $form_state->setRedirect('summergame.admin');

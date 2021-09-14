@@ -46,7 +46,7 @@ class SummerGameLegoResultsAddForm extends FormBase {
 
     $add = strtoupper($form_state->getValue('add'));
     $redis->set('lego_vote:' . $add[1] . ':' . time(), $add);
-    drupal_set_message("Added 1 vote for $add");
+    \Drupal::messenger()->addMessage("Added 1 vote for $add");
 
     return;
   }
