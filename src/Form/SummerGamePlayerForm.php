@@ -220,11 +220,11 @@ class SummerGamePlayerForm extends FormBase {
       '#title' => 'Privacy Options',
       '#options' => [
         'show_leaderboard' => 'Show my nickname and total score on the public leaderboard',
-        'show_myscore' => 'Allow others to see my $gameDisplayName scores and awards page',
+        'show_myscore' => "Allow others to see my $gameDisplayName scores and awards page",
         'show_titles' => 'Display the titles of Books/Movies/Music on my Score Card for others to see',
       ],
       '#default_value' => $privacy_defaults,
-      '#description' => 'Select what other people can see about your $gameDisplayName progress',
+      '#description' => "Select what other people can see about your $gameDisplayName progress",
     ];
     $form['agegroup'] = [
       '#type' => 'select',
