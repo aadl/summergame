@@ -558,12 +558,12 @@ FBL;
       $page_width = $pdf->GetPageWidth() - $lrMargin - $lrMargin;
 
       // now write some text
-      $pdf->AddFont('Quicksand-Bold', '', 'Quicksand-Bold.php');
+      $pdf->AddFont('Helvetica-Bold', '', 'helveticab.php');
       $font_size = 100;
-      $pdf->SetFont('Quicksand-Bold', '', $font_size);
+      $pdf->SetFont('Helvetica-Bold', '', $font_size);
       while ($pdf->GetStringWidth($event_code) > $page_width) {
         $font_size -= 5;
-        $pdf->SetFont('Quicksand-Bold', '', $font_size);
+        $pdf->SetFont('Helvetica-Bold', '', $font_size);
       }
       $pdf->SetXY($lrMargin, 50);
       $pdf->Cell(0, 10, $event_code, 0, 1, 'C');
