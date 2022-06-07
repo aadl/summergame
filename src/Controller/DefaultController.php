@@ -162,6 +162,9 @@ class DefaultController extends ControllerBase {
     $legend_markup = '';
 
     if ($summergame_points_enabled) {
+      // Temporary Message While Lawn & Library Codes are being developed
+      $homecode_explaination_markup .= '<h2>Stay tuned for Lawn & Library codes, coming July 8th!</h2>';
+/*
       $homecode_explaination_markup .= <<<EOT
 <p>The thought may be DWELLING in your mind, "What's a HOME CODE?" Well that's a great question! A Home Code is your VERY OWN PERSONALIZED code for your HOME!</p>
 <p>The way HOME CODES work is simple! You create your code by clicking "My Players". Then scroll down your My Summer Game page until you see "Player Details". You'll see the words, "Create a Home Code", click that and... well... CREATE A HOME CODE! Your Home Code is 100% created BY you FOR other passerby! You can choose whether or not you want your Home Code displayed on the map of ALL THE HOME CODES (A serious, no puns note: No personal information is given on the map. Just the address linked to the code!) Once your Home Code is created, you can MAKE a sign or PRINT a sign to put in your window! WHAT FUN!</p>
@@ -177,6 +180,7 @@ EOT;
           '<img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png"> = Code Available ' .
           '</p>';
       }
+*/
     }
     else {
       $homecode_explaination_markup .= <<<EOT
