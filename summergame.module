@@ -1009,22 +1009,29 @@ function summergame_player_points($pid, $points, $type, $description = '', $meta
   // Check for game limit for this type of scoring
   $game_limits = json_decode($summergame_settings->get('summergame_game_limits'), TRUE);
   if (isset($game_limits[$type])) {
-    $limit = $game_limits[$type];
+    $limit = $game_limits[$type]['limit'];
+    $duration = $game_limits[$type]['duration'];
+
     $sql = "SELECT SUM(points) AS total FROM sg_ledger " .
        "WHERE pid = :pid " .
        "AND type = :type " .
        "AND game_term = :game_term";
+    if ($duration == 'daily') {
+      $cutoff = strtotime('today');
+      $sql .= " AND timestamp > $cutoff";
+    }
+
     $row = $db->query($sql, [':pid' => $pid, ':type' => $type, ':game_term' => $game_term])->fetchObject();
 
     $total = $row->total + $points;
     if ($total > $limit) {
       // If over the limit, cap the point total at the daily limit
       $overage = $total - $limit;
-      \Drupal::messenger()->addWarning("Sorry, your score of $points brings you over the $game_term limit of $limit by $overage.");
+      \Drupal::messenger()->addWarning("Sorry, your score of $points brings you over the $duration limit of $limit by $overage.");
       $points -= $overage;
     }
     else {
-      \Drupal::messenger()->addMessage("You have earned $total points of your $game_term limit of $limit for $type scoring");
+      \Drupal::messenger()->addMessage("You have earned $total points of your $duration limit of $limit for $type scoring");
     }
   }
 
