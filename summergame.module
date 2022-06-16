@@ -1282,7 +1282,7 @@ function summergame_check_completion_bonus($pid) {
   $current_year_ts = strtotime(date('Y-01-01'));
 
   if ($player = summergame_player_load($pid)) {
-    if ($player['agegroup'] == 'youth' || $player['agegroup'] == 'teen') {
+    if (FALSE && ($player['agegroup'] == 'youth' || $player['agegroup'] == 'teen')) { // No BookPrizeTokens
       $row = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND game_term = :game_term AND type = 'Completion Bonus' AND timestamp > :year_ts",
                         [':pid' => $pid, ':game_term' => 'BookPrizeToken', ':year_ts' => $current_year_ts])->fetchObject();
     }
@@ -1293,7 +1293,7 @@ function summergame_check_completion_bonus($pid) {
 
     if (!isset($row->lid)) {
       // Award Bonus
-      if ($player['agegroup'] == 'youth' || $player['agegroup'] == 'teen') {
+      if (FALSE && ($player['agegroup'] == 'youth' || $player['agegroup'] == 'teen')) { // No BookPrizeTokens
         // Award Book Token
         summergame_player_points($pid, 1, 'Completion Bonus', 'Book Token Bonus for completing the Classic Reading Game', 'delete:no', 'BookPrizeToken');
         \Drupal::messenger()->addMessage('Received a Book Token Bonus for completing the Classic Reading Game');
