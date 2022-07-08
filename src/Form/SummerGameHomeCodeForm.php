@@ -55,7 +55,7 @@ class SummerGameHomeCodeForm extends FormBase {
             $location_message = "Spread the word that it's located at the $branch Library!";
           }
           else {
-            $location_message = 'Make sure to display the code near the street or sidewalk at:<br>' . $location_data->homecode;
+            $location_message = 'Make sure to display the code next to the street or sidewalk at:<br>' . $location_data->homecode;
           }
           $form['display'] = [
             '#markup' => '<p>Your Lawn or Library Code is:</p>' .
@@ -85,7 +85,7 @@ class SummerGameHomeCodeForm extends FormBase {
             '#options' => [
               '' => '- Select Type -',
               'lawn' => 'I have a Lawn sign',
-              'library' => 'I have a Library sign',
+              'library' => 'I have a Library card',
             ],
             '#required' => TRUE,
             '#attributes' => array("onChange" => "checkCodeType()", "style" => "border: 1px solid")
