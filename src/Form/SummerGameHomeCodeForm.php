@@ -20,6 +20,16 @@ class SummerGameHomeCodeForm extends FormBase {
     return 'summergame_home_code_form';
   }
 
+  private function branches() {
+    return [
+      'downtown' => 'Downtown',
+      'malletts' => 'Malletts Creek',
+      'pittsfield' => 'Pittsfield',
+      'traverwood' => 'Traverwood',
+      'westgate' => 'Westgate',
+    ];
+  }
+
   /**
    * {@inheritdoc}
    */
@@ -38,13 +48,20 @@ class SummerGameHomeCodeForm extends FormBase {
         $homecode = summergame_get_homecode($uid);
 
         if (isset($homecode->code_id)) {
-          $geocode_data = json_decode($homecode->clue);
+          $location_data = json_decode($homecode->clue);
+          if (isset($location_data->branchcode)) {
+            $branches = $this->branches();
+            $branch = $branches[$location_data->branchcode];
+            $location_message = "Spread the word that it's located at the $branch Library!";
+          }
+          else {
+            $location_message = 'Make sure to display the code near the street or sidewalk at:<br>' . $location_data->homecode;
+          }
           $form['display'] = [
-            '#markup' => '<p>Your Home Code is:</p>' .
+            '#markup' => '<p>Your Lawn or Library Code is:</p>' .
             '<h1>' . $homecode->text . '</h1>' .
             '<p>It has been redeemed ' . $homecode->num_redemptions . ' time' . ($homecode->num_redemptions == 1 ? '' : 's') . '!</p>' .
-            '<p><a href="/summergame/pdf/gamecode/' . $homecode->code_id . '">Download a sign</a> or Make Your Own!</p>' .
-            '<p>Make sure to display the code where it is visible at:<br>' . $geocode_data->homecode . '</p>'
+            "<p>$location_message</p>"
           ];
           $form['cancel'] = [
             '#type' => 'link',
@@ -54,20 +71,39 @@ class SummerGameHomeCodeForm extends FormBase {
           ];
         }
         else if (\Drupal::config('summergame.settings')->get('summergame_homecode_form_enabled')) {
+          $form['#attached']['library'][] = 'summergame/summergame-homecode-form-lib';
+          $form['instructions'] = [
+            '#markup' => \Drupal::config('summergame.settings')->get('summergame_homecode_message'),
+          ];
           $form['uid'] = [
             '#type' => 'value',
             '#value' => $uid,
           ];
-          $form['text'] = [
+          $form['type'] = [
+            '#type' => 'select',
+            '#title' => 'Please select which type of sign you have to begin',
+            '#options' => [
+              '' => '- Select Type -',
+              'lawn' => 'I have a Lawn sign',
+              'library' => 'I have a Library sign',
+            ],
+            '#required' => TRUE,
+            '#attributes' => array("onChange" => "checkCodeType()", "style" => "border: 1px solid")
+          ];
+          $form['details'] = [
+            '#prefix' => '<div id="homecode-form-details" class="visually-hidden">',
+            '#suffix' => '</div>',
+          ];
+          $form['details']['text'] = [
             '#type' => 'textfield',
-            '#title' => t('Home Code Text for User') . ' ' . $account->get('name')->value,
+            '#title' => t('Lawn or Library Code Text for User') . ' ' . $account->get('name')->value,
             '#default_value' => '',
             '#size' => 20,
             '#maxlength' => 12,
-            '#description' => t('Game Code Text for your address (letters and numbers only, maximum 12 characters)'),
+            '#description' => t('Game Code Text for your sign (letters and numbers only, maximum 12 characters)'),
             '#required' => TRUE,
           ];
-          $form['message'] = [
+          $form['details']['message'] = [
             '#type' => 'textfield',
             '#title' => t('Code Message'),
             '#default_value' => '',
@@ -75,54 +111,66 @@ class SummerGameHomeCodeForm extends FormBase {
             '#maxlength' => 64,
             '#description' => t('A short message to display to players who redeem your Game Code (optional)'),
           ];
-          $form['street'] = [
+          $form['details']['message_guidelines'] = [
+            '#markup' => '<strong><p>Please avoid messages that are commercial, religious, or political. Thank you!</p></strong>'
+          ];
+          $form['details']['library'] = [
+            '#prefix' => '<div id="library-elements">',
+            '#suffix' => '</div>',
+          ];
+          $form['details']['library']['branch'] = [
+            '#type' => 'select',
+            '#title' => t('Library Branch'),
+            '#options' => array_merge(['' => '- Select Branch -'], $this->branches()),
+            '#description' => t('The library branch where you are posting your library code sign'),
+          ];
+          $form['details']['lawn'] = [
+            '#prefix' => '<div id="lawn-elements">',
+            '#suffix' => '</div>',
+          ];
+          $form['details']['lawn']['street'] = [
             '#type' => 'textfield',
             '#title' => t('Street Address'),
             '#default_value' => '',
             '#size' => 64,
             '#maxlength' => 128,
-            '#description' => t('Street Address where the Game Code will be displayed (example "343 S. Fifth Ave")'),
-            '#required' => TRUE,
+            '#description' => t('Approximate Street Address where the Game Code sign will be displayed (example "343 S. Fifth Ave")'),
           ];
-          $form['zip'] = [
+          $form['details']['lawn']['zip'] = [
             '#type' => 'number',
             '#title' => t('Zip Code'),
             '#min' => 10000,
             '#max' => 99999,
             '#size' => 5,
-            '#description' => t('5 digit Zip Code where the Game Code will be displayed (example "48103")'),
+            '#description' => t('5 digit Zip Code where the Game Code sign will be displayed (example "48103")'),
+          ];
+          $form['details']['lawn']['guidelines'] = [
+            '#markup' => '<strong><p>Make sure your lawn sign is next to the sidewalk, street, or parking lot!</p></strong>'
+          ];
+          $form['details']['permission'] = [
+            '#type' => 'checkbox',
+            '#title' => 'I am a grownup, or I have permission from one to make this code and put up a code sign. (REQUIRED)',
             '#required' => TRUE,
           ];
-          $form['display'] = [
-            '#type' => 'checkbox',
-            '#title' => 'Display my Address on Public Home Codes Map',
-            '#description' => t('This means summer game players will come to your home looking for this code!'),
+          $form['details']['actions'] = [
+            '#prefix' => '<div class="sg-form-actions">',
+            '#suffix' => '</div>',
           ];
-          $form['permission'] = [
-            '#type' => 'checkbox',
-            '#title' => 'I am a grownup, or I have permission from one to make this home code and put up a code sign. (REQUIRED)',
-            '#required' => TRUE,
-          ];
-          $form['guidelines'] = [
-            '#markup' => '<strong><p>Make sure your code is clearly visible from the sidewalk, street, or parking lot!</p><p>Please avoid messages that are commercial, religious, or political. Thank you!</p></strong>'
-          ];
-          $form['submit'] = [
+          $form['details']['actions']['submit'] = [
             '#type' => 'submit',
             '#value' => t('Submit Code'),
-            '#prefix' => '<div class="sg-form-actions">'
           ];
-          $form['cancel'] = [
+          $form['details']['actions']['cancel'] = [
             '#type' => 'link',
             '#title' => 'Return to Player Page',
             '#url' => \Drupal\Core\Url::fromRoute('summergame.player'),
-            '#suffix' => '</div>'
           ];
         }
         else {
           // No home code, but home code creation is not enabled
           $form['display'] = [
-            '#markup' => '<p>Sorry, Home Code creation is not currently available.</p>' .
-                         '<p><a href="/summergame/homecodes">View the current Home Codes map</a> to see what home codes are available.</p>',
+            '#markup' => '<p>Sorry, Lawn Code & Library Code creation is not currently available.</p>' .
+                         '<p><a href="/summergame/homecodes">View the current Codes map</a> to see what codes are available.</p>',
           ];
           $form['cancel'] = [
             '#type' => 'link',
@@ -162,30 +210,40 @@ class SummerGameHomeCodeForm extends FormBase {
     }
     $form_state->setValue('text', $text);
 
-    // Check geocode of address
-    $street = trim($form_state->getValue('street'));
-    $guzzle = \Drupal::httpClient();
-    $geocode_search_url = $summergame_settings->get('summergame_homecode_geocode_url');
+    if ($form_state->getValue('type') == 'lawn') {
+      // Check geocode of address
+      $street = trim($form_state->getValue('street'));
+      $guzzle = \Drupal::httpClient();
+      $geocode_search_url = $summergame_settings->get('summergame_homecode_geocode_url');
 
-    $query = [
-      'street' => $street,
-      'postalcode' => $form_state->getValue('zip'),
-      'country' => 'United States of America',
-      'addressdetails' => 1,
-      'format' => 'json',
-    ];
-    try {
-      $response = $guzzle->request('GET', $geocode_search_url, ['query' => $query]);
-    }
-    catch (\Exception $e) {
-      \Drupal::messenger()->addError('Unable to validate barcode for patron');
-    }
-    if ($response) {
-      $response_body = json_decode($response->getBody()->getContents());
-      if (!isset($response_body[0]->address->road)) {
-        $form_state->setErrorByName('street', 'Unable to locate street address. Please try again.');
+      $query = [
+        'street' => $street,
+        'postalcode' => $form_state->getValue('zip'),
+        'country' => 'United States of America',
+        'addressdetails' => 1,
+        'format' => 'json',
+      ];
+      try {
+        $response = $guzzle->request('GET', $geocode_search_url, ['query' => $query]);
       }
-      $form_state->setValue('geocode_data', $response_body[0]);
+      catch (\Exception $e) {
+        \Drupal::messenger()->addError('Unable to lookup address position');
+      }
+      if ($response) {
+        $response_body = json_decode($response->getBody()->getContents());
+        if (!isset($response_body[0]->address->road)) {
+          $form_state->setErrorByName('street', 'Unable to locate street address. Please try again.');
+        }
+        $form_state->setValue('geocode_data', $response_body[0]);
+      }
+    }
+    else if ($form_state->getValue('type') == 'library') {
+      if ($form_state->getValue('branch') == '') {
+        $form_state->setErrorByName('branch', 'Please select the branch where this code will be posted.');
+      }
+    }
+    else {
+      $form_state->setErrorByName('type', 'Invalid code type selected, please select type of code you wish to create');
     }
   }
 
@@ -197,22 +255,36 @@ class SummerGameHomeCodeForm extends FormBase {
     $messenger = \Drupal::messenger();
     $summergame_settings = \Drupal::config('summergame.settings');
 
-    // Format code description
-    $geocode_data = $form_state->getValue('geocode_data');
-    $description = "You found a Home Code on " . $geocode_data->address->road . '.';
-    if ($message = $form_state->getValue('message')) {
-      $description .= ' ' . trim($message);
-    }
+    if ($form_state->getValue('type') == 'lawn') {
+      // Format code description
+      $geocode_data = $form_state->getValue('geocode_data');
+      $description = "You found a Lawn Code on " . $geocode_data->address->road . '.';
+      if ($message = $form_state->getValue('message')) {
+        $description .= ' ' . trim($message);
+      }
 
-    $city = $geocode_data->address->municipality ?? $geocode_data->address->city ?? $geocode_data->address->town ?? $geocode_data->address->village;
-    $clue = [
-      'homecode' => $geocode_data->address->house_number . ' ' . $geocode_data->address->road . '<br>' .
-                    $city . ', ' . $geocode_data->address->state . '<br>' .
-                    $geocode_data->address->postcode,
-      'lat' => $geocode_data->lat,
-      'lon' => $geocode_data->lon,
-      'display' => $form_state->getValue('display'),
-    ];
+      $city = $geocode_data->address->municipality ?? $geocode_data->address->city ?? $geocode_data->address->town ?? $geocode_data->address->village;
+      $clue = [
+        'homecode' => $geocode_data->address->house_number . ' ' . $geocode_data->address->road . '<br>' .
+                      $city . ', ' . $geocode_data->address->state . '<br>' .
+                      $geocode_data->address->postcode,
+        'lat' => $geocode_data->lat,
+        'lon' => $geocode_data->lon,
+        'display' => $form_state->getValue('display'),
+      ];
+    }
+    else {
+      // branch code
+      $branch = $form_state->getValue('branch');
+      $branches = $this->branches();
+      $description = "You found a Library Code at the " . $branches[$branch] . ' Library.';
+      if ($message = $form_state->getValue('message')) {
+        $description .= ' ' . trim($message);
+      }
+      $clue = [
+        'branchcode' => $branch,
+      ];
+    }
 
     // Set up fields
     $fields = [
@@ -243,7 +315,7 @@ class SummerGameHomeCodeForm extends FormBase {
       \Drupal\Core\Url::fromRoute('summergame.admin.gamecode', ['code_id' => $code_id], ['absolute' => TRUE])->toString() . "\n\n" .
       $fields['text'] . ' created by User ID #' . $fields['creator_uid'] . "\n" .
       ($message ? 'User message: ' . $message . "\n" : '') .
-      "\nAddress Info:\n" . str_replace('<br>', "\n", $clue['homecode'])
+      "\nAddress Info:\n" . str_replace('<br>', "\n", $clue['homecode']) . $clue['branchcode']
     );
 
     return;

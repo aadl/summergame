@@ -163,7 +163,7 @@ class PlayerController extends ControllerBase {
             $homecode = '<a href="/summergame/user/' . $account->id() . '/homecode">' . $homecode->text . '</a>';
           }
           else if ($summergame_settings->get('summergame_homecode_form_enabled')) {
-            $homecode = '<a href="/summergame/user/' . $account->id() . '/homecode">Create a Home Code</a>';
+            $homecode = '<a href="/summergame/user/' . $account->id() . '/homecode">Create a Lawn Code or Library Code</a>';
           }
           else {
             $homecode = '';

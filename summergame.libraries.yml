@@ -3,7 +3,7 @@ summergame-lib:
   css:
     theme:
       css/summergame.css: {}
-summergame-homecodes-lib:
+summergame-map-lib:
   version: 1.x
   css:
     theme:
@@ -12,3 +12,7 @@ summergame-homecodes-lib:
   js:
     https://unpkg.com/leaflet@1.6.0/dist/leaflet.js: { type: external, minified: true }
     js/homecodes.js: {}
+summergame-homecode-form-lib:
+  version: 1.x
+  js:
+    js/homecode_form.js: {}

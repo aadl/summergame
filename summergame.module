@@ -842,7 +842,8 @@ function summergame_get_homecode($uid, $game_term = '') {
   if (empty($game_term)) {
     $game_term = \Drupal::config('summergame.settings')->get('summergame_current_game_term');
   }
-  $row = $db->query("SELECT * FROM sg_game_codes WHERE creator_uid = :uid AND game_term = :game_term AND clue LIKE '%\"homecode\"%'",
+  $row = $db->query("SELECT * FROM sg_game_codes WHERE creator_uid = :uid AND game_term = :game_term AND " .
+                    "(clue LIKE '%\"homecode\"%' OR clue LIKE '%\"branchcode\"%')",
                     [':uid' => $uid, ':game_term' => $game_term])->fetchObject();
   return $row;
 }
