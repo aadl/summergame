@@ -84,8 +84,8 @@ class SummerGameHomeCodeForm extends FormBase {
             '#title' => 'Please select which type of sign you have to begin',
             '#options' => [
               '' => '- Select Type -',
-              'lawn' => 'I have a Lawn sign',
-              'library' => 'I have a Library card',
+              'lawn' => 'I have a Lawn Code sign',
+              'library' => 'I have a Library Code card',
             ],
             '#required' => TRUE,
             '#attributes' => array("onChange" => "checkCodeType()", "style" => "border: 1px solid")
