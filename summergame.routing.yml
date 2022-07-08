@@ -232,6 +232,14 @@ summergame.map:
     game_term: ''
   requirements:
     _permission: 'access summergame'
+summergame.homecodes_redirect:
+  path: '/summergame/homecodes/{game_term}'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\DefaultController::homecodes_redirect'
+    _title: 'Summer Game Map'
+    game_term: ''
+  requirements:
+    _permission: 'access summergame'
 summergame.homecodes.markerdata:
   path: '/summergame/homecodes/markerdata/{game_term}'
   defaults:
