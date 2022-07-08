@@ -166,7 +166,7 @@ class DefaultController extends ControllerBase {
 
     if ($summergame_points_enabled) {
       // Temporary Message While Lawn & Library Codes are being developed
-      $explaination_markup .= '<p>Welcome to the new Summer Game Map. Updates are coming, stay tuned!</p>';
+      $explaination_markup .= '<p>Welcome to the new Summer Game Map. Check for locations to get started with Summer Game Library Code Stops and updates coming soon!</p>';
 /*
       $explaination_markup .= <<<EOT
 <p>The thought may be DWELLING in your mind, "What's a HOME CODE?" Well that's a great question! A Home Code is your VERY OWN PERSONALIZED code for your HOME!</p>
