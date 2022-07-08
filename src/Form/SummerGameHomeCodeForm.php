@@ -134,7 +134,7 @@ class SummerGameHomeCodeForm extends FormBase {
             '#default_value' => '',
             '#size' => 64,
             '#maxlength' => 128,
-            '#description' => t('Approximate Street Address where the Game Code sign will be displayed (example "343 S. Fifth Ave")'),
+            '#description' => t('Approximate Street Address where the Game Code sign will be displayed (example "343 S. Fifth Ave"). Note that your exact address will not be displayed to the public.'),
           ];
           $form['details']['lawn']['zip'] = [
             '#type' => 'number',
