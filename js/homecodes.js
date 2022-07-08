@@ -49,6 +49,29 @@
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   }).addTo(myMap);
 
+  // Load heatmap data from json source
+  $.ajax({
+    type: 'GET',
+    url: '/summergame/map/data/' + drupalSettings.hc_game_term,
+    dataType: 'json',
+    success: function (data) {
+      var heatmap = new L.TileLayer.HeatCanvas({},{'step':0.5, 'degree':HeatCanvas.LINEAR, 'opacity':0.7});
+      heatmap.onRenderingStart(function(){
+        document.getElementById("status").innerHTML = 'rendering';
+      });
+      heatmap.onRenderingEnd(function(){
+        document.getElementById("status").innerHTML = '';
+      });
+
+      // Loop through data and create markers
+      $.each(data, function(index, element) {
+        heatmap.pushData(element.lat, element.lon, element.value);
+      });
+      myMap.addLayer(heatmap);
+      alert('FOO');
+    }
+  });
+
   // Load marker data from json source
   $.ajax({
     type: 'GET',

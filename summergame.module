@@ -112,6 +112,40 @@ function summergame_get_leaderboard($type = '', $range = 'day', $staff = 0) {
   ];
 }
 
+function summergame_load_homecodes() {
+  $db = \Drupal::database();
+  $homecodes = $db->query("SELECT clue, game_term FROM sg_game_codes WHERE clue LIKE '%homecode%'")->fetchAll();
+  foreach ($homecodes as $homecode) {
+    $code_data = json_decode($homecode->clue);
+    if ($code_data->lat) {
+      $map_point = [
+        'type' => 'homecode',
+        'lat' => $code_data->lat,
+        'lon' => $code_data->lon,
+        'game_term' => $homecode->game_term,
+        'display' => $code_data->display
+      ];
+      $db->insert('sg_map_points')->fields($map_point)->execute();
+    }
+  }
+}
+
+function summergame_update_map_points() {
+  $radius = 0.005;
+  $db = \Drupal::database();
+  $points = $db->query("SELECT * FROM sg_map_points ORDER BY id ASC")->fetchAll();
+  foreach ($points as $point) {
+    $lat_min = $point->lat - $radius;
+    $lat_max = $point->lat + $radius;
+    $lon_min = $point->lon - $radius;
+    $lon_max = $point->lon + $radius;
+    $game_term = $point->game_term;
+
+    $count = $db->query("SELECT COUNT(*) FROM sg_map_points WHERE game_term = '$game_term' AND lat BETWEEN $lat_min AND $lat_max AND lon BETWEEN $lon_min AND $lon_max")->fetchField();
+    $db->update('sg_map_points')->fields(['nearby_count' => $count])->condition('id', $point->id)->execute();
+  }
+}
+
 function summergame_theme() {
   return [
     'summergame_admin_page' => [
