@@ -151,6 +151,9 @@ class DefaultController extends ControllerBase {
 
     return $render;
   }
+  public function homecodes_redirect($game_term = '') {
+    return $this->redirect('summergame.map', ['game_term' => $game_term]);
+  }
 
   public function map($game_term = '') {
     // Set default Game Term
