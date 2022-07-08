@@ -3,7 +3,7 @@ summergame-lib:
   css:
     theme:
       css/summergame.css: {}
-summergame-homecodes-lib:
+summergame-map-lib:
   version: 1.x
   css:
     theme:

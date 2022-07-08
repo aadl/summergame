@@ -58,7 +58,7 @@ class SummerGameHomeCodeForm extends FormBase {
             $location_message = 'Make sure to display the code near the street or sidewalk at:<br>' . $location_data->homecode;
           }
           $form['display'] = [
-            '#markup' => '<p>Your Lawn & Library Code is:</p>' .
+            '#markup' => '<p>Your Lawn or Library Code is:</p>' .
             '<h1>' . $homecode->text . '</h1>' .
             '<p>It has been redeemed ' . $homecode->num_redemptions . ' time' . ($homecode->num_redemptions == 1 ? '' : 's') . '!</p>' .
             "<p>$location_message</p>"
@@ -96,7 +96,7 @@ class SummerGameHomeCodeForm extends FormBase {
           ];
           $form['details']['text'] = [
             '#type' => 'textfield',
-            '#title' => t('Lawn & Library Code Text for User') . ' ' . $account->get('name')->value,
+            '#title' => t('Lawn or Library Code Text for User') . ' ' . $account->get('name')->value,
             '#default_value' => '',
             '#size' => 20,
             '#maxlength' => 12,
@@ -145,7 +145,7 @@ class SummerGameHomeCodeForm extends FormBase {
             '#description' => t('5 digit Zip Code where the Game Code sign will be displayed (example "48103")'),
           ];
           $form['details']['lawn']['guidelines'] = [
-            '#markup' => '<strong><p>Make sure your lawn sign is near the sidewalk, street, or parking lot!</p></strong>'
+            '#markup' => '<strong><p>Make sure your lawn sign is next to the sidewalk, street, or parking lot!</p></strong>'
           ];
           $form['details']['permission'] = [
             '#type' => 'checkbox',
@@ -169,7 +169,7 @@ class SummerGameHomeCodeForm extends FormBase {
         else {
           // No home code, but home code creation is not enabled
           $form['display'] = [
-            '#markup' => '<p>Sorry, Lawn & Library Code creation is not currently available.</p>' .
+            '#markup' => '<p>Sorry, Lawn Code & Library Code creation is not currently available.</p>' .
                          '<p><a href="/summergame/homecodes">View the current Codes map</a> to see what codes are available.</p>',
           ];
           $form['cancel'] = [

@@ -152,20 +152,20 @@ class DefaultController extends ControllerBase {
     return $render;
   }
 
-  public function homecodes($game_term = '') {
+  public function map($game_term = '') {
     // Set default Game Term
     if (empty($game_term)) {
       $game_term = \Drupal::config('summergame.settings')->get('summergame_current_game_term');
     }
     $summergame_points_enabled = \Drupal::config('summergame.settings')->get('summergame_points_enabled');
-    $homecode_explaination_markup = '<h1>Summer Game Home Codes</h1>';
+    $explaination_markup = '<h1>Summer Game Locations</h1>';
     $legend_markup = '';
 
     if ($summergame_points_enabled) {
       // Temporary Message While Lawn & Library Codes are being developed
-      $homecode_explaination_markup .= '<h2>Stay tuned for Lawn & Library codes, coming July 8th!</h2>';
+      $explaination_markup .= '<p>Welcome to the new Summer Game Map. Updates are coming, stay tuned!</p>';
 /*
-      $homecode_explaination_markup .= <<<EOT
+      $explaination_markup .= <<<EOT
 <p>The thought may be DWELLING in your mind, "What's a HOME CODE?" Well that's a great question! A Home Code is your VERY OWN PERSONALIZED code for your HOME!</p>
 <p>The way HOME CODES work is simple! You create your code by clicking "My Players". Then scroll down your My Summer Game page until you see "Player Details". You'll see the words, "Create a Home Code", click that and... well... CREATE A HOME CODE! Your Home Code is 100% created BY you FOR other passerby! You can choose whether or not you want your Home Code displayed on the map of ALL THE HOME CODES (A serious, no puns note: No personal information is given on the map. Just the address linked to the code!) Once your Home Code is created, you can MAKE a sign or PRINT a sign to put in your window! WHAT FUN!</p>
 <p><strong>MADE A CODE? PLEASE make sure the code is displayed where it can easily be seen from the curb / sidewalk / parking lot / driveway / what have you.</strong></p>
@@ -183,7 +183,7 @@ EOT;
 */
     }
     else {
-      $homecode_explaination_markup .= <<<EOT
+      $explaination_markup .= <<<EOT
 <p>Summer Game has ended and all Home Codes have expired! If you put up a home code this Summer, please take it down!</p>
 <p>This map will show total number of redemptions for each code during the offseason. If you have any questions or concerns, as always, <a href="http://aadl.org/contactus">contact us</a>.</p>
 <p>Thanks to everyone who posted or found a home code!</p>
@@ -204,14 +204,14 @@ EOT;
           'hc_points_enabled' => $summergame_points_enabled,
         ],
         'library' => [
-          'summergame/summergame-homecodes-lib',
+          'summergame/summergame-map-lib',
         ]
       ],
       '#cache' => [
         'max-age' => 0, // Don't cache, always get fresh data
       ],
-      '#markup' => $homecode_explaination_markup .
-        '<h1>Home Codes Map</h1>' .
+      '#markup' => $explaination_markup .
+        '<h1>Summer Game Map</h1>' .
         $legend_markup .
         '<div id="mapid" style="height: 180px;"></div>',
     ];

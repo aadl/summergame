@@ -224,11 +224,11 @@ summergame.leaderboard:
     _title: 'Summer Game Leaderboard'
   requirements:
     _permission: 'access content'
-summergame.homecodes:
-  path: '/summergame/homecodes/{game_term}'
+summergame.map:
+  path: '/summergame/map/{game_term}'
   defaults:
-    _controller: '\Drupal\summergame\Controller\DefaultController::homecodes'
-    _title: 'Summer Game Home Codes Map'
+    _controller: '\Drupal\summergame\Controller\DefaultController::map'
+    _title: 'Summer Game Map'
     game_term: ''
   requirements:
     _permission: 'access summergame'
