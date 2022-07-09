@@ -25,7 +25,19 @@ class AdminController extends ControllerBase {
     $gc_rows = [];
     $creator_names = [];
     $db = \Drupal::database();
+    $summergame_settings = \Drupal::config('summergame.settings');
+    $current_game_term = $summergame_settings->get('summergame_current_game_term');
 
+    // Player Created Codes Count
+    $sql = 'SELECT COUNT(*) ' .
+       'FROM sg_game_codes ' .
+       'WHERE game_term = :game_term ' .
+       'AND clue LIKE :clue';
+    $home_count = $db->query($sql, [':game_term' => $current_game_term, ':clue' => '%homecode%'])->fetchField();
+    $branch_count = $db->query($sql, [':game_term' => $current_game_term, ':clue' => '%branchcode%'])->fetchField();
+    $player_codes_status = $current_game_term . " Lawn Sign Codes: $home_count, Library Sign Codes: $branch_count";
+
+    // Game Codes
     $res = $db->query("SELECT * FROM sg_game_codes ORDER BY created DESC LIMIT $limit");
     while ($game_code = $res->fetchAssoc()) {
       // Load creator info
@@ -124,6 +136,7 @@ class AdminController extends ControllerBase {
       '#summergame_player_search_form' => \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerSearchForm'),
       '#summergame_gamecode_search_form' => \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGameGameCodeSearchForm'),
       '#sg_admin' => $sg_admin,
+      '#player_codes_status' => $player_codes_status,
       '#gc_rows' => $gc_rows,
       '#badge_rows' => $badge_rows,
       '#limit' => $limit,

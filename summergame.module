@@ -120,6 +120,7 @@ function summergame_theme() {
         'summergame_player_search_form' => NULL,
         'summergame_gamecode_search_form' => NULL,
         'sg_admin' => NULL,
+        'player_codes_status' => NULL,
         'gc_rows' => NULL,
         'badge_rows' => NULL,
         'limit' => NULL,
