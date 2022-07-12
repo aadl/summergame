@@ -1050,6 +1050,9 @@ function summergame_player_points($pid, $points, $type, $description = '', $meta
     $metadata = trim($md_string);
   }
 
+  // Remove extended characters from description field
+  $description = preg_replace('/[^(\x20-\x7F)]*/','', $description);
+
   $db->insert('sg_ledger')->fields([
     'pid' => $pid,
     'points' => $points,
