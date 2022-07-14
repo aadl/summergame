@@ -49,6 +49,7 @@
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   }).addTo(myMap);
 
+<<<<<<< HEAD
   // Load heatmap data from json source
   $.ajax({
     type: 'GET',
@@ -71,6 +72,14 @@
       alert('FOO');
     }
   });
+=======
+  // Add Branch Locations
+  L.marker([42.278355032204445, -83.74590413038366]).bindPopup('<strong>Downtown Library</strong><br>343 South Fifth Ave.<br>Building Codes<br>Library Code Stop').addTo(availableLayerGroup);
+  L.marker([42.24387568322788, -83.71805381691777]).bindPopup('<strong>Malletts Creek Library</strong><br>3090 East Eisenhower Parkway<br>Building Codes<br>Library Code Stop').addTo(availableLayerGroup);
+  L.marker([42.25271695126512, -83.77811950157411]).bindPopup('<strong>Pittsfield Library</strong><br>2359 Oak Valley Dr.<br>Building Codes<br>Library Code Stop').addTo(availableLayerGroup);
+  L.marker([42.30838433760029, -83.71416680157276]).bindPopup('<strong>Traverwood Library</strong><br>3333 Traverwood Dr.<br>Building Codes<br>Library Code Stop').addTo(availableLayerGroup);
+  L.marker([42.27866255504599, -83.78305954390173]).bindPopup('<strong>Westgate Library</strong><br>2503 Jackson Ave.<br>Building Codes<br>Library Code Stop').addTo(availableLayerGroup);
+>>>>>>> c767318a17baf0fbeb682f851e875cc8fb97b992
 
   // Load marker data from json source
   $.ajax({

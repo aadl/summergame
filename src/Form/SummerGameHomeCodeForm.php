@@ -55,7 +55,7 @@ class SummerGameHomeCodeForm extends FormBase {
             $location_message = "Spread the word that it's located at the $branch Library!";
           }
           else {
-            $location_message = 'Make sure to display the code near the street or sidewalk at:<br>' . $location_data->homecode;
+            $location_message = 'Make sure to display the code next to the street or sidewalk at:<br>' . $location_data->homecode;
           }
           $form['display'] = [
             '#markup' => '<p>Your Lawn or Library Code is:</p>' .
@@ -84,8 +84,8 @@ class SummerGameHomeCodeForm extends FormBase {
             '#title' => 'Please select which type of sign you have to begin',
             '#options' => [
               '' => '- Select Type -',
-              'lawn' => 'I have a Lawn sign',
-              'library' => 'I have a Library sign',
+              'lawn' => 'I have a Lawn Code sign',
+              'library' => 'I have a Library Code card',
             ],
             '#required' => TRUE,
             '#attributes' => array("onChange" => "checkCodeType()", "style" => "border: 1px solid")
@@ -134,7 +134,7 @@ class SummerGameHomeCodeForm extends FormBase {
             '#default_value' => '',
             '#size' => 64,
             '#maxlength' => 128,
-            '#description' => t('Approximate Street Address where the Game Code sign will be displayed (example "343 S. Fifth Ave")'),
+            '#description' => t('Approximate Street Address where the Game Code sign will be displayed (example "343 S. Fifth Ave"). Note that your exact address will not be displayed to the public.'),
           ];
           $form['details']['lawn']['zip'] = [
             '#type' => 'number',

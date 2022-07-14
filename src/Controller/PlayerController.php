@@ -57,7 +57,7 @@ class PlayerController extends ControllerBase {
       $summergame_settings = \Drupal::config('summergame.settings');
       $player_access = summergame_player_access($player['pid']);
       $current_game_term = $summergame_settings->get('summergame_current_game_term');
-      $summergame_shop_game_term = \Drupal::config('uc_summergame.settings')->get('uc_summergame_game_term');
+      $summergame_shop_game_term = \Drupal::config('commerce_summergame.settings')->get('commerce_summergame_game_term');
 
       // Check if player's score card is private and we don't have access
       if (!$player['show_myscore'] && !$player_access) {
@@ -177,8 +177,8 @@ class PlayerController extends ControllerBase {
 
       // Get Player Balances
       $balances = [];
-      if (\Drupal::moduleHandler()->moduleExists('uc_summergame')) {
-        $balances = uc_summergame_get_player_balances($player['pid']);
+      if (\Drupal::moduleHandler()->moduleExists('commerce_summergame')) {
+        $balances = commerce_summergame_get_player_balances($player['pid']);
       }
 
       // Get Points-o-Matic weekly scores

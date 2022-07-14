@@ -154,6 +154,7 @@ function summergame_theme() {
         'summergame_player_search_form' => NULL,
         'summergame_gamecode_search_form' => NULL,
         'sg_admin' => NULL,
+        'player_codes_status' => NULL,
         'gc_rows' => NULL,
         'badge_rows' => NULL,
         'limit' => NULL,
@@ -336,14 +337,11 @@ function summergame_twilio_respond($incoming) {
       $gameDisplayName = \Drupal::config('summergame.settings')->get('game_display_name');
       $response['text'] = ($player['nickname'] ? $player['nickname'] : $player['name']) . "'s $gameDisplayName Shop Balance: ";
 
-      if (\Drupal::moduleHandler()->moduleExists('uc_summergame')) {
-        $game_term = \Drupal::config('summergame.settings')->get('summergame_current_game_term');
+      if (\Drupal::moduleHandler()->moduleExists('commerce_summergame')) {
+        $summergame_shop_game_term = \Drupal::config('commerce_summergame.settings')->get('commerce_summergame_game_term');
 
-        $balances = uc_summergame_get_player_balances($player['pid']);
-        $response['text'] .= $balances[$game_term] . ' ' . $game_term  . ' points';
-        if ($balances['SummerGameClassic']) {
-          $response['text'] .= ', ' . $balances['SummerGameClassic'] . ' SummerGameClassic points';
-        }
+        $balances = commerce_summergame_get_player_balances($player['pid']);
+        $response['text'] .= $balances[$summergame_shop_game_term] . ' ' . $summergame_shop_game_term  . ' points';
       }
       else {
         $response['text'] .= 'Sorry, Shop is Currently Disabled';
@@ -1085,6 +1083,9 @@ function summergame_player_points($pid, $points, $type, $description = '', $meta
     }
     $metadata = trim($md_string);
   }
+
+  // Remove extended characters from description field
+  $description = preg_replace('/[^(\x20-\x7F)]*/','', $description);
 
   $db->insert('sg_ledger')->fields([
     'pid' => $pid,
