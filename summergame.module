@@ -114,6 +114,10 @@ function summergame_get_leaderboard($type = '', $range = 'day', $staff = 0) {
 
 function summergame_load_homecodes() {
   $db = \Drupal::database();
+  // Empty the table
+  $db->query("TRUNCATE sg_map_points");
+
+  // Populate the table with homecodes
   $homecodes = $db->query("SELECT clue, game_term FROM sg_game_codes WHERE clue LIKE '%homecode%'")->fetchAll();
   foreach ($homecodes as $homecode) {
     $code_data = json_decode($homecode->clue);
@@ -123,7 +127,7 @@ function summergame_load_homecodes() {
         'lat' => $code_data->lat,
         'lon' => $code_data->lon,
         'game_term' => $homecode->game_term,
-        'display' => $code_data->display
+        'display' => ($code_data->display ? 1 : 0)
       ];
       $db->insert('sg_map_points')->fields($map_point)->execute();
     }
