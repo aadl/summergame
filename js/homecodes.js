@@ -55,20 +55,26 @@
     url: '/summergame/map/data/' + drupalSettings.hc_game_term,
     dataType: 'json',
     success: function (data) {
-      var heatmap = new L.TileLayer.HeatCanvas({},{'step':0.5, 'degree':HeatCanvas.LINEAR, 'opacity':0.7});
-      heatmap.onRenderingStart(function(){
-        document.getElementById("status").innerHTML = 'rendering';
-      });
-      heatmap.onRenderingEnd(function(){
-        document.getElementById("status").innerHTML = '';
-      });
-
-      // Loop through data and create markers
-      $.each(data, function(index, element) {
-        heatmap.pushData(element.lat, element.lon, element.value);
-      });
-      myMap.addLayer(heatmap);
-      alert('FOO');
+      var heatCfg = {
+        // radius should be small ONLY if scaleRadius is true (or small radius is intended)
+        // if scaleRadius is false it will be the constant radius used in pixels
+        "radius": 0.0025,
+        "maxOpacity": .5,
+        // scales the radius based on map zoom
+        "scaleRadius": true,
+        // if set to false the heatmap uses the global maximum for colorization
+        // if activated: uses the data maximum within the current map boundaries
+        //   (there will always be a red spot with useLocalExtremas true)
+        "useLocalExtrema": false,
+        // which field name in your data represents the latitude - default "lat"
+        latField: 'lat',
+        // which field name in your data represents the longitude - default "lng"
+        lngField: 'lon',
+        // which field name in your data represents the data value - default "value"
+        valueField: 'count'
+      };
+      var heatmapLayer = new HeatmapOverlay(heatCfg).addTo(myMap);
+      heatmapLayer.setData(data);
     }
   });
 
@@ -78,7 +84,7 @@
   L.marker([42.25271695126512, -83.77811950157411]).bindPopup('<strong>Pittsfield Library</strong><br>2359 Oak Valley Dr.<br>Building Codes<br>Library Code Stop').addTo(availableLayerGroup);
   L.marker([42.30838433760029, -83.71416680157276]).bindPopup('<strong>Traverwood Library</strong><br>3333 Traverwood Dr.<br>Building Codes<br>Library Code Stop').addTo(availableLayerGroup);
   L.marker([42.27866255504599, -83.78305954390173]).bindPopup('<strong>Westgate Library</strong><br>2503 Jackson Ave.<br>Building Codes<br>Library Code Stop').addTo(availableLayerGroup);
-
+/*
   // Load marker data from json source
   $.ajax({
     type: 'GET',
@@ -139,4 +145,5 @@
       }
     }
   });
+*/
 })(jQuery, Drupal);

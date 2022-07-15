@@ -11,9 +11,9 @@ summergame-map-lib:
       css/homecodes.css: {}
   js:
     https://unpkg.com/leaflet@1.6.0/dist/leaflet.js: { type: external, minified: true }
+    js/heatmap.js: {preprocess: false}
+    js/leaflet-heatmap.js: {preprocess: false}
     js/homecodes.js: {}
-    js/heatcanvas/heatcanvas.js: { preprocess: false }
-    js/heatcanvas/heatcanvas-leaflet.js: { preprocess: false }
 summergame-homecode-form-lib:
   version: 1.x
   js:

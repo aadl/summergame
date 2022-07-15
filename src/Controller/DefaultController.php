@@ -277,12 +277,14 @@ EOT;
   public function map_data($game_term = '') {
     $response = [];
     $db = \Drupal::database();
+    $max = $db->query("SELECT MAX(nearby_count) FROM sg_map_points WHERE game_term = '$game_term' AND display = 1")->fetchField();
+    $response['max'] = $max;
     $map_points = $db->query("SELECT * FROM sg_map_points WHERE game_term = '$game_term' AND display = 1")->fetchAll();
     foreach ($map_points as $map_point) {
-      $response[] = [
+      $response['data'][] = [
         'lat' => $map_point->lat,
         'lon' => $map_point->lon,
-        'value' => $map_point->nearby_count,
+        'count' => $map_point->nearby_count,
       ];
     }
 
