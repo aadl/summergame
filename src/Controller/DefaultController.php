@@ -236,6 +236,7 @@ EOT;
     while ($game_code = $res->fetchObject()) {
       $geocode_data = json_decode($game_code->clue);
       if ($geocode_data->display) {
+        /*
         if ($summergame_points_enabled) {
           if ($player) {
             // see if player has redeemed this code
@@ -262,12 +263,29 @@ EOT;
             $geocode_data->homecode = 'Never redeemed';
           }
         }
-
+*/
         // Add number of redemptions
         $geocode_data->num_redemptions = $game_code->num_redemptions;
 
         $response[] = $geocode_data;
       }
+    }
+
+    return new JsonResponse($response);
+  }
+
+  public function map_data($game_term = '') {
+    $response = [];
+    $db = \Drupal::database();
+    $max = $db->query("SELECT MAX(nearby_count) FROM sg_map_points WHERE game_term = '$game_term' AND display = 1")->fetchField();
+    $response['max'] = $max;
+    $map_points = $db->query("SELECT * FROM sg_map_points WHERE game_term = '$game_term' AND display = 1")->fetchAll();
+    foreach ($map_points as $map_point) {
+      $response['data'][] = [
+        'lat' => $map_point->lat,
+        'lon' => $map_point->lon,
+        'count' => $map_point->nearby_count,
+      ];
     }
 
     return new JsonResponse($response);

@@ -256,6 +256,14 @@ summergame.homecodes.report:
     code_id: 0
   requirements:
     _permission: 'access summergame'
+summergame.map.data:
+  path: '/summergame/map/data/{game_term}'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\DefaultController::map_data'
+    _title: 'Summer Game Map Data'
+    game_term: ''
+  requirements:
+    _permission: 'access content'
 summergame.badgelist:
   path: '/summergame/badgelist'
   defaults:
