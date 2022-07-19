@@ -270,7 +270,7 @@ class SummerGameHomeCodeForm extends FormBase {
                       $geocode_data->address->postcode,
         'lat' => $geocode_data->lat,
         'lon' => $geocode_data->lon,
-        'display' => $form_state->getValue('display'),
+        'display' => 1, // New codes always display with the heatmap
       ];
     }
     else {
