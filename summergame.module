@@ -132,6 +132,9 @@ function summergame_load_homecodes() {
       $db->insert('sg_map_points')->fields($map_point)->execute();
     }
   }
+
+  // Update the nearby counts after all points are loaded
+  summergame_update_map_points();
 }
 
 function summergame_update_map_points() {
