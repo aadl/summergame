@@ -160,9 +160,15 @@ class DefaultController extends ControllerBase {
     if (empty($game_term)) {
       $game_term = \Drupal::config('summergame.settings')->get('summergame_current_game_term');
     }
+    $sg_admin = \Drupal::currentUser()->hasPermission('administer summergame');
     $summergame_points_enabled = \Drupal::config('summergame.settings')->get('summergame_points_enabled');
     $explaination_markup = '<h1>Summer Game Locations</h1>';
+    $heatRadius = ($_GET['heatRadius'] ?? 0.0025);
+
     $legend_markup = '';
+    if ($sg_admin) {
+      $legend_markup = '<p>Heatmap Radius: <span id="heatRadius">' . $heatRadius . '</span></p>';
+    }
 
     if ($summergame_points_enabled) {
       // Temporary Message While Lawn & Library Codes are being developed
@@ -218,7 +224,13 @@ EOT;
       '#markup' => $explaination_markup .
         '<h1>Summer Game Map</h1>' .
         $legend_markup .
-        '<div id="mapid" style="height: 180px;"></div>',
+        '<div id="map-wrapper">' .
+        '<div id="mapid" style="height: 180px;"></div>' .
+        '<div class="legend-area"><h4>Nearby Lawn Codes</h4>' .
+        '<span id="min"></span><span id="max"></span>' .
+        '<img id="gradient" src="" style="width:100%" />' .
+        '</div>' .
+        '</div>',
     ];
   }
 
@@ -279,6 +291,8 @@ EOT;
   public function map_data($game_term = '') {
     $response = [];
     $db = \Drupal::database();
+    $min = $db->query("SELECT MIN(nearby_count) FROM sg_map_points WHERE game_term = '$game_term' AND display = 1")->fetchField();
+    $response['min'] = $min;
     $max = $db->query("SELECT MAX(nearby_count) FROM sg_map_points WHERE game_term = '$game_term' AND display = 1")->fetchField();
     $response['max'] = $max;
     $map_points = $db->query("SELECT * FROM sg_map_points WHERE game_term = '$game_term' AND display = 1")->fetchAll();

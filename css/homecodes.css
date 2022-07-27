@@ -1,3 +1,36 @@
+#map-wrapper {
+  position: relative;
+}
 #mapid {
   height: 500px;
+}
+#heatRadius {
+  border: 1px solid red;
+}
+.legend-area {
+  position:absolute;
+  bottom:3px;
+  left:3px;
+  padding:10px;
+  width: 200px;
+  background:white;
+  outline:3px solid black;
+  line-height:1em;
+  z-index: 400;
+}
+.legend-area h4 {
+  margin:0;
+  padding:0;
+  margin-bottom:5px;
+}
+.legend-area #min {
+  float:left;
+}
+.legend-area #max {
+  float:right;
+}
+.legend-area span {
+  font-size:14px;
+  margin:0;
+  padding:0;
 }
