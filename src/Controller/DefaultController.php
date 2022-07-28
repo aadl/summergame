@@ -227,7 +227,7 @@ EOT;
         '<div id="map-wrapper">' .
         '<div id="mapid" style="height: 180px;"></div>' .
         '<div class="legend-area"><h4>Nearby Lawn Codes</h4>' .
-        '<span id="min"></span><span id="max"></span>' .
+        '<span id="min">Fewer</span><span id="max">More</span>' .
         '<img id="gradient" src="" style="width:100%" />' .
         '</div>' .
         '</div>',

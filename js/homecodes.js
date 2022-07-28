@@ -85,16 +85,9 @@
       var legendCanvas = document.createElement('canvas');
       legendCanvas.width = 200;
       legendCanvas.height = 10;
-      var min = document.querySelector('#min');
-      var max = document.querySelector('#max');
       var gradientImg = document.querySelector('#gradient');
       var legendCtx = legendCanvas.getContext('2d');
       var gradientCfg = {};
-
-      // the onExtremaChange callback gives us min, max, and the gradientConfig
-      // so we can update the legend
-      min.innerHTML = data.min;
-      max.innerHTML = data.max;
 
       gradientCfg = heatmapLayer._heatmap._config.defaultGradient;
       var gradient = legendCtx.createLinearGradient(0, 0, 200, 1);
