@@ -163,7 +163,7 @@ class DefaultController extends ControllerBase {
     $sg_admin = \Drupal::currentUser()->hasPermission('administer summergame');
     $summergame_points_enabled = \Drupal::config('summergame.settings')->get('summergame_points_enabled');
     $explaination_markup = '<h1>Summer Game Locations</h1>';
-    $heatRadius = ($_GET['heatRadius'] ?? 0.0025);
+    $heatRadius = ($_GET['heatRadius'] ?? 0.001);
 
     $legend_markup = '';
     if ($sg_admin) {
@@ -289,22 +289,38 @@ EOT;
   }
 
   public function map_data($game_term = '') {
-    $response = [];
     $db = \Drupal::database();
+
+    // Heatmap Data
+    $heatmap = [];
     $min = $db->query("SELECT MIN(nearby_count) FROM sg_map_points WHERE game_term = '$game_term' AND display = 1")->fetchField();
-    $response['min'] = $min;
+    $heatmap['min'] = $min;
     $max = $db->query("SELECT MAX(nearby_count) FROM sg_map_points WHERE game_term = '$game_term' AND display = 1")->fetchField();
-    $response['max'] = $max;
+    $heatmap['max'] = $max;
     $map_points = $db->query("SELECT * FROM sg_map_points WHERE game_term = '$game_term' AND display = 1")->fetchAll();
     foreach ($map_points as $map_point) {
-      $response['data'][] = [
+      $heatmap['data'][] = [
         'lat' => $map_point->lat,
         'lon' => $map_point->lon,
         'count' => $map_point->nearby_count,
       ];
     }
 
-    return new JsonResponse($response);
+    // Badges Data
+    $badges = [];
+    $nids = \Drupal::entityQuery('node')->condition('type', 'sg_badge')->exists('field_badge_coordinates')->execute();
+    foreach ($nids as $nid) {
+      $badge = \Drupal::entityTypeManager()->getStorage('node')->load($nid);
+      $image_url = file_create_url($badge->field_badge_image->entity->getFileUri());
+      list($lat, $lon) = explode(',', $badge->field_badge_coordinates->value);
+      $badges[] = [
+        'popup' => 'Badge Start Point<br>' . $badge->toLink()->toString(),
+        'lat' => trim($lat),
+        'lon' => trim($lon),
+        'image' => $image_url,
+      ];
+    }
+    return new JsonResponse(['heatmap' => $heatmap, 'badges' => $badges]);
   }
 /*
   public function badge() {

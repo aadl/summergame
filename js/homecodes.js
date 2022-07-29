@@ -1,12 +1,13 @@
 (function ($, Drupal) {
   // Build marker layers
-  var availableLayerGroup = new L.layerGroup();
-  var redeemedLayerGroup = new L.layerGroup();
+  var branchLayerGroup = new L.layerGroup();
+  var heatmapLayerGroup = new L.layerGroup();
+  var badgeLayerGroup = new L.layerGroup();
 
   var myMap = L.map('mapid', {
       center: [42.2781734, -83.74570792114082],
       zoom: 13,
-      layers: [availableLayerGroup, redeemedLayerGroup]
+      layers: [branchLayerGroup, heatmapLayerGroup, badgeLayerGroup]
   });
 
   var redIcon = new L.Icon({
@@ -55,7 +56,7 @@
     url: '/summergame/map/data/' + drupalSettings.hc_game_term,
     dataType: 'json',
     success: function (data) {
-      var heatRadius = 0.0025;
+      var heatRadius = 0.001;
       if (element = document.querySelector('#heatRadius')) {
         heatRadius = element.innerHTML;
       }
@@ -78,8 +79,8 @@
         // which field name in your data represents the data value - default "value"
         valueField: 'count'
       };
-      var heatmapLayer = new HeatmapOverlay(heatCfg).addTo(myMap);
-      heatmapLayer.setData(data);
+      var heatmapLayer = new HeatmapOverlay(heatCfg).addTo(heatmapLayerGroup);
+      heatmapLayer.setData(data.heatmap);
 
       // Create Legend
       var legendCanvas = document.createElement('canvas');
@@ -97,16 +98,36 @@
       legendCtx.fillStyle = gradient;
       legendCtx.fillRect(0, 0, 200, 10);
       gradientImg.src = legendCanvas.toDataURL();
+
+      // Add Badges
+      $.each(data.badges, function(index, element) {
+        // create new icon image based on badge image
+        var badgeIcon = new L.Icon({
+          iconUrl: element.image,
+          iconSize: [64, 64],
+        });
+        L.marker([element.lat, element.lon], {icon: badgeIcon}).bindPopup(element.popup).addTo(badgeLayerGroup);
+      });
     }
   });
 
   // Add Branch Locations
-  L.marker([42.278355032204445, -83.74590413038366]).bindPopup('<strong>Downtown Library</strong><br>343 South Fifth Ave.<br>Building Codes<br>Library Code Stop').addTo(availableLayerGroup);
-  L.marker([42.24387568322788, -83.71805381691777]).bindPopup('<strong>Malletts Creek Library</strong><br>3090 East Eisenhower Parkway<br>Building Codes<br>Library Code Stop').addTo(availableLayerGroup);
-  L.marker([42.25271695126512, -83.77811950157411]).bindPopup('<strong>Pittsfield Library</strong><br>2359 Oak Valley Dr.<br>Building Codes<br>Library Code Stop').addTo(availableLayerGroup);
-  L.marker([42.30838433760029, -83.71416680157276]).bindPopup('<strong>Traverwood Library</strong><br>3333 Traverwood Dr.<br>Building Codes<br>Library Code Stop').addTo(availableLayerGroup);
-  L.marker([42.27866255504599, -83.78305954390173]).bindPopup('<strong>Westgate Library</strong><br>2503 Jackson Ave.<br>Building Codes<br>Library Code Stop').addTo(availableLayerGroup);
-/*
+  L.marker([42.278355032204445, -83.74590413038366]).bindPopup('<strong>Downtown Library</strong><br>343 South Fifth Ave.<br>Building Codes<br>Library Code Stop').addTo(branchLayerGroup);
+  L.marker([42.24387568322788, -83.71805381691777]).bindPopup('<strong>Malletts Creek Library</strong><br>3090 East Eisenhower Parkway<br>Building Codes<br>Library Code Stop').addTo(branchLayerGroup);
+  L.marker([42.25271695126512, -83.77811950157411]).bindPopup('<strong>Pittsfield Library</strong><br>2359 Oak Valley Dr.<br>Building Codes<br>Library Code Stop').addTo(branchLayerGroup);
+  L.marker([42.30838433760029, -83.71416680157276]).bindPopup('<strong>Traverwood Library</strong><br>3333 Traverwood Dr.<br>Building Codes<br>Library Code Stop').addTo(branchLayerGroup);
+  L.marker([42.27866255504599, -83.78305954390173]).bindPopup('<strong>Westgate Library</strong><br>2503 Jackson Ave.<br>Building Codes<br>Library Code Stop').addTo(branchLayerGroup);
+
+  // Add layers to map
+  var overlayMaps = {
+    "Branches": branchLayerGroup,
+    "Lawn Code Heatmap": heatmapLayerGroup,
+    "Badge Starting Points": badgeLayerGroup,
+  };
+  L.control.layers(null, overlayMaps, {collapsed:false}).addTo(myMap);
+  $(".leaflet-control-layers-overlays").prepend("<label>Display:</label>");
+
+  /*
   // Load marker data from json source
   $.ajax({
     type: 'GET',
