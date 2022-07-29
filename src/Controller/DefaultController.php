@@ -311,7 +311,7 @@ EOT;
     $nids = \Drupal::entityQuery('node')->condition('type', 'sg_badge')->exists('field_badge_coordinates')->execute();
     foreach ($nids as $nid) {
       $badge = \Drupal::entityTypeManager()->getStorage('node')->load($nid);
-      $image_url = file_create_url($badge->field_badge_image->entity->getFileUri());
+      $image_url = '/files/badge-derivs/100/' . $badge->field_badge_image->entity->getFilename();
       list($lat, $lon) = explode(',', $badge->field_badge_coordinates->value);
       $badges[] = [
         'popup' => 'Badge Start Point<br>' . $badge->toLink()->toString(),
