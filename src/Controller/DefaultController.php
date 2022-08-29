@@ -195,17 +195,18 @@ EOT;
     }
     else {
       $explaination_markup .= <<<EOT
-<p>Summer Game has ended and all Home Codes have expired! If you put up a home code this Summer, please take it down!</p>
-<p>This map will show total number of redemptions for each code during the offseason. If you have any questions or concerns, as always, <a href="http://aadl.org/contactus">contact us</a>.</p>
-<p>Thanks to everyone who posted or found a home code!</p>
+<p>Summer Game has ended and all Lawn Codes and Library Codes have expired! If you put up a Lawn Code sign, please take it down but PLEASE KEEP IT! Don't toss those Summer Game Lawn signs! We don't have all the details yet, but we'll reuse the signs for the 2023 game, so store them until next June, or return them to your nearest Library and we'll find a good use for them in 2023.⁣</p>
+<p>If you have any questions or concerns, as always, <a href="http://aadl.org/contactus">contact us</a>.</p>
+<p>Thanks to everyone who posted or found Lawn and Library codes!</p>
 EOT;
-
+/*
       $legend_markup = '<p>Showing number of redemptions during the game.</p>' .
           '<img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png"> = 0-49 ' .
           '<img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png"> = 50-99 ' .
           '<img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-gold.png"> = 100-199 ' .
           '<img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png"> = 200-299 ' .
           '<img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png"> = 300+ ';
+ */
     }
 
     return [
@@ -289,36 +290,40 @@ EOT;
   }
 
   public function map_data($game_term = '') {
-    $db = \Drupal::database();
+    $summergame_points_enabled = \Drupal::config('summergame.settings')->get('summergame_points_enabled');
 
-    // Heatmap Data
-    $heatmap = [];
-    $min = $db->query("SELECT MIN(nearby_count) FROM sg_map_points WHERE game_term = '$game_term' AND display = 1")->fetchField();
-    $heatmap['min'] = $min;
-    $max = $db->query("SELECT MAX(nearby_count) FROM sg_map_points WHERE game_term = '$game_term' AND display = 1")->fetchField();
-    $heatmap['max'] = $max;
-    $map_points = $db->query("SELECT * FROM sg_map_points WHERE game_term = '$game_term' AND display = 1")->fetchAll();
-    foreach ($map_points as $map_point) {
-      $heatmap['data'][] = [
-        'lat' => $map_point->lat,
-        'lon' => $map_point->lon,
-        'count' => $map_point->nearby_count,
-      ];
-    }
+    if ($summergame_points_enabled) {
+      $db = \Drupal::database();
 
-    // Badges Data
-    $badges = [];
-    $nids = \Drupal::entityQuery('node')->condition('type', 'sg_badge')->exists('field_badge_coordinates')->execute();
-    foreach ($nids as $nid) {
-      $badge = \Drupal::entityTypeManager()->getStorage('node')->load($nid);
-      $image_url = '/files/badge-derivs/100/' . $badge->field_badge_image->entity->getFilename();
-      list($lat, $lon) = explode(',', $badge->field_badge_coordinates->value);
-      $badges[] = [
-        'popup' => 'Badge Start Point<br>' . $badge->toLink()->toString(),
-        'lat' => trim($lat),
-        'lon' => trim($lon),
-        'image' => $image_url,
-      ];
+      // Heatmap Data
+      $heatmap = [];
+      $min = $db->query("SELECT MIN(nearby_count) FROM sg_map_points WHERE game_term = '$game_term' AND display = 1")->fetchField();
+      $heatmap['min'] = $min;
+      $max = $db->query("SELECT MAX(nearby_count) FROM sg_map_points WHERE game_term = '$game_term' AND display = 1")->fetchField();
+      $heatmap['max'] = $max;
+      $map_points = $db->query("SELECT * FROM sg_map_points WHERE game_term = '$game_term' AND display = 1")->fetchAll();
+      foreach ($map_points as $map_point) {
+        $heatmap['data'][] = [
+          'lat' => $map_point->lat,
+          'lon' => $map_point->lon,
+          'count' => $map_point->nearby_count,
+        ];
+      }
+
+      // Badges Data
+      $badges = [];
+      $nids = \Drupal::entityQuery('node')->condition('type', 'sg_badge')->exists('field_badge_coordinates')->execute();
+      foreach ($nids as $nid) {
+        $badge = \Drupal::entityTypeManager()->getStorage('node')->load($nid);
+        $image_url = '/files/badge-derivs/100/' . $badge->field_badge_image->entity->getFilename();
+        list($lat, $lon) = explode(',', $badge->field_badge_coordinates->value);
+        $badges[] = [
+          'popup' => 'Badge Start Point<br>' . $badge->toLink()->toString(),
+          'lat' => trim($lat),
+          'lon' => trim($lon),
+          'image' => $image_url,
+        ];
+      }
     }
     return new JsonResponse(['heatmap' => $heatmap, 'badges' => $badges]);
   }
