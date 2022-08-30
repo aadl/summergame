@@ -249,22 +249,35 @@ class PlayerController extends ControllerBase {
   private function auth_redemptions($pid, $type) {
     $user = \Drupal::currentUser();
     $gameDisplayName = \Drupal::config('summergame.settings')->get('game_display_name');
-   if ($user->isAuthenticated()) {
+    if ($user->isAuthenticated()) {
       $pid = (int) $pid;
       if ($pid) {
         $player = summergame_player_load($pid);
         $pid = $player['pid'];
         if ($pid && summergame_player_access($pid)) {
           if ($type == 'gamecode') {
-            return $redeem_form = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerRedeemForm', $pid);
-          } else {
-            return $redeem_form = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerConsumeForm', $pid);
+            return \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerRedeemForm', $pid);
           }
-        } else {
+          elseif ($type == 'consume') {
+            if (\Drupal::config('summergame.settings')->get('summergame_points_enabled')) {
+              return \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerConsumeForm', $pid);
+            }
+            else {
+              \Drupal::messenger()->addError("Summer Game is not currently active for logging rewards");
+              return new RedirectResponse('/summergame/player');
+            }
+          }
+          else {
+            \Drupal::messenger()->addError("Invalid redeem form type");
+            return new RedirectResponse('/summergame/player');
+          }
+        }
+        else {
           \Drupal::messenger()->addError("Invalid ID or no access for player #$pid");
           return new RedirectResponse('/summergame/player');
         }
-      } else {
+      }
+      else {
         // pid = 0, try to load default player record and redirect
         if ($player = summergame_get_active_player()) {
           $redirect_uri = '/summergame/player/' . $player['pid'] . '/' . $type;
@@ -272,13 +285,15 @@ class PlayerController extends ControllerBase {
             $redirect_uri .= '?text=' . $_GET['text'];
           }
           return new RedirectResponse($redirect_uri);
-        } else {
+        }
+        else {
           \Drupal::messenger()->addMessage('Add a player to your account to play the $gameDisplayName');
           return new RedirectResponse('/summergame/player/new');
         }
 
       }
-    } else {
+    }
+    else {
       \Drupal::messenger()->addMessage('You must be logged in to redeem a $gameDisplayName code.');
       return new RedirectResponse("/user/login?destination=" . $_SERVER['REQUEST_URI']);
     }
