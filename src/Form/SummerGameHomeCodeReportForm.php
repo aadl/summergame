@@ -7,6 +7,7 @@
 
 namespace Drupal\summergame\Form;
 
+use Drupal\Core\Url;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 
@@ -68,7 +69,7 @@ class SummerGameHomeCodeReportForm extends FormBase {
           $form['inline']['cancel'] = [
             '#type' => 'link',
             '#title' => $this->t('Back to Map'),
-            '#url' => \Drupal\Core\Url::fromRoute('summergame.homecodes'),
+            '#url' => Url::fromRoute('summergame.homecodes'),
           ];
         }
         else {
@@ -130,7 +131,7 @@ class SummerGameHomeCodeReportForm extends FormBase {
       'Home Code Reported: ' . $code_data->text,
       "We have received a report of a Home Code that a player was unable to find.\n\n" .
       "Home Code Details:\n" .
-      \Drupal\Core\Url::fromRoute('summergame.admin.gamecode', ['code_id' => $code_data->code_id], ['absolute' => TRUE])->toString() . "\n" .
+      Url::fromRoute('summergame.admin.gamecode', ['code_id' => $code_data->code_id], ['absolute' => TRUE])->toString() . "\n" .
       "Code Text: $code_data->text\n" .
       "Code description: $code_data->description\n" .
       "Number of Code Redemptions: $code_data->num_redemptions\n" .
@@ -139,7 +140,7 @@ class SummerGameHomeCodeReportForm extends FormBase {
       "Creator Username: $code_data->name\n" .
       "Creator email: $code_data->mail\n\n" .
       "Reporting Player Details:\n" .
-      \Drupal\Core\Url::fromRoute('summergame.player', ['pid' => $player['pid']], ['absolute' => TRUE])->toString() . "\n" .
+      Url::fromRoute('summergame.player', ['pid' => $player['pid']], ['absolute' => TRUE])->toString() . "\n" .
       "Player Name: " . $player['name'] . "\n" .
       "Player Nickname: " . $player['nickname'] . "\n" .
       "Player Drupal User ID: " . $player['uid']

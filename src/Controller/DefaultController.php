@@ -5,6 +5,10 @@
 
 namespace Drupal\summergame\Controller;
 
+use Drupal\Core\Url;
+use Drupal\user\Entity\User;
+use Drupal\taxonomy\Entity\Term;
+use Drupal\node\Entity\Node;
 use Drupal\Core\Controller\ControllerBase;
 use Predis\Client;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -584,7 +588,7 @@ FBL;
   }
 */
   public function pdf($type = 'adult', $code_id = 0) {
-    $file_path = drupal_get_path('module', 'summergame') . '/pdf/';
+    $file_path = \Drupal::service('extension.list.module')->getPath('summergame') . '/pdf/';
     $redis = new Client(\Drupal::config('summergame.settings')->get('summergame_redis_conn'));
 
     if ($type == 'gamecode') {
@@ -597,7 +601,7 @@ FBL;
       $description = $gamecode->description; // Description of Code
       $description = array_reverse(explode("\n", wordwrap($description, 100)));
 
-      $code_link = \Drupal\Core\Url::fromRoute('summergame.player.gamecode',
+      $code_link = Url::fromRoute('summergame.player.gamecode',
                                                ['pid' => 0, 'text' => $event_code],
                                                ['absolute' => TRUE])->toString();
 
@@ -666,7 +670,7 @@ FBL;
   public function badge_list() {
     $db = \Drupal::database();
     $summergame_settings = \Drupal::config('summergame.settings');
-    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+    $user = User::load(\Drupal::currentUser()->id());
 
     // check if pid to fade unearned badges
     $player = summergame_get_active_player();
@@ -699,7 +703,7 @@ FBL;
       ->condition('vid', $vocab)
       ->sort('weight');
     $tids = $query->execute();
-    $terms = \Drupal\taxonomy\Entity\Term::loadMultiple($tids);
+    $terms = Term::loadMultiple($tids);
 
     foreach ($terms as $term) {
       // Check if Play Tester term and not a play tester, skip rest of loop if so
@@ -719,7 +723,7 @@ FBL;
       $nodes = $query->execute();
       if (count($nodes)) {
         foreach ($nodes as $nid) {
-          $node = \Drupal\node\Entity\Node::load($nid);
+          $node = Node::load($nid);
 
           // If badge is in the play tester series and user is not a play tester, skip it
           if (!$play_tester) {

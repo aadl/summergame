@@ -7,6 +7,7 @@
 
 namespace Drupal\summergame\Form;
 
+use Drupal\Core\Url;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 
@@ -72,7 +73,7 @@ class SummerGamePlayerRedeemForm extends FormBase {
     $form['cancel'] = [
       '#type' => 'link',
       '#title' => 'Return to Player Page',
-      '#url' => \Drupal\Core\Url::fromRoute('summergame.player'),
+      '#url' => Url::fromRoute('summergame.player'),
       '#suffix' => '</div>'
     ];
 

@@ -7,6 +7,7 @@
 
 namespace Drupal\summergame\Form;
 
+use Drupal\Core\Url;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 
@@ -206,14 +207,14 @@ class SummerGameGameCodeForm extends FormBase {
     $form['inline']['cancel'] = [
       '#type' => 'link',
       '#title' => $this->t('Cancel'),
-      '#url' => \Drupal\Core\Url::fromRoute('summergame.admin'),
+      '#url' => Url::fromRoute('summergame.admin'),
     ];
 
     if ($game_code['code_id']) {
     $form['inline']['delete'] = [
       '#type' => 'link',
       '#title' => $this->t('DELETE'),
-      '#url' => \Drupal\Core\Url::fromRoute('summergame.admin.gamecode.delete', ['code_id' => $game_code['code_id']]),
+      '#url' => Url::fromRoute('summergame.admin.gamecode.delete', ['code_id' => $game_code['code_id']]),
       '#suffix' => '</div>'
     ];
   }

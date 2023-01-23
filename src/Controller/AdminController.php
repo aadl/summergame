@@ -5,6 +5,8 @@
 
 namespace Drupal\summergame\Controller;
 
+use Drupal\user\Entity\User;
+use Drupal\taxonomy\Entity\Term;
 use Drupal\Core\Controller\ControllerBase;
 use Predis\Client;
 use \Drupal\node\Entity\Node;
@@ -43,7 +45,7 @@ class AdminController extends ControllerBase {
       // Load creator info
       $creator_uid = $game_code['creator_uid'];
       if (!isset($creator_names[$creator_uid])) {
-        if ($account = \Drupal\user\Entity\User::load($creator_uid)) {
+        if ($account = User::load($creator_uid)) {
           $creator_names[$creator_uid] = $account->get('name')->value;
         }
         else {
@@ -90,7 +92,7 @@ class AdminController extends ControllerBase {
                  ->sort('nid', 'DESC')
                  ->range(0, 25)
                  ->execute();
-    $badges = \Drupal\node\Entity\Node::loadMultiple($badge_ids);
+    $badges = Node::loadMultiple($badge_ids);
     foreach ($badges as $badge) {
       $formula = $badge->get('field_badge_formula')->value;
       if (!$sg_admin) {
@@ -179,7 +181,7 @@ class AdminController extends ControllerBase {
       // Load creator info
       $creator_uid = $game_code['creator_uid'];
       if (!isset($creator_names[$creator_uid])) {
-        if ($account = \Drupal\user\Entity\User::load($creator_uid)) {
+        if ($account = User::load($creator_uid)) {
           $creator_names[$creator_uid] = $account->get('name')->value;
         }
         else {
@@ -499,7 +501,7 @@ class AdminController extends ControllerBase {
       ->condition('vid', $vocab)
       ->sort('weight');
     $tids = $query->execute();
-    $terms = \Drupal\taxonomy\Entity\Term::loadMultiple($tids);
+    $terms = Term::loadMultiple($tids);
 
     foreach ($terms as $term) {
       $series_info = explode("\n", strip_tags($term->get('description')->value));

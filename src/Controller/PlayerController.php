@@ -5,6 +5,8 @@
 
 namespace Drupal\summergame\Controller;
 
+use Drupal\user\Entity\User;
+use Drupal\node\Entity\Node;
 use Drupal\Core\Controller\ControllerBase;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 //use Drupal\Core\Database\Database;
@@ -153,7 +155,7 @@ class PlayerController extends ControllerBase {
       // Lookup drupal user if admin
       $website_user = '';
       $homecode = '';
-      if ($account = \Drupal\user\Entity\User::load($player['uid'])) {
+      if ($account = User::load($player['uid'])) {
         if ($user->id() == $account->id() || $user->hasPermission('administer summergame')) {
           $website_user = $account->get('name')->value;
 
@@ -438,7 +440,7 @@ class PlayerController extends ControllerBase {
   public function set_active($pid = 0) {
     if ($player = summergame_player_load($pid)) {
       if ($player['uid']) {
-        $account = \Drupal\user\Entity\User::load($player['uid']);
+        $account = User::load($player['uid']);
         if (isset($account)) {
           // Use the user data service to store active Player ID
           \Drupal::service('user.data')->set('summergame', $account->id(), 'sg_active_pid', $pid);
@@ -501,7 +503,7 @@ class PlayerController extends ControllerBase {
       // Generate a new referral code
       $nums = '34679';
       $num_max_idx = strlen($nums) - 1;
-      $lines = file(drupal_get_path('module', 'summergame') . '/upgoer5words.txt');
+      $lines = file(\Drupal::service('extension.list.module')->getPath('summergame') . '/upgoer5words.txt');
 
       $code = '';
       while ($code == '') {
@@ -595,7 +597,7 @@ class PlayerController extends ControllerBase {
         // link to nodes
         if (preg_match('/nid:([\d]+)/', $row['metadata'], $matches)) {
           if ($row['type'] != 'Download of the Day' || $player_access) { // Don't link to DotD records
-            $node = \Drupal\node\Entity\Node::load($matches[1]);
+            $node = Node::load($matches[1]);
             $node_title = $node->get('title')->value;
             $nid = $node->get('nid')->value;
             $row['description'] .= ": <a href=\"/node/$nid\">$node_title</a>";

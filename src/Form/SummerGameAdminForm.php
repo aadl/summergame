@@ -45,7 +45,7 @@ class SummerGameAdminForm extends ConfigFormBase {
     return ['summergame.settings'];
   }
 
-  public function buildForm(array $form, \Drupal\Core\Form\FormStateInterface $form_state) {
+  public function buildForm(array $form, FormStateInterface $form_state) {
     $summergame_settings = \Drupal::config('summergame.settings');
     $form = [];
     $form['summergame_points_enabled'] = [
