@@ -316,7 +316,7 @@ EOT;
 
       // Badges Data
       $badges = [];
-      $nids = \Drupal::entityQuery('node')->condition('type', 'sg_badge')->exists('field_badge_coordinates')->execute();
+      $nids = \Drupal::entityQuery('node')->condition('type', 'sg_badge')->exists('field_badge_coordinates')->accessCheck(TRUE)->execute();
       foreach ($nids as $nid) {
         $badge = \Drupal::entityTypeManager()->getStorage('node')->load($nid);
         $image_url = '/files/badge-derivs/100/' . $badge->field_badge_image->entity->getFilename();
@@ -702,7 +702,7 @@ FBL;
     $query = \Drupal::entityQuery('taxonomy_term')
       ->condition('vid', $vocab)
       ->sort('weight');
-    $tids = $query->execute();
+    $tids = $query->accessCheck(TRUE)->execute();
     $terms = Term::loadMultiple($tids);
 
     foreach ($terms as $term) {
@@ -720,7 +720,7 @@ FBL;
         ->condition('field_badge_game_term', $badgelist_game_term)
         ->condition('field_sg_badge_series_multiple', $term->id())
         ->sort('created' , 'ASC');
-      $nodes = $query->execute();
+      $nodes = $query->accessCheck(TRUE)->execute();
       if (count($nodes)) {
         foreach ($nodes as $nid) {
           $node = Node::load($nid);

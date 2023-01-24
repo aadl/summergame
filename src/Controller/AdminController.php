@@ -91,6 +91,7 @@ class AdminController extends ControllerBase {
                  ->condition('type','sg_badge')
                  ->sort('nid', 'DESC')
                  ->range(0, 25)
+                 ->accessCheck(TRUE)
                  ->execute();
     $badges = Node::loadMultiple($badge_ids);
     foreach ($badges as $badge) {
@@ -500,7 +501,7 @@ class AdminController extends ControllerBase {
     $query = \Drupal::entityQuery('taxonomy_term')
       ->condition('vid', $vocab)
       ->sort('weight');
-    $tids = $query->execute();
+    $tids = $query->accessCheck(TRUE)->execute();
     $terms = Term::loadMultiple($tids);
 
     foreach ($terms as $term) {
@@ -512,7 +513,7 @@ class AdminController extends ControllerBase {
         ->condition('status', 1)
         ->condition('field_badge_game_term', $game_term)
         ->condition('field_sg_badge_series_multiple', $term->id());
-      $nodes = $query->execute();
+      $nodes = $query->accessCheck(TRUE)->execute();
 
       if (count($nodes)) {
         $output .= '<h2>' . $series . ' :: ' . count($nodes) . ' Badges</h2>';
