@@ -48,7 +48,7 @@ class SummerGamePlayerRedeemForm extends FormBase {
     $all_players = summergame_player_load_all($player['uid']);
     if (count($all_players) > 1) {
       $pid_options = [];
-      if ($_SESSION['summergame_pid_defaults']) {
+      if (isset($_SESSION['summergame_pid_defaults'])) {
         $pid_defaults = json_decode($_SESSION['summergame_pid_defaults']);
       }
       else {

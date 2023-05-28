@@ -773,7 +773,16 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
         'balance' => 0,
         'total' => 0,
         'prize_count' => 0,
+        'max_timestamp' => $row['timestamp'],
+        'min_timestamp' => $row['timestamp'],
       ];
+    }
+    else {
+      // Check min timestamp for game term
+      // (row sort is timestamp DESC so max_timestamp is always set with first row of game term)
+      if ($row['timestamp'] < $player_points[$game_term]['min_timestamp']) {
+        $player_points[$game_term]['min_timestamp'] = $row['timestamp'];
+      }
     }
 
     // if type for this game term is not set, initialize point value
