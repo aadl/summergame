@@ -710,28 +710,6 @@ FBL;
         continue;
       }
 
-      $series_info = explode("\n", strip_tags($term->get('description')->value));
-      $series_level = (int) ($series_info[2] ?? 1); // default to series level 1
-      switch ($series_level) {
-        case 2:
-          $level_output = "⭐️⭐️ Tricky";
-          break;
-        case 3:
-        case 4:
-          $level_output = "⭐️⭐️⭐️ Super Tricky";
-          break;
-        default:
-          $level_output = "⭐️ Standard";
-      }
-
-      $badges[$term_id] = [
-        'name' => $term->get('name')->value,
-        'description' => $series_info[0],
-        'level' => $level_output,
-        'tags' => [],
-        'classes' => ['diff' . $series_level],
-      ];
-
       $query = \Drupal::entityQuery('node')
         ->condition('type', 'sg_badge')
         ->condition('status', 1)
@@ -750,6 +728,31 @@ FBL;
                 continue 2;
               }
             }
+          }
+
+          // Set Series info if not set yet
+          if (!isset($badges[$term_id])) {
+            $series_info = explode("\n", strip_tags($term->get('description')->value));
+            $series_level = (int) ($series_info[2] ?? 1); // default to series level 1
+            switch ($series_level) {
+              case 2:
+                $level_output = "⭐️⭐️ Tricky";
+                break;
+              case 3:
+              case 4:
+                $level_output = "⭐️⭐️⭐️ Super Tricky";
+                break;
+              default:
+                $level_output = "⭐️ Standard";
+            }
+
+            $badges[$term_id] = [
+              'name' => $term->get('name')->value,
+              'description' => $series_info[0],
+              'level' => $level_output,
+              'tags' => [],
+              'classes' => ['diff' . $series_level],
+            ];
           }
 
           if ($player['pid'] &&
