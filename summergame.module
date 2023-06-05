@@ -204,20 +204,20 @@ function summergame_theme() {
         'completed_classic' => NULL,
         'website_user' => NULL,
         'homecode' => NULL,
-        'game_display_name' => null,
+        'game_display_name' => NULL,
       ],
     ],
     'summergame_player_ledger' => [
       'variables' => [
         'ledger' => NULL,
         'pager' => NULL,
-        'game_display_name' => null,
+        'game_display_name' => NULL,
       ]
     ],
     'summergame_player_redeem' => [
       'variables' => [
         'redeem_form' => NULL,
-        'type' => Null
+        'type' => NULL,
       ]
     ],
     'summergame_player_badge_list' => [
@@ -225,7 +225,9 @@ function summergame_theme() {
         'player' => NULL,
         'all_players' => NULL,
         'viewing_access' => NULL,
-        'badge_list' => NULL
+        'game_term' => NULL,
+        'list_tags' => NULL,
+        'badge_list' => NULL,
       ]
     ],
     'summergame_leaderboard_page' => [

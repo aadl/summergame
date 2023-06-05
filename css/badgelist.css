@@ -1,0 +1,9 @@
+.badgelist-series {
+  display: none; /* Hidden by default */
+}
+.show {
+  display: block;
+}
+.button.active {
+  background-color: #09f;
+}
