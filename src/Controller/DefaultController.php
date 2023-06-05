@@ -694,6 +694,7 @@ FBL;
     $play_test_term_id = $summergame_settings->get('summergame_play_test_term_id');
     $play_tester = $user->hasPermission('play test summergame');
     $badges = [];
+    $list_tags = [];
 
     $query = \Drupal::entityQuery('taxonomy_term')
       ->condition('vid', $vocab)
@@ -702,13 +703,34 @@ FBL;
     $terms = \Drupal\taxonomy\Entity\Term::loadMultiple($tids);
 
     foreach ($terms as $term) {
+      $term_id = $term->id();
+
       // Check if Play Tester term and not a play tester, skip rest of loop if so
-      if ($term->id() == $play_test_term_id && !$play_tester) {
+      if ($term_id == $play_test_term_id && !$play_tester) {
         continue;
       }
 
       $series_info = explode("\n", strip_tags($term->get('description')->value));
-      $series = $term->get('name')->value;
+      $series_level = (int) ($series_info[2] ?? 1); // default to series level 1
+      switch ($series_level) {
+        case 2:
+          $level_output = "⭐️⭐️ Tricky";
+          break;
+        case 3:
+        case 4:
+          $level_output = "⭐️⭐️⭐️ Super Tricky";
+          break;
+        default:
+          $level_output = "⭐️ Standard";
+      }
+
+      $badges[$term_id] = [
+        'name' => $term->get('name')->value,
+        'description' => $series_info[0],
+        'level' => $level_output,
+        'tags' => [],
+        'classes' => ['diff' . $series_level],
+      ];
 
       $query = \Drupal::entityQuery('node')
         ->condition('type', 'sg_badge')
@@ -730,28 +752,19 @@ FBL;
             }
           }
 
-          $game_term = $node->field_badge_game_term->value;
-
-          // Set Series info if not set yet
-          if (!isset($badges[$game_term][$series]['description'])) {
-            $badges[$game_term][$series]['description'] = $series_info[0];
-
-            $series_level = (int) $series_info[2];
-            $max_level = 4;
-            $level_diff = $max_level - $series_level;
-            $level_output = '';
-            for ($i = 0; $i < $series_level; $i++) {
-              $level_output .= '&starf;';
-            }
-            for ($i = 0; $i < $level_diff; $i++) {
-              $level_output .= '&star;';
-            }
-            $badges[$game_term][$series]['level'] = $level_output;
-          }
-
           if ($player['pid'] &&
               isset($player['bids'][$nid])) {
             $node->badge_earned = true;
+          }
+
+          // Update any badge tags on term
+          if (isset($node->field_badge_tags)) {
+            foreach ($node->field_badge_tags->referencedEntities() as $ref) {
+              $tid = $ref->get('tid')->value;
+              $badges[$term_id]['tags'][$tid] = $ref->get('name')->value;
+              $badges[$term_id]['classes'][] = 'tag' . $tid;
+              $list_tags[$tid] = $ref->get('name')->value;
+            }
           }
 
           // Hidden Badges
@@ -761,6 +774,7 @@ FBL;
               foreach ($required_parts as $required_part) {
                 if (strpos($required_part, 'gamecode:') === 0) {
                   // Required Game Code, search player ledger
+                  $game_term = $node->field_badge_game_term->value;
                   $ledger = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND metadata LIKE :metadata AND game_term = :term LIMIT 1",
                                                      [':pid' => $player['pid'], ':metadata' => $required_part, ':term' => $game_term])->fetch();
                   if (!$ledger->lid) {
@@ -782,12 +796,17 @@ FBL;
             }
           }
 
-          $badges[$game_term][$series]['nodes'][] = $node;
+          $badges[$term_id]['nodes'][] = $node;
         }
       }
     }
 
     return [
+      '#attached' => [
+        'library' => [
+          'summergame/summergame-badgelist-lib',
+        ],
+      ],
       '#cache' => [
         'max-age' => 0, // Don't cache, always get fresh data
       ],
@@ -795,6 +814,8 @@ FBL;
       '#player' => $player,
       '#all_players' => $all_players,
       '#viewing_access' => true,
+      '#game_term' => $badgelist_game_term,
+      '#list_tags' => $list_tags,
       '#badge_list' => $badges
     ];
   }
