@@ -739,8 +739,10 @@ FBL;
                 $level_output = "⭐️⭐️ Tricky";
                 break;
               case 3:
-              case 4:
                 $level_output = "⭐️⭐️⭐️ Super Tricky";
+                break;
+              case 4:
+                $level_output = "⭐️⭐️⭐️⭐️ Ambitious";
                 break;
               default:
                 $level_output = "⭐️ Standard";

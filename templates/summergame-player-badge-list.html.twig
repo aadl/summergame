@@ -20,9 +20,10 @@
           <button class="button" onclick="filterSelection('diff1')">⭐️ Standard</button>
           <button class="button" onclick="filterSelection('diff2')">⭐️⭐️ Tricky</button>
           <button class="button" onclick="filterSelection('diff3')">⭐️⭐️⭐️ Super Tricky</button>
+          <button class="button" onclick="filterSelection('diff4')">⭐️⭐️⭐️⭐️ Ambitious</button>
         </p>
         {% if list_tags %}
-        <p>Categories:
+        <p>Tags:
           {% for term_id, tag in list_tags %}
             <button class="button" onclick="filterSelection('tag{{ term_id }}')">{{ tag }}</button>
           {% endfor %}
@@ -40,7 +41,7 @@
               {% endif %}
               Difficulty: {{ series.level|raw }}
               {% if series.tags %}
-                <br>Categories: {{ series.tags|join(', ') }}
+                <br>Tags: {{ series.tags|join(', ') }}
               {% endif %}
             </p>
             <div class="badgelist-badges">
