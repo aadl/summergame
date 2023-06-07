@@ -106,15 +106,15 @@ class SummerGamePlayerRedeemForm extends FormBase {
     foreach ($pids as $pid) {
       $player = summergame_player_load(['pid' => $pid]);
       $status = summergame_redeem_code($player, $form_state->getValue('code_text'));
-      if ($status['error']) {
+      if (!empty($status['error'])) {
         \Drupal::messenger()->addError($status['error']);
       }
-      else if ($status['warning']) {
+      else if (!empty($status['warning'])) {
         \Drupal::messenger()->addWarning($status['warning']);
       }
-      else if ($status['success']) {
+      else if (!empty($status['success'])) {
         \Drupal::messenger()->addMessage(['#markup' => $status['success']]);
-        if (isset($status['clue'])) {
+        if (!empty($status['clue'])) {
           \Drupal::messenger()->addWarning(['#markup' => 'New Clue: ' . $status['clue']]);
         }
       }

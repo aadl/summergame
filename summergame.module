@@ -973,7 +973,7 @@ function summergame_redeem_code($player, $code_text) {
       // check if player has already redeemed this code
       $existing = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND metadata LIKE :metadata",
                             [':pid' => $player['pid'], ':metadata' => 'gamecode:' . $code->text])->fetchObject();
-      if ($existing->lid) {
+      if (isset($existing->lid)) {
         $existing_date = date('F j, Y, g:i a', $existing->timestamp);
         return ['error' => "Code \"$code->text\" already redeemed on $existing_date"];
       }
@@ -1180,6 +1180,16 @@ function summergame_player_check_badges($pid, $game_term) {
           $awarded = summergame_player_award_badge($pid, $badge->bid);
         }
       }
+      else if (strpos($badge->formula, '^^')) {
+        // Multiple days of a ledger type formula (streak)
+        list($count_limit, $text_pattern) = explode('^^', $badge->formula);
+        $lid_count = $db->query("SELECT COUNT(DISTINCT FROM_UNIXTIME(`timestamp`, '%j')) AS lid_count FROM sg_ledger WHERE pid = $pid " .
+                                "AND (type LIKE :text_pattern OR metadata LIKE :gamecode_pattern) AND game_term = :game_term",
+                                [':text_pattern' => $text_pattern, ':gamecode_pattern' => "gamecode:$text_pattern%", ':game_term' => $game_term])->fetchObject();
+        if ($lid_count->lid_count >= $count_limit) {
+          $awarded = summergame_player_award_badge($pid, $badge->bid);
+        }
+      }
       else if (strpos($badge->formula, '::')) {
         // Multiple of a ledger type formula
         $formula_parts = explode('::', $badge->formula);
@@ -1211,7 +1221,7 @@ function summergame_player_check_badges($pid, $game_term) {
         foreach (explode(',', $badge->formula) as $text_pattern) {
           $query = "SELECT lid FROM sg_ledger WHERE pid = :pid AND (";
           $args = [
-          ':pid' => $pid
+            ':pid' => $pid
           ];
 
           $text_patterns = explode('|', $text_pattern);
@@ -1227,7 +1237,7 @@ function summergame_player_check_badges($pid, $game_term) {
 
           $ledger = $db->query($query, $args)->fetchObject();
 
-          if (!$ledger->lid) {
+          if (!isset($ledger->lid)) {
             $eligible = FALSE;
             break;
           }
