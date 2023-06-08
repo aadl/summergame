@@ -753,6 +753,7 @@ FBL;
               'description' => $series_info[0],
               'level' => $level_output,
               'tags' => [],
+              'diff_class' => 'diff' . $series_level,
               'classes' => ['diff' . $series_level],
             ];
           }
@@ -762,12 +763,16 @@ FBL;
             $node->badge_earned = true;
           }
 
-          // Update any badge tags on term
+          // Add difficulty to node classes
+          $node->classes = [$badges[$term_id]['diff_class']];
+
+          // Update any badge tags on term and add to node
           if (isset($node->field_badge_tags)) {
             foreach ($node->field_badge_tags->referencedEntities() as $ref) {
               $tid = $ref->get('tid')->value;
               $badges[$term_id]['tags'][$tid] = $ref->get('name')->value;
               $badges[$term_id]['classes'][] = 'tag' . $tid;
+              $node->classes[] = 'tag' . $tid;
               $list_tags[$tid] = [
                 'name' => $ref->get('name')->value,
                 'description' => $ref->get('description')->value,

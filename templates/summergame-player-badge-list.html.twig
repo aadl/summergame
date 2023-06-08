@@ -52,7 +52,7 @@
             </p>
             <div class="badgelist-badges">
               {% for node in series.nodes %}
-                <div class="badgelist-badge l-inline-b">
+                <div class="badgelist-badge {{ node.classes|join(' ') }} show-ib">
                   {% if node.hide_badge %}
                     <a href="/node/{{ node.id }}" target="_blank">
                       <img class="sg-admin-badge" src="/{{ directory }}/images/hidden_100.png" alt="Hidden Badge image">

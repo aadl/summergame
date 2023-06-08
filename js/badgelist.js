@@ -17,6 +17,13 @@ function filterSelection(c) {
     removeClass(x[i], "show");
     if (x[i].className.indexOf(c) > -1) addClass(x[i], "show");
   }
+  x = document.getElementsByClassName("badgelist-badge");
+  if (c == "all") c = "";
+  // Add the "show-ib" class (display:inline-block) to the filtered elements, and remove the "show-ib" class from the elements that are not selected
+  for (i = 0; i < x.length; i++) {
+    removeClass(x[i], "show-ib");
+    if (x[i].className.indexOf(c) > -1) addClass(x[i], "show-ib");
+  }
 }
 
 // Show filtered elements
