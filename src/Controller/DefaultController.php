@@ -768,7 +768,10 @@ FBL;
               $tid = $ref->get('tid')->value;
               $badges[$term_id]['tags'][$tid] = $ref->get('name')->value;
               $badges[$term_id]['classes'][] = 'tag' . $tid;
-              $list_tags[$tid] = $ref->get('name')->value;
+              $list_tags[$tid] = [
+                'name' => $ref->get('name')->value,
+                'description' => $ref->get('description')->value,
+              ];
             }
           }
 

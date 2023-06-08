@@ -1,3 +1,6 @@
+.badge-tag-description {
+  display: none;
+}
 .badgelist-series {
   display: none; /* Hidden by default */
 }

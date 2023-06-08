@@ -25,7 +25,13 @@
         {% if list_tags %}
         <p>Tags:
           {% for term_id, tag in list_tags %}
-            <button class="button" onclick="filterSelection('tag{{ term_id }}')">{{ tag }}</button>
+            <button class="button"
+                    onmouseover="showDescription('tag{{ term_id }}')"
+                    onmouseout="showDescription('')"
+                    onclick="filterSelection('tag{{ term_id }}')">{{ tag.name }}</button>
+          {% endfor %}
+          {% for term_id, tag in list_tags %}
+            <div class="badge-tag-description" id="tag{{ term_id }}-description">{{ tag.description|raw }}</div>
           {% endfor %}
         </p>
         {% endif %}

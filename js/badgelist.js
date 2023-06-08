@@ -1,4 +1,13 @@
 // adapted from https://www.w3schools.com/howto/howto_js_filter_elements.asp
+function showDescription(t) {
+  var x, i;
+  x = document.getElementsByClassName("badge-tag-description");
+  for (i = 0; i < x.length; i++) {
+    removeClass(x[i], "show");
+    if (x[i].id == t + "-description") addClass(x[i], "show");
+  }
+}
+
 function filterSelection(c) {
   var x, i;
   x = document.getElementsByClassName("badgelist-series");
