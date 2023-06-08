@@ -171,10 +171,12 @@ class DefaultController extends ControllerBase {
     }
 
     if ($summergame_points_enabled) {
-      // Temporary Message While Lawn & Library Codes are being developed
-      $explaination_markup .= '<p>Welcome to the new Summer Game Map. Find out where to find Summer Game codes and more!</p>' .
-                              '<p><img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png"> = Library building locations, find codes around the building and at the Library Code sign.</p>' .
-                              "<p>Heatmap colors indicate approximate locations of the Lawn Code signs around town. They should all be visible from the street or sidewalk.</p>";
+      // Temporary Message While Lawn & Library Codes are not yet available
+      $explaination_markup .= '<p>Welcome to the Summer Game Map. Find out where to find Summer Game codes and more!</p>' .
+                              '<p>LAWN & LIBRARY CODES are returning in a few weeks! Check back then to see details.</p>' .
+                              '<p><img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png"> = Library building locations, find codes around the building.</p>' .
+                              '<p>Badge images indicate starting locations for earning those badges. Click the badge name to open the badge details page.</p>';
+                              // "<p>Heatmap colors indicate approximate locations of the Lawn Code signs around town. They should all be visible from the street or sidewalk.</p>";
 /*
       $explaination_markup .= <<<EOT
 <p>The thought may be DWELLING in your mind, "What's a HOME CODE?" Well that's a great question! A Home Code is your VERY OWN PERSONALIZED code for your HOME!</p>
@@ -227,10 +229,12 @@ EOT;
         $legend_markup .
         '<div id="map-wrapper">' .
         '<div id="mapid" style="height: 180px;"></div>' .
+/*
         '<div class="legend-area"><h4>Nearby Lawn Codes</h4>' .
         '<span id="min">Fewer</span><span id="max">More</span>' .
         '<img id="gradient" src="" style="width:100%" />' .
         '</div>' .
+*/
         '</div>',
     ];
   }

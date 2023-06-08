@@ -1,13 +1,13 @@
 (function ($, Drupal) {
   // Build marker layers
   var branchLayerGroup = new L.layerGroup();
-  var heatmapLayerGroup = new L.layerGroup();
+  // var heatmapLayerGroup = new L.layerGroup();
   var badgeLayerGroup = new L.layerGroup();
 
   var myMap = L.map('mapid', {
       center: [42.2781734, -83.74570792114082],
       zoom: 13,
-      layers: [branchLayerGroup, heatmapLayerGroup, badgeLayerGroup]
+      layers: [branchLayerGroup, /*heatmapLayerGroup,*/ badgeLayerGroup]
   });
 
   var redIcon = new L.Icon({
@@ -49,7 +49,7 @@
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   }).addTo(myMap);
-
+/*
   // Load heatmap data from json source
   $.ajax({
     type: 'GET',
@@ -110,7 +110,7 @@
       });
     }
   });
-
+*/
   // Add Branch Locations
   L.marker([42.278355032204445, -83.74590413038366]).bindPopup('<strong>Downtown Library</strong><br>343 South Fifth Ave.<br>Building Codes<br>Library Code Stop').addTo(branchLayerGroup);
   L.marker([42.24387568322788, -83.71805381691777]).bindPopup('<strong>Malletts Creek Library</strong><br>3090 East Eisenhower Parkway<br>Building Codes<br>Library Code Stop').addTo(branchLayerGroup);
@@ -121,7 +121,7 @@
   // Add layers to map
   var overlayMaps = {
     "Branches": branchLayerGroup,
-    "Lawn Code Heatmap": heatmapLayerGroup,
+    // "Lawn Code Heatmap": heatmapLayerGroup,
     "Badge Starting Points": badgeLayerGroup,
   };
   L.control.layers(null, overlayMaps, {collapsed:false}).addTo(myMap);
