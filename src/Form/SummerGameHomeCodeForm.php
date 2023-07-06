@@ -144,6 +144,11 @@ class SummerGameHomeCodeForm extends FormBase {
             '#size' => 5,
             '#description' => t('5 digit Zip Code where the Game Code sign will be displayed (example "48103")'),
           ];
+          $form['details']['lawn']['display'] = [
+            '#type' => 'checkbox',
+            '#title' => 'Display my Address on Public Lawn Codes Map',
+            '#description' => t('This means summer game players will come to your home looking for this code!'),
+          ];
           $form['details']['lawn']['guidelines'] = [
             '#markup' => '<strong><p>Make sure your lawn sign is next to the sidewalk, street, or parking lot!</p></strong>'
           ];
@@ -270,7 +275,7 @@ class SummerGameHomeCodeForm extends FormBase {
                       $geocode_data->address->postcode,
         'lat' => $geocode_data->lat,
         'lon' => $geocode_data->lon,
-        'display' => 1, // New codes always display with the heatmap
+        'display' => $form_state->getValue('display'),
       ];
     }
     else {

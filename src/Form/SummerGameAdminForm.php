@@ -223,6 +223,12 @@ class SummerGameAdminForm extends ConfigFormBase {
       '#default_value' => $summergame_settings->get('summergame_homecode_message'),
       '#description' => 'Message to be displayed at the top of the homecode creation form',
     ];
+    $form['summergame_homecode_report_threshold'] = [
+      '#type' => 'textfield',
+      '#title' => 'Home Code Report Threshold',
+      '#default_value' => $summergame_settings->get('summergame_homecode_report_threshold'),
+      '#description' => 'Number of player reports needed to remove a Home Code from the map',
+    ];
 
     return parent::buildForm($form, $form_state);
   }

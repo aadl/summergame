@@ -162,21 +162,30 @@ class DefaultController extends ControllerBase {
     }
     $sg_admin = \Drupal::currentUser()->hasPermission('administer summergame');
     $summergame_points_enabled = \Drupal::config('summergame.settings')->get('summergame_points_enabled');
+    $summergame_homecode_report_threshold = \Drupal::config('summergame.settings')->get('summergame_homecode_report_threshold');
     $explaination_markup = '<h1>Summer Game Locations</h1>';
-    $heatRadius = ($_GET['heatRadius'] ?? 0.001);
+    // $heatRadius = ($_GET['heatRadius'] ?? 0.001);
 
     $legend_markup = '';
+/*
     if ($sg_admin) {
       $legend_markup = '<p>Heatmap Radius: <span id="heatRadius">' . $heatRadius . '</span></p>';
     }
-
+*/
     if ($summergame_points_enabled) {
+      // 2023 Lawn & Library Codes Explaination
+      $explaination_markup .= '<p>Would you love to create your VERY OWN Summer Game Code??? YOU CAN with LAWN & LIBRARY CODES!</p>' .
+                              '<p>FIRST, stop by any of our AADL locations to pick up either a (new and improved) Lawn Code Sign OR a Library Code Card. THEN create your code by clicking "My Players." Scroll down to your My Summer Game page until you see "Player Details." You\'ll see the words, "Create Your Lawn Code or Library Code," click it and fill out the form to make your code real and active! Write the code legibly in ALLCAPS on your lawn sign or code card and get it out there for fellow players to find!!! If you make a Lawn Code, you can decide if you want a pin for it to be displayed on the Summer Game Map! (Serious note: No personal information is given on the map. Just the address linked to the code!). If you make a Library Code Card, you get to choose which Summer Game Stop post you want to attach it to (we have one at each of our locations)!!</p>' .
+                              '<p>DID YOU MAKE A LAWN CODE? Please make sure the code is displayed on YOUR lawn (or one you have permission to use) near a sidewalk, so that players aren\'t searching high and low or out in traffic. Thank you!!</p>' .
+                              '<p>CAN\'T FIND A CODE? Use the "I Can\'t Find This" tool to report a missing L&L code! PLEASE DON\'T KNOCK ON ANY DOORS OR TRY TO ASK THE RESIDENT. Just use the tool!! Keep it cool!! The Summer Game doesn\'t involve knocking on peoples\' doors! EVER!!!!</p>';
+/*
       // Temporary Message While Lawn & Library Codes are not yet available
       $explaination_markup .= '<p>Welcome to the Summer Game Map. Find out where to find Summer Game codes and more!</p>' .
                               '<p>LAWN & LIBRARY CODES are returning in a few weeks! Check back then to see details.</p>' .
                               '<p><img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png"> = Library building locations, find codes around the building.</p>' .
                               '<p>Badge images indicate starting locations for earning those badges. Click the badge name to open the badge details page.</p>';
                               // "<p>Heatmap colors indicate approximate locations of the Lawn Code signs around town. They should all be visible from the street or sidewalk.</p>";
+*/
 /*
       $explaination_markup .= <<<EOT
 <p>The thought may be DWELLING in your mind, "What's a HOME CODE?" Well that's a great question! A Home Code is your VERY OWN PERSONALIZED code for your HOME!</p>
@@ -216,6 +225,7 @@ EOT;
         'drupalSettings' => [
           'hc_game_term' => $game_term,
           'hc_points_enabled' => $summergame_points_enabled,
+          'hc_report_threshold' => $summergame_homecode_report_threshold,
         ],
         'library' => [
           'summergame/summergame-map-lib',
@@ -239,6 +249,7 @@ EOT;
     ];
   }
 
+/*
   public function homecodes_markerdata($game_term = '') {
     // Build JSON array of home code marker data
     $response = [];
@@ -255,7 +266,6 @@ EOT;
     while ($game_code = $res->fetchObject()) {
       $geocode_data = json_decode($game_code->clue);
       if ($geocode_data->display) {
-        /*
         if ($summergame_points_enabled) {
           if ($player) {
             // see if player has redeemed this code
@@ -282,7 +292,7 @@ EOT;
             $geocode_data->homecode = 'Never redeemed';
           }
         }
-*/
+
         // Add number of redemptions
         $geocode_data->num_redemptions = $game_code->num_redemptions;
 
@@ -292,13 +302,18 @@ EOT;
 
     return new JsonResponse($response);
   }
+*/
 
   public function map_data($game_term = '') {
     $summergame_points_enabled = \Drupal::config('summergame.settings')->get('summergame_points_enabled');
 
     if ($summergame_points_enabled) {
       $db = \Drupal::database();
+      if (empty($game_term)) {
+        $game_term = \Drupal::config('summergame.settings')->get('summergame_current_game_term');
+      }
 
+      /*
       // Heatmap Data
       $heatmap = [];
       $min = $db->query("SELECT MIN(nearby_count) FROM sg_map_points WHERE game_term = '$game_term' AND display = 1")->fetchField();
@@ -312,6 +327,23 @@ EOT;
           'lon' => $map_point->lon,
           'count' => $map_point->nearby_count,
         ];
+      }
+      */
+
+      // Homecodes Data
+      $homecodes = [];
+      $res = $db->query("SELECT * FROM sg_game_codes WHERE game_term = :game_term AND clue LIKE '%\"homecode\"%'",
+                        [':game_term' => $game_term]);
+      while ($game_code = $res->fetchObject()) {
+        $geocode_data = json_decode($game_code->clue);
+        if ($geocode_data->display) {
+          // Add game code data to geocode data
+          $geocode_data->code_id = $game_code->code_id;
+          $geocode_data->created = $game_code->created;
+          $geocode_data->num_redemptions = $game_code->num_redemptions;
+
+          $homecodes[] = $geocode_data;
+        }
       }
 
       // Badges Data
@@ -329,7 +361,7 @@ EOT;
         ];
       }
     }
-    return new JsonResponse(['heatmap' => $heatmap, 'badges' => $badges]);
+    return new JsonResponse(['homecodes' => $homecodes, 'badges' => $badges]);
   }
 /*
   public function badge() {
