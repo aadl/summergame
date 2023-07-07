@@ -50,10 +50,10 @@ class SummerGameHomeCodeReportForm extends FormBase {
           ];
 
           $form['display'] = [
-            '#markup' => '<h1>Report Home Code</h1>' .
-            '<p>Having trouble finding the Home Code for at the following address?</p>' .
+            '#markup' => '<h1>Report Lawn Code</h1>' .
+            '<p>Having trouble finding the Lawn Code for at the following address?</p>' .
             '<p>' . $geocode_data->homecode . '</p>' .
-            "<p>If you report this Home Code, we'll send a reminder to the owner to make sure it's viewable in the right location.</p>"
+            "<p>If you report this Lawn Code, we'll send a reminder to the owner to make sure it's viewable in the right location.</p>"
           ];
 
           $form['inline'] = [
@@ -62,28 +62,28 @@ class SummerGameHomeCodeReportForm extends FormBase {
           ];
           $form['inline']['submit'] = array(
             '#type' => 'submit',
-            '#value' => t('Report Home Code'),
+            '#value' => t('Report Lawn Code'),
             '#prefix' => '<div class="sg-form-actions">'
           );
           $form['inline']['cancel'] = [
             '#type' => 'link',
             '#title' => $this->t('Back to Map'),
-            '#url' => \Drupal\Core\Url::fromRoute('summergame.homecodes'),
+            '#url' => \Drupal\Core\Url::fromRoute('summergame.map'),
           ];
         }
         else {
-          \Drupal::messenger()->addError('You have already reported this Home Code');
-          return $this->redirect('summergame.homecodes');
+          \Drupal::messenger()->addError('You have already reported this Lawn Code');
+          return $this->redirect('summergame.map');
         }
       }
       else {
-        \Drupal::messenger()->addError('Unable to load Home Code with ID ' . $code_id);
-        return $this->redirect('summergame.homecodes');
+        \Drupal::messenger()->addError('Unable to load Lawn Code with ID ' . $code_id);
+        return $this->redirect('summergame.map');
       }
     }
     else {
       \Drupal::messenger()->addError('Unable to load player record for current user');
-      return $this->redirect('summergame.homecodes');
+      return $this->redirect('summergame.map');
     }
 
     return $form;
@@ -104,6 +104,9 @@ class SummerGameHomeCodeReportForm extends FormBase {
     // Update Home Code reports with player id
     $player_pid = $player['pid'];
     $geocode_data = json_decode($code_data->clue);
+    if (!isset($geocode_data->reports)) {
+      $geocode_data->reports = new \stdClass();
+    }
     $geocode_data->reports->$player_pid = $player_pid;
     $db->update('sg_game_codes')->fields(['clue' => json_encode($geocode_data)])->condition('code_id', $code_id)->execute();
 
@@ -111,14 +114,14 @@ class SummerGameHomeCodeReportForm extends FormBase {
 
     // Send email to Home Code owner
     $headers = "From: $homecode_email" . "\r\n" .
-             "Reply-To: $homecode_email" . "\r\n" .
-             "X-Mailer: PHP/" . phpversion() .
-             "Content-Type: text/html; charset=\"us-ascii\"";
+               "Reply-To: $homecode_email" . "\r\n" .
+               "X-Mailer: PHP/" . phpversion() .
+               "Content-Type: text/html; charset=\"us-ascii\"";
 
     mail($code_data->mail,
-      'Your Summer Game Home Code has been reported',
+      'Your Summer Game Lawn Code has been reported',
       "Hello there, Summer Gamer!\n" .
-      "We have received a report that a player was unable to find your Home Code at the following address:\n\n" .
+      "We have received a report that a player was unable to find your Lawn Code at the following address:\n\n" .
       str_replace('<br>', "\n", $geocode_data->homecode) . "\n\n" .
       "Please make sure that your sign is displayed in an easily viewable location from the street or sidewalk.\n" .
       "If you have any questions, please Contact Us for more information!\n\n-The Summer Game Team",
@@ -126,15 +129,16 @@ class SummerGameHomeCodeReportForm extends FormBase {
     );
 
     // Send email to staff
+    $reports = (array)$geocode_data->reports;
     mail($homecode_email,
-      'Home Code Reported: ' . $code_data->text,
-      "We have received a report of a Home Code that a player was unable to find.\n\n" .
-      "Home Code Details:\n" .
+      'Lawn Code Reported: ' . $code_data->text,
+      "We have received a report of a Lawn Code that a player was unable to find.\n\n" .
+      "Lawn Code Details:\n" .
       \Drupal\Core\Url::fromRoute('summergame.admin.gamecode', ['code_id' => $code_data->code_id], ['absolute' => TRUE])->toString() . "\n" .
       "Code Text: $code_data->text\n" .
       "Code description: $code_data->description\n" .
       "Number of Code Redemptions: $code_data->num_redemptions\n" .
-      "Reported by: " . count($geocode_data->reports) . " (Player IDs: " . implode((array)$geocode_data->reports, ", ") . ")\n" .
+      "Reported by: " . count($reports) . " (Player IDs: " . implode(", ", $reports) . ")\n" .
       "Address: " . str_replace('<br>', " ", $geocode_data->homecode) . "\n" .
       "Creator Username: $code_data->name\n" .
       "Creator email: $code_data->mail\n\n" .
@@ -145,8 +149,8 @@ class SummerGameHomeCodeReportForm extends FormBase {
       "Player Drupal User ID: " . $player['uid']
     );
 
-    \Drupal::messenger()->addMessage('Home Code Reported. Thank you for helping with the Summer Game!');
-    $form_state->setRedirect('summergame.homecodes');
+    \Drupal::messenger()->addMessage('Lawn Code Reported. Thank you for helping with the Summer Game!');
+    $form_state->setRedirect('summergame.map');
 
     return;
   }

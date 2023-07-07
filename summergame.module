@@ -112,6 +112,7 @@ function summergame_get_leaderboard($type = '', $range = 'day', $staff = 0) {
   ];
 }
 
+/*
 function summergame_load_homecodes() {
   $db = \Drupal::database();
   // Empty the table
@@ -136,7 +137,8 @@ function summergame_load_homecodes() {
   // Update the nearby counts after all points are loaded
   summergame_update_map_points();
 }
-
+*/
+/*
 function summergame_update_map_points() {
   $radius = 0.005;
   $db = \Drupal::database();
@@ -152,6 +154,7 @@ function summergame_update_map_points() {
     $db->update('sg_map_points')->fields(['nearby_count' => $count])->condition('id', $point->id)->execute();
   }
 }
+*/
 
 function summergame_theme() {
   return [

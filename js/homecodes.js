@@ -1,13 +1,14 @@
 (function ($, Drupal) {
   // Build marker layers
+  var badgeLayerGroup = new L.layerGroup();
   var branchLayerGroup = new L.layerGroup();
   // var heatmapLayerGroup = new L.layerGroup();
-  var badgeLayerGroup = new L.layerGroup();
+  var homecodeLayerGroup = new L.layerGroup();
 
   var myMap = L.map('mapid', {
       center: [42.2781734, -83.74570792114082],
       zoom: 13,
-      layers: [branchLayerGroup, /*heatmapLayerGroup,*/ badgeLayerGroup]
+      layers: [badgeLayerGroup, branchLayerGroup, /*heatmapLayerGroup,*/ homecodeLayerGroup]
   });
 
   var redIcon = new L.Icon({
@@ -49,13 +50,14 @@
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   }).addTo(myMap);
-/*
+
   // Load heatmap data from json source
   $.ajax({
     type: 'GET',
     url: '/summergame/map/data/' + drupalSettings.hc_game_term,
     dataType: 'json',
     success: function (data) {
+/*
       var heatRadius = 0.001;
       if (element = document.querySelector('#heatRadius')) {
         heatRadius = element.innerHTML;
@@ -98,7 +100,7 @@
       legendCtx.fillStyle = gradient;
       legendCtx.fillRect(0, 0, 200, 10);
       gradientImg.src = legendCanvas.toDataURL();
-
+*/
       // Add Badges
       $.each(data.badges, function(index, element) {
         // create new icon image based on badge image
@@ -108,9 +110,44 @@
         });
         L.marker([element.lat, element.lon], {icon: badgeIcon}).bindPopup(element.popup).addTo(badgeLayerGroup);
       });
+
+      // Loop through homecode data and create markers
+      $.each(data.homecodes, function(index, element) {
+        if (drupalSettings.hc_points_enabled) {
+          if (element.code_id) {
+            // Add report link to homecode text
+            element.homecode += '<br>[ <a href="/summergame/homecodes/report/' + element.code_id + '">Can\'t find it?</a> ]';
+          }
+          if (element.reports && Object.keys(element.reports).length >= drupalSettings.hc_report_threshold) {
+            element.homecode = 'REPORTED as hard to find<br>' + element.homecode;
+            L.marker([element.lat, element.lon], {icon: redIcon}).bindPopup(element.homecode).addTo(homecodeLayerGroup);
+          }
+          else {
+            L.marker([element.lat, element.lon], {icon: greenIcon}).bindPopup(element.homecode).addTo(homecodeLayerGroup);
+          }
+        }
+        else {
+          // Offseason, show number of redemptions
+          if (element.num_redemptions >= 300) {
+            L.marker([element.lat, element.lon], {icon: redIcon}).bindPopup(element.homecode).addTo(homecodeLayerGroup);
+          }
+          else if (element.num_redemptions >= 200) {
+            L.marker([element.lat, element.lon], {icon: orangeIcon}).bindPopup(element.homecode).addTo(homecodeLayerGroup);
+          }
+          else if (element.num_redemptions >= 100) {
+            L.marker([element.lat, element.lon], {icon: yellowIcon}).bindPopup(element.homecode).addTo(homecodeLayerGroup);
+          }
+          else if (element.num_redemptions >= 50) {
+            L.marker([element.lat, element.lon], {icon: greenIcon}).bindPopup(element.homecode).addTo(homecodeLayerGroup);
+          }
+          else {
+            L.marker([element.lat, element.lon]).bindPopup(element.homecode).addTo(homecodeLayerGroup);
+          }
+        }
+      });
     }
   });
-*/
+
   // Add Branch Locations
   L.marker([42.278355032204445, -83.74590413038366]).bindPopup('<strong>Downtown Library</strong><br>343 South Fifth Ave.<br>Building Codes<br>Library Code Stop').addTo(branchLayerGroup);
   L.marker([42.24387568322788, -83.71805381691777]).bindPopup('<strong>Malletts Creek Library</strong><br>3090 East Eisenhower Parkway<br>Building Codes<br>Library Code Stop').addTo(branchLayerGroup);
@@ -121,7 +158,7 @@
   // Add layers to map
   var overlayMaps = {
     "Branches": branchLayerGroup,
-    // "Lawn Code Heatmap": heatmapLayerGroup,
+    "Lawn Codes": homecodeLayerGroup,
     "Badge Starting Points": badgeLayerGroup,
   };
   L.control.layers(null, overlayMaps, {collapsed:false}).addTo(myMap);
