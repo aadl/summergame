@@ -147,7 +147,7 @@ class SummerGameHomeCodeForm extends FormBase {
           $form['details']['lawn']['display'] = [
             '#type' => 'checkbox',
             '#title' => 'Display my Address on Public Lawn Codes Map',
-            '#description' => t('This means summer game players will come to your home looking for this code!'),
+            '#description' => t("This means summer game players will come to your home looking for this code! Make sure it's in YOUR lawn or you have permission!"),
           ];
           $form['details']['lawn']['guidelines'] = [
             '#markup' => '<strong><p>Make sure your lawn sign is next to the sidewalk, street, or parking lot!</p></strong>'

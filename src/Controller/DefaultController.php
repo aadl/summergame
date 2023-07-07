@@ -177,7 +177,7 @@ class DefaultController extends ControllerBase {
       $explaination_markup .= '<p>Would you love to create your VERY OWN Summer Game Code??? YOU CAN with LAWN & LIBRARY CODES!</p>' .
                               '<p>FIRST, stop by any of our AADL locations to pick up either a (new and improved) Lawn Code Sign OR a Library Code Card. THEN create your code by clicking "My Players." Scroll down to your My Summer Game page until you see "Player Details." You\'ll see the words, "Create Your Lawn Code or Library Code," click it and fill out the form to make your code real and active! Write the code legibly in ALLCAPS on your lawn sign or code card and get it out there for fellow players to find!!! If you make a Lawn Code, you can decide if you want a pin for it to be displayed on the Summer Game Map! (Serious note: No personal information is given on the map. Just the address linked to the code!). If you make a Library Code Card, you get to choose which Summer Game Stop post you want to attach it to (we have one at each of our locations)!!</p>' .
                               '<p>DID YOU MAKE A LAWN CODE? Please make sure the code is displayed on YOUR lawn (or one you have permission to use) near a sidewalk, so that players aren\'t searching high and low or out in traffic. Thank you!!</p>' .
-                              '<p>CAN\'T FIND A CODE? Use the "I Can\'t Find This" tool to report a missing L&L code! PLEASE DON\'T KNOCK ON ANY DOORS OR TRY TO ASK THE RESIDENT. Just use the tool!! Keep it cool!! The Summer Game doesn\'t involve knocking on peoples\' doors! EVER!!!!</p>';
+                              '<p>CAN\'T FIND A CODE? Use the "Can\'t find it?" link to report a missing Lawn Code! PLEASE DON\'T KNOCK ON ANY DOORS OR TRY TO ASK THE RESIDENT. Just use the tool!! Keep it cool!! The Summer Game doesn\'t involve knocking on peoples\' doors! EVER!!!!</p>';
 /*
       // Temporary Message While Lawn & Library Codes are not yet available
       $explaination_markup .= '<p>Welcome to the Summer Game Map. Find out where to find Summer Game codes and more!</p>' .
@@ -348,7 +348,11 @@ EOT;
 
       // Badges Data
       $badges = [];
-      $nids = \Drupal::entityQuery('node')->condition('type', 'sg_badge')->exists('field_badge_coordinates')->execute();
+      $nids = \Drupal::entityQuery('node')
+              ->condition('type', 'sg_badge')
+              ->condition('field_badge_game_term', $game_term)
+              ->exists('field_badge_coordinates')
+              ->execute();
       foreach ($nids as $nid) {
         $badge = \Drupal::entityTypeManager()->getStorage('node')->load($nid);
         $image_url = '/files/badge-derivs/100/' . $badge->field_badge_image->entity->getFilename();
