@@ -1706,7 +1706,13 @@ function summergame_tag_bib($bib_id, $game_code, $game_term = '') {
     $game_term = $summergame_settings->get('summergame_current_game_term');
   }
 
-  if (!in_array($game_code, $doc->gamecodes->{$game_term})) {
+  // check if field is set. if is an array, apply additional code
+  if(!isset($doc->gamecodes)) {
+    $doc->gamecodes = new \stdClass;
+  }
+
+  if (!isset($doc->gamecodes->{$game_term}) || (is_array($doc->gamecodes->{$game_term}) && !in_array($game_code, $doc->gamecodes->{$game_term}))) {
+
     $doc->gamecodes->{$game_term}[] = $game_code;
   }
 
