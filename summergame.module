@@ -114,6 +114,7 @@ function summergame_get_leaderboard($type = '', $range = 'day', $staff = 0) {
   ];
 }
 
+/*
 function summergame_load_homecodes() {
   $db = \Drupal::database();
   // Empty the table
@@ -138,7 +139,8 @@ function summergame_load_homecodes() {
   // Update the nearby counts after all points are loaded
   summergame_update_map_points();
 }
-
+*/
+/*
 function summergame_update_map_points() {
   $radius = 0.005;
   $db = \Drupal::database();
@@ -154,6 +156,7 @@ function summergame_update_map_points() {
     $db->update('sg_map_points')->fields(['nearby_count' => $count])->condition('id', $point->id)->execute();
   }
 }
+*/
 
 function summergame_theme() {
   return [
@@ -206,20 +209,20 @@ function summergame_theme() {
         'completed_classic' => NULL,
         'website_user' => NULL,
         'homecode' => NULL,
-        'game_display_name' => null,
+        'game_display_name' => NULL,
       ],
     ],
     'summergame_player_ledger' => [
       'variables' => [
         'ledger' => NULL,
         'pager' => NULL,
-        'game_display_name' => null,
+        'game_display_name' => NULL,
       ]
     ],
     'summergame_player_redeem' => [
       'variables' => [
         'redeem_form' => NULL,
-        'type' => Null
+        'type' => NULL,
       ]
     ],
     'summergame_player_badge_list' => [
@@ -227,7 +230,9 @@ function summergame_theme() {
         'player' => NULL,
         'all_players' => NULL,
         'viewing_access' => NULL,
-        'badge_list' => NULL
+        'game_term' => NULL,
+        'list_tags' => NULL,
+        'badge_list' => NULL,
       ]
     ],
     'summergame_leaderboard_page' => [
@@ -775,7 +780,16 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
         'balance' => 0,
         'total' => 0,
         'prize_count' => 0,
+        'max_timestamp' => $row['timestamp'],
+        'min_timestamp' => $row['timestamp'],
       ];
+    }
+    else {
+      // Check min timestamp for game term
+      // (row sort is timestamp DESC so max_timestamp is always set with first row of game term)
+      if ($row['timestamp'] < $player_points[$game_term]['min_timestamp']) {
+        $player_points[$game_term]['min_timestamp'] = $row['timestamp'];
+      }
     }
 
     // if type for this game term is not set, initialize point value
@@ -964,7 +978,7 @@ function summergame_redeem_code($player, $code_text) {
       // check if player has already redeemed this code
       $existing = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND metadata LIKE :metadata",
                             [':pid' => $player['pid'], ':metadata' => 'gamecode:' . $code->text])->fetchObject();
-      if ($existing->lid) {
+      if (isset($existing->lid)) {
         $existing_date = date('F j, Y, g:i a', $existing->timestamp);
         return ['error' => "Code \"$code->text\" already redeemed on $existing_date"];
       }
@@ -1171,6 +1185,16 @@ function summergame_player_check_badges($pid, $game_term) {
           $awarded = summergame_player_award_badge($pid, $badge->bid);
         }
       }
+      else if (strpos($badge->formula, '^^')) {
+        // Multiple days of a ledger type formula (streak)
+        list($count_limit, $text_pattern) = explode('^^', $badge->formula);
+        $lid_count = $db->query("SELECT COUNT(DISTINCT FROM_UNIXTIME(`timestamp`, '%j')) AS lid_count FROM sg_ledger WHERE pid = $pid " .
+                                "AND (type LIKE :text_pattern OR metadata LIKE :gamecode_pattern) AND game_term = :game_term",
+                                [':text_pattern' => $text_pattern, ':gamecode_pattern' => "gamecode:$text_pattern%", ':game_term' => $game_term])->fetchObject();
+        if ($lid_count->lid_count >= $count_limit) {
+          $awarded = summergame_player_award_badge($pid, $badge->bid);
+        }
+      }
       else if (strpos($badge->formula, '::')) {
         // Multiple of a ledger type formula
         $formula_parts = explode('::', $badge->formula);
@@ -1202,7 +1226,7 @@ function summergame_player_check_badges($pid, $game_term) {
         foreach (explode(',', $badge->formula) as $text_pattern) {
           $query = "SELECT lid FROM sg_ledger WHERE pid = :pid AND (";
           $args = [
-          ':pid' => $pid
+            ':pid' => $pid
           ];
 
           $text_patterns = explode('|', $text_pattern);
@@ -1218,7 +1242,7 @@ function summergame_player_check_badges($pid, $game_term) {
 
           $ledger = $db->query($query, $args)->fetchObject();
 
-          if (!$ledger->lid) {
+          if (!isset($ledger->lid)) {
             $eligible = FALSE;
             break;
           }

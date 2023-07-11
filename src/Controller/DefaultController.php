@@ -166,19 +166,30 @@ class DefaultController extends ControllerBase {
     }
     $sg_admin = \Drupal::currentUser()->hasPermission('administer summergame');
     $summergame_points_enabled = \Drupal::config('summergame.settings')->get('summergame_points_enabled');
+    $summergame_homecode_report_threshold = \Drupal::config('summergame.settings')->get('summergame_homecode_report_threshold');
     $explaination_markup = '<h1>Summer Game Locations</h1>';
-    $heatRadius = ($_GET['heatRadius'] ?? 0.001);
+    // $heatRadius = ($_GET['heatRadius'] ?? 0.001);
 
     $legend_markup = '';
+/*
     if ($sg_admin) {
       $legend_markup = '<p>Heatmap Radius: <span id="heatRadius">' . $heatRadius . '</span></p>';
     }
-
+*/
     if ($summergame_points_enabled) {
-      // Temporary Message While Lawn & Library Codes are being developed
-      $explaination_markup .= '<p>Welcome to the new Summer Game Map. Find out where to find Summer Game codes and more!</p>' .
-                              '<p><img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png"> = Library building locations, find codes around the building and at the Library Code sign.</p>' .
-                              "<p>Heatmap colors indicate approximate locations of the Lawn Code signs around town. They should all be visible from the street or sidewalk.</p>";
+      // 2023 Lawn & Library Codes Explaination
+      $explaination_markup .= '<p>Would you love to create your VERY OWN Summer Game Code??? YOU CAN with LAWN & LIBRARY CODES!</p>' .
+                              '<p>FIRST, stop by any of our AADL locations to pick up either a (new and improved) Lawn Code Sign OR a Library Code Card. THEN create your code by clicking "My Players." Scroll down to your My Summer Game page until you see "Player Details." You\'ll see the words, "Create Your Lawn Code or Library Code," click it and fill out the form to make your code real and active! Write the code legibly in ALLCAPS on your lawn sign or code card and get it out there for fellow players to find!!! If you make a Lawn Code, you can decide if you want a pin for it to be displayed on the Summer Game Map! (Serious note: No personal information is given on the map. Just the address linked to the code!). If you make a Library Code Card, you get to choose which Summer Game Stop post you want to attach it to (we have one at each of our locations)!!</p>' .
+                              '<p>DID YOU MAKE A LAWN CODE? Please make sure the code is displayed on YOUR lawn (or one you have permission to use) near a sidewalk, so that players aren\'t searching high and low or out in traffic. Thank you!!</p>' .
+                              '<p>CAN\'T FIND A CODE? Use the "Can\'t find it?" link to report a missing Lawn Code! PLEASE DON\'T KNOCK ON ANY DOORS OR TRY TO ASK THE RESIDENT. Just use the tool!! Keep it cool!! The Summer Game doesn\'t involve knocking on peoples\' doors! EVER!!!!</p>';
+/*
+      // Temporary Message While Lawn & Library Codes are not yet available
+      $explaination_markup .= '<p>Welcome to the Summer Game Map. Find out where to find Summer Game codes and more!</p>' .
+                              '<p>LAWN & LIBRARY CODES are returning in a few weeks! Check back then to see details.</p>' .
+                              '<p><img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png"> = Library building locations, find codes around the building.</p>' .
+                              '<p>Badge images indicate starting locations for earning those badges. Click the badge name to open the badge details page.</p>';
+                              // "<p>Heatmap colors indicate approximate locations of the Lawn Code signs around town. They should all be visible from the street or sidewalk.</p>";
+*/
 /*
       $explaination_markup .= <<<EOT
 <p>The thought may be DWELLING in your mind, "What's a HOME CODE?" Well that's a great question! A Home Code is your VERY OWN PERSONALIZED code for your HOME!</p>
@@ -218,6 +229,7 @@ EOT;
         'drupalSettings' => [
           'hc_game_term' => $game_term,
           'hc_points_enabled' => $summergame_points_enabled,
+          'hc_report_threshold' => $summergame_homecode_report_threshold,
         ],
         'library' => [
           'summergame/summergame-map-lib',
@@ -231,14 +243,17 @@ EOT;
         $legend_markup .
         '<div id="map-wrapper">' .
         '<div id="mapid" style="height: 180px;"></div>' .
+/*
         '<div class="legend-area"><h4>Nearby Lawn Codes</h4>' .
         '<span id="min">Fewer</span><span id="max">More</span>' .
         '<img id="gradient" src="" style="width:100%" />' .
         '</div>' .
+*/
         '</div>',
     ];
   }
 
+/*
   public function homecodes_markerdata($game_term = '') {
     // Build JSON array of home code marker data
     $response = [];
@@ -255,7 +270,6 @@ EOT;
     while ($game_code = $res->fetchObject()) {
       $geocode_data = json_decode($game_code->clue);
       if ($geocode_data->display) {
-        /*
         if ($summergame_points_enabled) {
           if ($player) {
             // see if player has redeemed this code
@@ -282,7 +296,7 @@ EOT;
             $geocode_data->homecode = 'Never redeemed';
           }
         }
-*/
+
         // Add number of redemptions
         $geocode_data->num_redemptions = $game_code->num_redemptions;
 
@@ -292,13 +306,18 @@ EOT;
 
     return new JsonResponse($response);
   }
+*/
 
   public function map_data($game_term = '') {
     $summergame_points_enabled = \Drupal::config('summergame.settings')->get('summergame_points_enabled');
 
     if ($summergame_points_enabled) {
       $db = \Drupal::database();
+      if (empty($game_term)) {
+        $game_term = \Drupal::config('summergame.settings')->get('summergame_current_game_term');
+      }
 
+      /*
       // Heatmap Data
       $heatmap = [];
       $min = $db->query("SELECT MIN(nearby_count) FROM sg_map_points WHERE game_term = '$game_term' AND display = 1")->fetchField();
@@ -313,10 +332,31 @@ EOT;
           'count' => $map_point->nearby_count,
         ];
       }
+      */
+
+      // Homecodes Data
+      $homecodes = [];
+      $res = $db->query("SELECT * FROM sg_game_codes WHERE game_term = :game_term AND clue LIKE '%\"homecode\"%'",
+                        [':game_term' => $game_term]);
+      while ($game_code = $res->fetchObject()) {
+        $geocode_data = json_decode($game_code->clue);
+        if ($geocode_data->display) {
+          // Add game code data to geocode data
+          $geocode_data->code_id = $game_code->code_id;
+          $geocode_data->created = $game_code->created;
+          $geocode_data->num_redemptions = $game_code->num_redemptions;
+
+          $homecodes[] = $geocode_data;
+        }
+      }
 
       // Badges Data
       $badges = [];
-      $nids = \Drupal::entityQuery('node')->condition('type', 'sg_badge')->exists('field_badge_coordinates')->accessCheck(TRUE)->execute();
+      $nids = \Drupal::entityQuery('node')
+              ->condition('type', 'sg_badge')
+              ->condition('field_badge_game_term', $game_term)
+              ->exists('field_badge_coordinates')
+              ->execute();
       foreach ($nids as $nid) {
         $badge = \Drupal::entityTypeManager()->getStorage('node')->load($nid);
         $image_url = '/files/badge-derivs/100/' . $badge->field_badge_image->entity->getFilename();
@@ -329,7 +369,7 @@ EOT;
         ];
       }
     }
-    return new JsonResponse(['heatmap' => $heatmap, 'badges' => $badges]);
+    return new JsonResponse(['homecodes' => $homecodes, 'badges' => $badges]);
   }
 /*
   public function badge() {
@@ -698,6 +738,7 @@ FBL;
     $play_test_term_id = $summergame_settings->get('summergame_play_test_term_id');
     $play_tester = $user->hasPermission('play test summergame');
     $badges = [];
+    $list_tags = [];
 
     $query = \Drupal::entityQuery('taxonomy_term')
       ->condition('vid', $vocab)
@@ -706,13 +747,12 @@ FBL;
     $terms = Term::loadMultiple($tids);
 
     foreach ($terms as $term) {
+      $term_id = $term->id();
+
       // Check if Play Tester term and not a play tester, skip rest of loop if so
-      if ($term->id() == $play_test_term_id && !$play_tester) {
+      if ($term_id == $play_test_term_id && !$play_tester) {
         continue;
       }
-
-      $series_info = explode("\n", strip_tags($term->get('description')->value));
-      $series = $term->get('name')->value;
 
       $query = \Drupal::entityQuery('node')
         ->condition('type', 'sg_badge')
@@ -734,28 +774,54 @@ FBL;
             }
           }
 
-          $game_term = $node->field_badge_game_term->value;
-
           // Set Series info if not set yet
-          if (!isset($badges[$game_term][$series]['description'])) {
-            $badges[$game_term][$series]['description'] = $series_info[0];
+          if (!isset($badges[$term_id])) {
+            $series_info = explode("\n", strip_tags($term->get('description')->value));
+            $series_level = (int) ($series_info[2] ?? 1); // default to series level 1
+            switch ($series_level) {
+              case 2:
+                $level_output = "⭐️⭐️ Tricky";
+                break;
+              case 3:
+                $level_output = "⭐️⭐️⭐️ Super Tricky";
+                break;
+              case 4:
+                $level_output = "⭐️⭐️⭐️⭐️ Ambitious";
+                break;
+              default:
+                $level_output = "⭐️ Standard";
+            }
 
-            $series_level = (int) $series_info[2];
-            $max_level = 4;
-            $level_diff = $max_level - $series_level;
-            $level_output = '';
-            for ($i = 0; $i < $series_level; $i++) {
-              $level_output .= '&starf;';
-            }
-            for ($i = 0; $i < $level_diff; $i++) {
-              $level_output .= '&star;';
-            }
-            $badges[$game_term][$series]['level'] = $level_output;
+            $badges[$term_id] = [
+              'name' => $term->get('name')->value,
+              'description' => $series_info[0],
+              'level' => $level_output,
+              'tags' => [],
+              'diff_class' => 'diff' . $series_level,
+              'classes' => ['diff' . $series_level],
+            ];
           }
 
           if ($player['pid'] &&
               isset($player['bids'][$nid])) {
             $node->badge_earned = true;
+          }
+
+          // Add difficulty to node classes
+          $node->classes = [$badges[$term_id]['diff_class']];
+
+          // Update any badge tags on term and add to node
+          if (isset($node->field_badge_tags)) {
+            foreach ($node->field_badge_tags->referencedEntities() as $ref) {
+              $tid = $ref->get('tid')->value;
+              $badges[$term_id]['tags'][$tid] = $ref->get('name')->value;
+              $badges[$term_id]['classes'][] = 'tag' . $tid;
+              $node->classes[] = 'tag' . $tid;
+              $list_tags[$tid] = [
+                'name' => $ref->get('name')->value,
+                'description' => $ref->get('description')->value,
+              ];
+            }
           }
 
           // Hidden Badges
@@ -765,6 +831,7 @@ FBL;
               foreach ($required_parts as $required_part) {
                 if (strpos($required_part, 'gamecode:') === 0) {
                   // Required Game Code, search player ledger
+                  $game_term = $node->field_badge_game_term->value;
                   $ledger = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND metadata LIKE :metadata AND game_term = :term LIMIT 1",
                                                      [':pid' => $player['pid'], ':metadata' => $required_part, ':term' => $game_term])->fetch();
                   if (!$ledger->lid) {
@@ -786,12 +853,17 @@ FBL;
             }
           }
 
-          $badges[$game_term][$series]['nodes'][] = $node;
+          $badges[$term_id]['nodes'][] = $node;
         }
       }
     }
 
     return [
+      '#attached' => [
+        'library' => [
+          'summergame/summergame-badgelist-lib',
+        ],
+      ],
       '#cache' => [
         'max-age' => 0, // Don't cache, always get fresh data
       ],
@@ -799,6 +871,8 @@ FBL;
       '#player' => $player,
       '#all_players' => $all_players,
       '#viewing_access' => true,
+      '#game_term' => $badgelist_game_term,
+      '#list_tags' => $list_tags,
       '#badge_list' => $badges
     ];
   }

@@ -1,0 +1,15 @@
+.badge-tag-description {
+  display: none;
+}
+.badgelist-series, .badgelist-badge {
+  display: none; /* Hidden by default */
+}
+.show {
+  display: block;
+}
+.show-ib {
+  display: inline-block;
+}
+.button.active {
+  background-color: #09f;
+}

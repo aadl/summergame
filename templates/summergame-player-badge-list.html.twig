@@ -6,27 +6,53 @@
     <div class="page-with-sidebar-content">
       {% if all_players|length > 1 %}
         <p id="badge-list-other-players">
-          <b>Show Badge List For:</b><br>
+          <b>Show Badge List for other Players: </b>
           {% for other in all_players %}
-            <a href="/badgelist?pid={{ other.pid }}">{{ other.nickname ? other.nickname : other.name }}</a>
-            {% if not loop.last %}
-              <br>
+            {% if other.pid != player.pid %}
+              <a class="button" href="/badgelist?pid={{ other.pid }}">{{ other.nickname ? other.nickname : other.name }}</a>
             {% endif %}
           {% endfor %}
         </p>
       {% endif %}
+      <div id="badge-filters">
+        <p>Filter by: <button class="button active" onclick="filterSelection('all')">SHOW ALL</button></p>
+        <p>Difficulty:
+          <button class="button" onclick="filterSelection('diff1')">⭐️ Standard</button>
+          <button class="button" onclick="filterSelection('diff2')">⭐️⭐️ Tricky</button>
+          <button class="button" onclick="filterSelection('diff3')">⭐️⭐️⭐️ Super Tricky</button>
+          <button class="button" onclick="filterSelection('diff4')">⭐️⭐️⭐️⭐️ Ambitious</button>
+        </p>
+        {% if list_tags %}
+        <p>Tags:
+          {% for term_id, tag in list_tags %}
+            <button class="button"
+                    onmouseover="showDescription('tag{{ term_id }}')"
+                    onmouseout="showDescription('')"
+                    onclick="filterSelection('tag{{ term_id }}')">{{ tag.name }}</button>
+          {% endfor %}
+          {% for term_id, tag in list_tags %}
+            <div class="badge-tag-description" id="tag{{ term_id }}-description">{{ tag.description|raw }}</div>
+          {% endfor %}
+        </p>
+        {% endif %}
+      </div>
       <div id="badge-list">
-        {% for name, game in badge_list %}
-          <h2>{{ name|replace({'_': ' '}) }}</h2>
-          {% for k, series in game %}
-            <h3 class="no-margin-bottom">{{ k }} Badge Series</h3>
+        <h2>{{ game_term|replace({'_': ' '}) }}</h2>
+        {% for term_id, series in badge_list %}
+          <div class="badgelist-series {{ series.classes|join(' ') }} show">
+            <h3 id="series-{{ term_id }}" class="no-margin-bottom">{{ series.name }} Badge Series</h3>
             <p>
-              {{ series.description }}<br>
+              {% if series.description %}
+                {{ series.description }}<br>
+              {% endif %}
               Difficulty: {{ series.level|raw }}
+              {% if series.tags %}
+                <br>Tags: {{ series.tags|join(', ') }}
+              {% endif %}
             </p>
             <div class="badgelist-badges">
               {% for node in series.nodes %}
-                <div class="badgelist-badge l-inline-b">
+                <div class="badgelist-badge {{ node.classes|join(' ') }} show-ib">
                   {% if node.hide_badge %}
                     <a href="/node/{{ node.id }}" target="_blank">
                       <img class="sg-admin-badge" src="/{{ directory }}/images/hidden_100.png" alt="Hidden Badge image">
@@ -40,7 +66,7 @@
                 </div>
               {% endfor %}
             </div>
-          {% endfor %}
+          </div>
         {% endfor %}
       </div>
     </div>

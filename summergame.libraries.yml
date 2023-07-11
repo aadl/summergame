@@ -18,3 +18,10 @@ summergame-homecode-form-lib:
   version: 1.x
   js:
     js/homecode_form.js: {}
+summergame-badgelist-lib:
+  version: 1.x
+  css:
+    theme:
+      css/badgelist.css: {}
+  js:
+    js/badgelist.js: {}

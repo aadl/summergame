@@ -531,6 +531,10 @@ class AdminController extends ControllerBase {
             // Badge collection badge
             $output .= 'BADGE COLLECTION BADGE';
           }
+          else if (strpos($badge->formula, '^^')) {
+            // Multiple days of a ledger type formula
+            $output .= 'LEDGER MULTIPLE DAY (STREAK) BADGE';
+          }
           else if (strpos($badge->formula, '::')) {
             // Multiple of a ledger type formula
             $output .= 'LEDGER MULTIPLE BADGE';
