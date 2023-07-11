@@ -353,6 +353,7 @@ EOT;
       // Badges Data
       $badges = [];
       $nids = \Drupal::entityQuery('node')
+	      ->accessCheck(FALSE)
               ->condition('type', 'sg_badge')
               ->condition('field_badge_game_term', $game_term)
               ->exists('field_badge_coordinates')
