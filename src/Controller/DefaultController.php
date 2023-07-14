@@ -177,7 +177,8 @@ class DefaultController extends ControllerBase {
       $explaination_markup .= '<p>Would you love to create your VERY OWN Summer Game Code??? YOU CAN with LAWN & LIBRARY CODES!</p>' .
                               '<p>FIRST, stop by any of our AADL locations to pick up either a (new and improved) Lawn Code Sign OR a Library Code Card. THEN create your code by clicking "My Players." Scroll down to your My Summer Game page until you see "Player Details." You\'ll see the words, "Create Your Lawn Code or Library Code," click it and fill out the form to make your code real and active! Write the code legibly in ALLCAPS on your lawn sign or code card and get it out there for fellow players to find!!! If you make a Lawn Code, you can decide if you want a pin for it to be displayed on the Summer Game Map! (Serious note: No personal information is given on the map. Just the address linked to the code!). If you make a Library Code Card, you get to choose which Summer Game Stop post you want to attach it to (we have one at each of our locations)!!</p>' .
                               '<p>DID YOU MAKE A LAWN CODE? Please make sure the code is displayed on YOUR lawn (or one you have permission to use) near a sidewalk, so that players aren\'t searching high and low or out in traffic. Thank you!!</p>' .
-                              '<p>CAN\'T FIND A CODE? Use the "Can\'t find it?" link to report a missing Lawn Code! PLEASE DON\'T KNOCK ON ANY DOORS OR TRY TO ASK THE RESIDENT. Just use the tool!! Keep it cool!! The Summer Game doesn\'t involve knocking on peoples\' doors! EVER!!!!</p>';
+                              '<p>CAN\'T FIND A CODE? Use the "Can\'t find it?" link to report a missing Lawn Code! PLEASE DON\'T KNOCK ON ANY DOORS OR TRY TO ASK THE RESIDENT. Just use the tool!! Keep it cool!! The Summer Game doesn\'t involve knocking on peoples\' doors! EVER!!!!</p>' .
+                              '<p>WANT TO CLEAR UP YOUR MAP? We know there is nothing more mildly inconvenient than trying to redeem a code you redeemed two weeks ago, so you\'ll notice we\'ve added a nifty new feature that allows you to hide Lawn Code pins from your map based on how long ago they were created! Just check off some of those boxes in the SG Map\'s key to only view the newest, oldest, and/or middle-aged-est Lawn Codes!</p>';
 /*
       // Temporary Message While Lawn & Library Codes are not yet available
       $explaination_markup .= '<p>Welcome to the Summer Game Map. Find out where to find Summer Game codes and more!</p>' .
@@ -341,6 +342,26 @@ EOT;
           $geocode_data->code_id = $game_code->code_id;
           $geocode_data->created = $game_code->created;
           $geocode_data->num_redemptions = $game_code->num_redemptions;
+
+          // Determine layerGroup depending on age
+          $ts_diff = time() - $game_code->created;
+          $days_old = floor($ts_diff / (60 * 60 * 24));
+
+          if ($days_old < 3) {
+            $geocode_data->layerGroup = 'A';
+          }
+          else if ($days_old < 7) {
+            $geocode_data->layerGroup = 'B';
+          }
+          else if ($days_old < 14) {
+            $geocode_data->layerGroup = 'C';
+          }
+          else if ($days_old < 21) {
+            $geocode_data->layerGroup = 'D';
+          }
+          else {
+            $geocode_data->layerGroup = 'E';
+          }
 
           $homecodes[] = $geocode_data;
         }
