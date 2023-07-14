@@ -4,11 +4,16 @@
   var branchLayerGroup = new L.layerGroup();
   // var heatmapLayerGroup = new L.layerGroup();
   var homecodeLayerGroup = new L.layerGroup();
+  var homecodeLayerGroupA = new L.layerGroup();
+  var homecodeLayerGroupB = new L.layerGroup();
+  var homecodeLayerGroupC = new L.layerGroup();
+  var homecodeLayerGroupD = new L.layerGroup();
+  var homecodeLayerGroupE = new L.layerGroup();
 
   var myMap = L.map('mapid', {
       center: [42.2781734, -83.74570792114082],
       zoom: 13,
-      layers: [badgeLayerGroup, branchLayerGroup, /*heatmapLayerGroup,*/ homecodeLayerGroup]
+      layers: [badgeLayerGroup, branchLayerGroup, homecodeLayerGroup, homecodeLayerGroupA, homecodeLayerGroupB, homecodeLayerGroupC, homecodeLayerGroupD, homecodeLayerGroupE]
   });
 
   var redIcon = new L.Icon({
@@ -40,6 +45,33 @@
 
   var greenIcon = new L.Icon({
     iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+  });
+
+  var blueIcon = new L.Icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+  });
+
+  var purpleIcon = new L.Icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-violet.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+  });
+
+  var greyIcon = new L.Icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-grey.png',
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
     iconSize: [25, 41],
     iconAnchor: [12, 41],
@@ -114,16 +146,37 @@
       // Loop through homecode data and create markers
       $.each(data.homecodes, function(index, element) {
         if (drupalSettings.hc_points_enabled) {
+          var reported = false;
+          if (element.reports && Object.keys(element.reports).length >= drupalSettings.hc_report_threshold) {
+            element.homecode = 'REPORTED as hard to find<br>' + element.homecode;
+            reported = true;
+          }
           if (element.code_id) {
             // Add report link to homecode text
             element.homecode += '<br>[ <a href="/summergame/homecodes/report/' + element.code_id + '">Can\'t find it?</a> ]';
           }
-          if (element.reports && Object.keys(element.reports).length >= drupalSettings.hc_report_threshold) {
-            element.homecode = 'REPORTED as hard to find<br>' + element.homecode;
-            L.marker([element.lat, element.lon], {icon: redIcon}).bindPopup(element.homecode).addTo(homecodeLayerGroup);
+
+          // Determine layer group
+          if (element.layerGroup == 'A') {
+            var aIcon = (reported ? greyIcon : redIcon);
+            L.marker([element.lat, element.lon], {icon: aIcon}).bindPopup(element.homecode).addTo(homecodeLayerGroupA);
+          }
+          else if (element.layerGroup == 'B') {
+            var bIcon = (reported ? greyIcon : orangeIcon);
+            L.marker([element.lat, element.lon], {icon: bIcon}).bindPopup(element.homecode).addTo(homecodeLayerGroupB);
+          }
+          else if (element.layerGroup == 'C') {
+            var cIcon = (reported ? greyIcon : yellowIcon);
+            L.marker([element.lat, element.lon], {icon: cIcon}).bindPopup(element.homecode).addTo(homecodeLayerGroupC);
+          }
+          else if (element.layerGroup == 'D') {
+            var dIcon = (reported ? greyIcon : greenIcon);
+            L.marker([element.lat, element.lon], {icon: dIcon}).bindPopup(element.homecode).addTo(homecodeLayerGroupD);
           }
           else {
-            L.marker([element.lat, element.lon], {icon: greenIcon}).bindPopup(element.homecode).addTo(homecodeLayerGroup);
+            // default to LayerGroupE
+            var eIcon = (reported ? greyIcon : blueIcon);
+            L.marker([element.lat, element.lon], {icon: eIcon}).bindPopup(element.homecode).addTo(homecodeLayerGroupE);
           }
         }
         else {
@@ -149,21 +202,46 @@
   });
 
   // Add Branch Locations
-  L.marker([42.278355032204445, -83.74590413038366]).bindPopup('<strong>Downtown Library</strong><br>343 South Fifth Ave.<br>Building Codes<br>Library Code Stop').addTo(branchLayerGroup);
-  L.marker([42.24387568322788, -83.71805381691777]).bindPopup('<strong>Malletts Creek Library</strong><br>3090 East Eisenhower Parkway<br>Building Codes<br>Library Code Stop').addTo(branchLayerGroup);
-  L.marker([42.25271695126512, -83.77811950157411]).bindPopup('<strong>Pittsfield Library</strong><br>2359 Oak Valley Dr.<br>Building Codes<br>Library Code Stop').addTo(branchLayerGroup);
-  L.marker([42.30838433760029, -83.71416680157276]).bindPopup('<strong>Traverwood Library</strong><br>3333 Traverwood Dr.<br>Building Codes<br>Library Code Stop').addTo(branchLayerGroup);
-  L.marker([42.27866255504599, -83.78305954390173]).bindPopup('<strong>Westgate Library</strong><br>2503 Jackson Ave.<br>Building Codes<br>Library Code Stop').addTo(branchLayerGroup);
+  L.marker([42.278355032204445, -83.74590413038366], {icon: purpleIcon}).bindPopup('<strong>Downtown Library</strong><br>343 South Fifth Ave.<br>Building Codes<br>Library Code Stop').addTo(branchLayerGroup);
+  L.marker([42.24387568322788, -83.71805381691777], {icon: purpleIcon}).bindPopup('<strong>Malletts Creek Library</strong><br>3090 East Eisenhower Parkway<br>Building Codes<br>Library Code Stop').addTo(branchLayerGroup);
+  L.marker([42.25271695126512, -83.77811950157411], {icon: purpleIcon}).bindPopup('<strong>Pittsfield Library</strong><br>2359 Oak Valley Dr.<br>Building Codes<br>Library Code Stop').addTo(branchLayerGroup);
+  L.marker([42.30838433760029, -83.71416680157276], {icon: purpleIcon}).bindPopup('<strong>Traverwood Library</strong><br>3333 Traverwood Dr.<br>Building Codes<br>Library Code Stop').addTo(branchLayerGroup);
+  L.marker([42.27866255504599, -83.78305954390173], {icon: purpleIcon}).bindPopup('<strong>Westgate Library</strong><br>2503 Jackson Ave.<br>Building Codes<br>Library Code Stop').addTo(branchLayerGroup);
+
+  // Set up layer labels
 
   // Add layers to map
   var overlayMaps = {
-    "Branches": branchLayerGroup,
+    "Branches <img src=\"https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-violet.png\" height=\"15px\">": branchLayerGroup,
     "Lawn Codes": homecodeLayerGroup,
+    "< 3 days old <img src=\"https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png\" height=\"15px\">": homecodeLayerGroupA,
+    "< 7 days old <img src=\"https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png\" height=\"15px\">": homecodeLayerGroupB,
+    "< 2 weeks old <img src=\"https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-yellow.png\" height=\"15px\">": homecodeLayerGroupC,
+    "< 3 weeks old <img src=\"https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png\" height=\"15px\">": homecodeLayerGroupD,
+    "> 3 weeks old <img src=\"https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png\" height=\"15px\">": homecodeLayerGroupE,
     "Badge Starting Points": badgeLayerGroup,
   };
   L.control.layers(null, overlayMaps, {collapsed:false}).addTo(myMap);
-  $(".leaflet-control-layers-overlays").prepend("<label>Display:</label>");
 
+  myMap.on("overlayremove", function(e){
+    if (e.name == 'Lawn Codes') {
+      setTimeout(function(){myMap.removeLayer(homecodeLayerGroupA)}, 10);
+      setTimeout(function(){myMap.removeLayer(homecodeLayerGroupB)}, 10);
+      setTimeout(function(){myMap.removeLayer(homecodeLayerGroupC)}, 10);
+      setTimeout(function(){myMap.removeLayer(homecodeLayerGroupD)}, 10);
+      setTimeout(function(){myMap.removeLayer(homecodeLayerGroupE)}, 10);
+    }
+  });
+
+  myMap.on("overlayadd", function(e){
+    if (e.name == 'Lawn Codes') {
+      setTimeout(function(){myMap.addLayer(homecodeLayerGroupA)}, 10);
+      setTimeout(function(){myMap.addLayer(homecodeLayerGroupB)}, 10);
+      setTimeout(function(){myMap.addLayer(homecodeLayerGroupC)}, 10);
+      setTimeout(function(){myMap.addLayer(homecodeLayerGroupD)}, 10);
+      setTimeout(function(){myMap.addLayer(homecodeLayerGroupE)}, 10);
+    }
+  });
   /*
   // Load marker data from json source
   $.ajax({

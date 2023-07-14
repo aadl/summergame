@@ -342,6 +342,26 @@ EOT;
           $geocode_data->created = $game_code->created;
           $geocode_data->num_redemptions = $game_code->num_redemptions;
 
+          // Determine layerGroup depending on age
+          $ts_diff = time() - $game_code->created;
+          $days_old = floor($ts_diff / (60 * 60 * 24));
+
+          if ($days_old < 3) {
+            $geocode_data->layerGroup = 'A';
+          }
+          else if ($days_old < 7) {
+            $geocode_data->layerGroup = 'B';
+          }
+          else if ($days_old < 14) {
+            $geocode_data->layerGroup = 'C';
+          }
+          else if ($days_old < 21) {
+            $geocode_data->layerGroup = 'D';
+          }
+          else {
+            $geocode_data->layerGroup = 'E';
+          }
+
           $homecodes[] = $geocode_data;
         }
       }
