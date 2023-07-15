@@ -209,7 +209,13 @@ class SummerGameAdminForm extends ConfigFormBase {
         '#type' => 'textfield',
         '#title' => 'Home Code Geocode URL',
         '#default_value' => $summergame_settings->get('summergame_homecode_geocode_url'),
-        '#description' => 'URL Address of Geocoding Service for Home Code address lookup (e.g. https://nominatim.openstreetmap.org/search)',
+        '#description' => 'URL Address of Geocoding Service for Home Code address lookup (e.g. https://maps.googleapis.com/maps/api/geocode/json)',
+    ];
+    $form['summergame_homecode_geocode_api_key'] = [
+      '#type' => 'textfield',
+      '#title' => 'Home Code Geocode API Key',
+      '#default_value' => $summergame_settings->get('summergame_homecode_geocode_api_key'),
+      '#description' => 'API Key for Geocoding Service for Home Code address lookup',
     ];
     $form['summergame_homecode_notify_email'] = [
         '#type' => 'textfield',

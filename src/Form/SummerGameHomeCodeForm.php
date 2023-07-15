@@ -203,7 +203,6 @@ class SummerGameHomeCodeForm extends FormBase {
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
     $db = \Drupal::database();
-    $summergame_settings = \Drupal::config('summergame.settings');
 
     // Remove non-alphanumerics from Game Code text
     $text = preg_replace('/[^A-Za-z0-9]/', '', $form_state->getValue('text'));
@@ -218,28 +217,13 @@ class SummerGameHomeCodeForm extends FormBase {
     if ($form_state->getValue('type') == 'lawn') {
       // Check geocode of address
       $street = trim($form_state->getValue('street'));
-      $guzzle = \Drupal::httpClient();
-      $geocode_search_url = $summergame_settings->get('summergame_homecode_geocode_url');
+      $zip = $form_state->getValue('zip');
 
-      $query = [
-        'street' => $street,
-        'postalcode' => $form_state->getValue('zip'),
-        'country' => 'United States of America',
-        'addressdetails' => 1,
-        'format' => 'json',
-      ];
-      try {
-        $response = $guzzle->request('GET', $geocode_search_url, ['query' => $query]);
+      if ($geocode_data = $this->geocode_lookup($street, $zip)) {
+        $form_state->setValue('geocode_data', $geocode_data);
       }
-      catch (\Exception $e) {
-        \Drupal::messenger()->addError('Unable to lookup address position');
-      }
-      if ($response) {
-        $response_body = json_decode($response->getBody()->getContents());
-        if (!isset($response_body[0]->address->road)) {
-          $form_state->setErrorByName('street', 'Unable to locate street address. Please try again.');
-        }
-        $form_state->setValue('geocode_data', $response_body[0]);
+      else {
+        $form_state->setErrorByName('street', 'Unable to locate street address. Please try again.');
       }
     }
     else if ($form_state->getValue('type') == 'library') {
@@ -263,18 +247,15 @@ class SummerGameHomeCodeForm extends FormBase {
     if ($form_state->getValue('type') == 'lawn') {
       // Format code description
       $geocode_data = $form_state->getValue('geocode_data');
-      $description = "You found a Lawn Code on " . $geocode_data->address->road . '.';
+      $description = "You found a Lawn Code on " . $geocode_data['route'] . '.';
       if ($message = $form_state->getValue('message')) {
         $description .= ' ' . trim($message);
       }
 
-      $city = $geocode_data->address->municipality ?? $geocode_data->address->city ?? $geocode_data->address->town ?? $geocode_data->address->village;
       $clue = [
-        'homecode' => $geocode_data->address->house_number . ' ' . $geocode_data->address->road . '<br>' .
-                      $city . ', ' . $geocode_data->address->state . '<br>' .
-                      $geocode_data->address->postcode,
-        'lat' => $geocode_data->lat,
-        'lon' => $geocode_data->lon,
+        'homecode' => $geocode_data['formatted'],
+        'lat' => $geocode_data['lat'],
+        'lon' => $geocode_data['lon'],
         'display' => $form_state->getValue('display'),
       ];
     }
@@ -326,4 +307,58 @@ class SummerGameHomeCodeForm extends FormBase {
     return;
   }
 
+  private function geocode_lookup($street, $zip) {
+    $address = FALSE;
+    $guzzle = \Drupal::httpClient();
+    $geocode_url =  \Drupal::config('summergame.settings')->get('summergame_homecode_geocode_url');
+
+    $query = [
+      'address' =>  $street . ' ' . $zip,
+      'key' => \Drupal::config('summergame.settings')->get('summergame_homecode_geocode_api_key'),
+    ];
+    try {
+      $response = $guzzle->request('GET', $geocode_url, ['query' => $query]);
+    }
+    catch (\Exception $e) {
+      \Drupal::messenger()->addError('Unable to lookup address');
+    }
+
+    if ($response) {
+      $response_body = json_decode($response->getBody()->getContents());
+
+      if ($response_body->status == 'OK') {
+        // parse address components
+        $result = $response_body->results[0];
+
+        // Convert formatted address
+        $formatted_address = str_replace(', USA', '', $result->formatted_address);
+        $comma_pos = strpos($formatted_address, ', ');
+        if ($comma_pos) {
+          $formatted_address = substr_replace($formatted_address, "<br>", $comma_pos, 2);
+        }
+        $last_space_pos = strrpos($formatted_address, ' ');
+        if ($last_space_pos) {
+          $formatted_address = substr_replace($formatted_address, "<br>", $last_space_pos, 1);
+        }
+
+        $address = [
+          'formatted' => $formatted_address,
+          'lat' => $result->geometry->location->lat,
+          'lon' => $result->geometry->location->lng,
+        ];
+        foreach ($result->address_components as $address_component) {
+          $type = $address_component->types[0];
+          $address[$type] = $address_component->short_name;
+        }
+      }
+      else {
+        \Drupal::messenger()->addError('Unable to find entered address');
+      }
+    }
+    else {
+      \Drupal::messenger()->addError('Empty response on address lookup');
+    }
+
+    return $address;
+  }
 }
