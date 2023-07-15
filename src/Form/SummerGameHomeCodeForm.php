@@ -209,7 +209,7 @@ class SummerGameHomeCodeForm extends FormBase {
 
     // Check whether new game code is unique
     $code = $db->query("SELECT code_id FROM sg_game_codes WHERE text LIKE :text", [':text' => $text])->fetchObject();
-    if ($code->code_id) {
+    if (!empty($code->code_id)) {
       $form_state->setErrorByName('text', 'Code text is already in use. Please select another code.');
     }
     $form_state->setValue('text', $text);
@@ -350,9 +350,14 @@ class SummerGameHomeCodeForm extends FormBase {
           $type = $address_component->types[0];
           $address[$type] = $address_component->short_name;
         }
+
+        if (empty($address['street_number'])) {
+          // Require a street number
+          $address = FALSE;
+        }
       }
       else {
-        \Drupal::messenger()->addError('Unable to find entered address');
+        \Drupal::messenger()->addError('Error returned from address lookup, try again');
       }
     }
     else {
