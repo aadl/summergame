@@ -200,7 +200,7 @@ class AdminController extends ControllerBase {
     else {
       $markup = '<p>Select Branch:</p>';
       foreach ($branches as $branch_id => $branch_name) {
-        $markup .= "<p><a href=\"$branch_id\">$branch_name</a></p>";
+        $markup .= "<p><a href=\"/summergame/admin/branchcodes/$branch_id\">$branch_name</a></p>";
       }
       $body = [
         '#markup' => $markup,
