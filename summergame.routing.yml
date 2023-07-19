@@ -12,6 +12,14 @@ summergame.admin:
     _title: 'Summer Game Admin'
   requirements:
     _permission: 'manage summergame'
+summergame.admin.branchcodes:
+  path: '/summergame/admin/branchcodes/{branch}'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\AdminController::branchcodes'
+    _title: 'Summer Game Library Code List'
+    branch: ''
+  requirements:
+    _permission: 'manage summergame'
 summergame.admin.gamecodes:
   path: '/summergame/admin/gamecodes/{search_term}'
   defaults:

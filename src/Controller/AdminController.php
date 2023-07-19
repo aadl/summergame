@@ -145,6 +145,74 @@ class AdminController extends ControllerBase {
     return $render;
   }
 
+  public function branchcodes($branch = '') {
+    $branches = [
+      'downtown' => 'Downtown',
+      'malletts' => 'Malletts Creek',
+      'pittsfield' => 'Pittsfield',
+      'traverwood' => 'Traverwood',
+      'westgate' => 'Westgate',
+    ];
+    $summergame_settings = \Drupal::config('summergame.settings');
+    $current_game_term = $summergame_settings->get('summergame_current_game_term');
+    $header = 'Library Sign Codes';
+
+    if (isset($branches[$branch])) {
+      $header .= ' for ' . $branches[$branch];
+
+      // Grab all library codes from that branch and list in order
+      $db = \Drupal::database();
+      $query_args = [
+        ':game_term' => $current_game_term,
+        ':branchclue' => '{"branchcode":"' . $branch . '"}',
+      ];
+
+      $rows = [];
+      $codes = $db->query("SELECT text, description FROM sg_game_codes " .
+                          "WHERE game_term = :game_term " .
+                          "AND clue = :branchclue " .
+                          "ORDER BY text ASC",
+                          $query_args);
+
+      $code_count = 0;
+      while ($row = $codes->fetchAssoc()) {
+        $code_count++;
+        $rows[] = [
+          '' => $code_count,
+          'Code Text' => $row['text'],
+          'Description' => $row['description'],
+        ];
+      }
+
+      if (count($rows)) {
+        $body = [
+          '#type' => 'table',
+          '#header' => array_keys($rows[0]),
+          '#rows' => $rows,
+        ];
+      }
+      else {
+        $body = [
+          '#markup' => '<p>No Codes found</p>'
+        ];
+      }
+    }
+    else {
+      $markup = '<p>Select Branch:</p>';
+      foreach ($branches as $branch_id => $branch_name) {
+        $markup .= "<p><a href=\"$branch_id\">$branch_name</a></p>";
+      }
+      $body = [
+        '#markup' => $markup,
+      ];
+    }
+
+    return [
+      '#markup' => "<h1>$header</h1>",
+      $body,
+    ];
+  }
+
   public function gamecodes($search_term = '') {
     $sg_admin = \Drupal::currentUser()->hasPermission('administer summergame');
     $admin_users = \Drupal::currentUser()->hasPermission('administer users');
