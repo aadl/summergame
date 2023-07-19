@@ -18,7 +18,11 @@
     </div>
   {% endif %}
 
-  <p style="text-align:right"><strong>Player Code Counts:</strong> {{ player_codes_status }}</p>
+  <p style="text-align:right">
+    <strong>Player Code Counts:</strong>
+    Lawn Sign Codes: {{ lawn_code_count }},
+    <a href="/summergame/admin/branchcodes">Library Sign Codes: {{ library_code_count }}</a>
+  </p>
 
   <h2 class="title game-codes">Game Codes</h2>
   {% if sg_admin %}

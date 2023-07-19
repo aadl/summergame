@@ -35,7 +35,7 @@ class AdminController extends ControllerBase {
        'AND clue LIKE :clue';
     $home_count = $db->query($sql, [':game_term' => $current_game_term, ':clue' => '%homecode%'])->fetchField();
     $branch_count = $db->query($sql, [':game_term' => $current_game_term, ':clue' => '%branchcode%'])->fetchField();
-    $player_codes_status = $current_game_term . " Lawn Sign Codes: $home_count, Library Sign Codes: $branch_count";
+    //$player_codes_status = $current_game_term . " Lawn Sign Codes: $home_count, Library Sign Codes: $branch_count";
 
     // Game Codes
     $res = $db->query("SELECT * FROM sg_game_codes ORDER BY created DESC LIMIT $limit");
@@ -136,7 +136,8 @@ class AdminController extends ControllerBase {
       '#summergame_player_search_form' => \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerSearchForm'),
       '#summergame_gamecode_search_form' => \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGameGameCodeSearchForm'),
       '#sg_admin' => $sg_admin,
-      '#player_codes_status' => $player_codes_status,
+      '#lawn_code_count' => $home_count,
+      '#library_code_count' => $branch_count,
       '#gc_rows' => $gc_rows,
       '#badge_rows' => $badge_rows,
       '#limit' => $limit,
