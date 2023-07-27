@@ -148,6 +148,7 @@ class SummerGamePlayerConsumeForm extends FormBase {
 
     $bnum = $form_state->getValue('bnum');
     $pid = $form_state->getValue('pid');
+    $player = summergame_player_load($pid);
     $consume_type = $form_state->getValue('consume_type');
     $title = $form_state->getValue('title');
     $finished = $form_state->getValue('finished');
@@ -165,7 +166,7 @@ class SummerGamePlayerConsumeForm extends FormBase {
       $points = 50;
     }
 
-    if ($finished && ($consume_type == 'read' || $consume_type == 'listen')) {
+    if ($finished && (($consume_type == 'read' || $consume_type == 'listen') || ($player['agegroup'] == 'adult' && $consume_type == 'watch'))) {
       $metadata['logged'] = 1;
     }
 
