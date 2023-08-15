@@ -287,14 +287,14 @@ class PlayerController extends ControllerBase {
           return new RedirectResponse($redirect_uri);
         }
         else {
-          \Drupal::messenger()->addMessage('Add a player to your account to play the $gameDisplayName');
+          \Drupal::messenger()->addMessage("Add a player to your account to play the $gameDisplayName");
           return new RedirectResponse('/summergame/player/new');
         }
 
       }
     }
     else {
-      \Drupal::messenger()->addMessage('You must be logged in to redeem a $gameDisplayName code.');
+      \Drupal::messenger()->addMessage("You must be logged in to redeem a $gameDisplayName code.");
       return new RedirectResponse("/user/login?destination=" . $_SERVER['REQUEST_URI']);
     }
   }
