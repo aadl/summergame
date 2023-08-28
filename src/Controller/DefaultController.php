@@ -207,11 +207,12 @@ EOT;
     }
     else {
       $explaination_markup .= <<<EOT
-<p>Summer Game has ended and all Lawn Codes and Library Codes have expired! If you put up a Lawn Code sign, please take it down but PLEASE KEEP IT! Don't toss those Summer Game Lawn signs! We don't have all the details yet, but we'll reuse the signs for the 2023 game, so store them until next June, or return them to your nearest Library and we'll find a good use for them in 2023.⁣</p>
+<p>Summer Game has ended and all Lawn Codes and Library Codes have expired! If you put up a Lawn Code sign, please take it down but PLEASE KEEP IT! Don't toss those Summer Game Lawn signs!</p>
 <p>If you have any questions or concerns, as always, <a href="http://aadl.org/contactus">contact us</a>.</p>
 <p>Thanks to everyone who posted or found Lawn and Library codes!</p>
 EOT;
 /*
+We don't have all the details yet, but we'll reuse the signs for the 2023 game, so store them until next June, or return them to your nearest Library and we'll find a good use for them in 2023.
       $legend_markup = '<p>Showing number of redemptions during the game.</p>' .
           '<img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png"> = 0-49 ' .
           '<img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png"> = 50-99 ' .
