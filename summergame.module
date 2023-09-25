@@ -1171,7 +1171,28 @@ function summergame_player_check_badges($pid, $game_term) {
   while ($badge = $res->fetchObject()) {
     if (!in_array($badge->bid, $player_bids)) {
       $awarded = FALSE;
-      if (preg_match('/^{([\d,]+)}$/', $badge->formula, $matches)) {
+      if (strpos($badge->formula, '**')) {
+        // Multi Game Term ("Hall of Fame") Badge
+        list($hof_type, $game_term_pattern, $badge_limit) = explode('**', $badge->formula);
+        if ($hof_type == 'game_terms') {
+          // Count distict Game Terms that match the pattern
+          $gt_count = $db->query("SELECT COUNT(DISTINCT `game_term`) AS gt_count FROM `sg_ledger` WHERE `pid` = $pid AND `game_term` LIKE :game_term_pattern",
+                                   [':game_term_pattern' => "%$game_term_pattern%"])->fetchObject();
+          if ($gt_count->gt_count >= $badge_limit) {
+            $awarded = summergame_player_award_badge($pid, $badge->bid);
+          }
+        }
+        elseif ($hof_type == 'total_points') {
+          // Total points earned in Game Terms that match the pattern
+          $point_total = $db->query("SELECT SUM(`points`) AS point_total FROM `sg_ledger` WHERE `pid` = $pid AND `game_term` LIKE :game_term_pattern " .
+                               "AND `points` > '0' AND `metadata` NOT LIKE '%leaderboard:no%'",
+                               [':game_term_pattern' => "%$game_term_pattern%"])->fetchObject();
+          if ($point_total->point_total >= $badge_limit) {
+            $awarded = summergame_player_award_badge($pid, $badge->bid);
+          }
+        }
+      }
+      elseif (preg_match('/^{([\d,]+)}$/', $badge->formula, $matches)) {
         // Badge collection badge
         $eligible = TRUE;
         foreach (explode(',', $matches[1]) as $formula_bid) {
@@ -1184,7 +1205,7 @@ function summergame_player_check_badges($pid, $game_term) {
           $awarded = summergame_player_award_badge($pid, $badge->bid);
         }
       }
-      else if (strpos($badge->formula, '^^')) {
+      elseif (strpos($badge->formula, '^^')) {
         // Multiple days of a ledger type formula (streak)
         list($count_limit, $text_pattern) = explode('^^', $badge->formula);
         $lid_count = $db->query("SELECT COUNT(DISTINCT FROM_UNIXTIME(`timestamp`, '%j')) AS lid_count FROM sg_ledger WHERE pid = $pid " .
@@ -1194,7 +1215,7 @@ function summergame_player_check_badges($pid, $game_term) {
           $awarded = summergame_player_award_badge($pid, $badge->bid);
         }
       }
-      else if (strpos($badge->formula, '::')) {
+      elseif (strpos($badge->formula, '::')) {
         // Multiple of a ledger type formula
         $formula_parts = explode('::', $badge->formula);
         if (count($formula_parts) == 2) {
@@ -1207,7 +1228,7 @@ function summergame_player_check_badges($pid, $game_term) {
             $awarded = summergame_player_award_badge($pid, $badge->bid);
           }
         }
-        else if (count($formula_parts) == 3) {
+        elseif (count($formula_parts) == 3) {
           // New multiple of a ledger pattern (count::field::pattern)
           list($count_limit, $ledger_field, $text_pattern) = $formula_parts;
           $lid_count = $db->query("SELECT COUNT(lid) AS lid_count FROM sg_ledger WHERE pid = $pid " .
@@ -1250,6 +1271,7 @@ function summergame_player_check_badges($pid, $game_term) {
           $awarded = summergame_player_award_badge($pid, $badge->bid);
         }
       }
+
       if ($awarded) {
         $badge_node = \Drupal::entityTypeManager()->getStorage('node')->load($badge->bid);
         $badge_title = $badge_node->get('title')->value;
