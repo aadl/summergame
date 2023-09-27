@@ -49,7 +49,7 @@
                 {{ player_game_points.min_timestamp|date('F j, Y, g:i a') }} -<br>
                 {{ player_game_points.max_timestamp|date('F j, Y, g:i a') }}</p>
               </div>
-              {% if 'summergame' in game_term|lower or 'points-o-matic' in game_term|lower %}
+              {% if 'summergame' in game_term|lower or 'points-o-matic' in game_term|lower or 'halloffame' in game_term|lower %}
                 <div class="player-badges">
                   <h3>Badges</h3>
                   {% if player_game_points.badges %}
