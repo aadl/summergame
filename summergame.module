@@ -1356,11 +1356,19 @@ function summergame_player_award_badge($pid, $bid) {
 function summergame_check_all_player_badges($game_term = '') {
   $p_count = 0;
   $db = \Drupal::database();
-  $res = $db->query("SELECT DISTINCT pid FROM sg_ledger WHERE game_term = :gt ORDER BY pid", [':gt' => $game_term]);
+
+  if ($game_term == 'HallOfFame') {
+    // HallOfFame badges span multiple game terms. Check ALL player IDs.
+    $res = $db->query("SELECT pid FROM sg_players WHERE 1 ORDER BY pid");
+  }
+  else {
+    $res = $db->query("SELECT DISTINCT pid FROM sg_ledger WHERE game_term = :gt ORDER BY pid", [':gt' => $game_term]);
+  }
+
   while ($p = $res->fetchObject()) {
     summergame_player_check_badges($p->pid, $game_term);
     if (++$p_count % 100 == 0) {
-      echo date("Y-m-d H:i:s") . "Processed $p_count Players..." . PHP_EOL;
+      echo date("Y-m-d H:i:s") . " Processed $p_count Players..." . PHP_EOL;
     }
   }
 }
