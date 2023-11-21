@@ -7,6 +7,8 @@
 
 namespace Drupal\summergame\Form;
 
+use Drupal\user\Entity\User;
+use Drupal\Core\Url;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -35,10 +37,10 @@ class SummerGameHomeCodeForm extends FormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state, $uid = 0) {
     // Check access to Account
-    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+    $user = User::load(\Drupal::currentUser()->id());
     if ($user->get('uid')->value == $uid ||
         $user->hasPermission('manage summergame')) {
-      $account = \Drupal\user\Entity\User::load($uid);
+      $account = User::load($uid);
       if (isset($account)) {
         $form = [
           '#attributes' => ['class' => 'form-width-exception'],
@@ -66,7 +68,7 @@ class SummerGameHomeCodeForm extends FormBase {
           $form['cancel'] = [
             '#type' => 'link',
             '#title' => 'Return to Player Page',
-            '#url' => \Drupal\Core\Url::fromRoute('summergame.player'),
+            '#url' => Url::fromRoute('summergame.player'),
             '#suffix' => '</div>'
           ];
         }
@@ -168,7 +170,7 @@ class SummerGameHomeCodeForm extends FormBase {
           $form['details']['actions']['cancel'] = [
             '#type' => 'link',
             '#title' => 'Return to Player Page',
-            '#url' => \Drupal\Core\Url::fromRoute('summergame.player'),
+            '#url' => Url::fromRoute('summergame.player'),
           ];
         }
         else {
@@ -180,7 +182,7 @@ class SummerGameHomeCodeForm extends FormBase {
           $form['cancel'] = [
             '#type' => 'link',
             '#title' => 'Return to Player Page',
-            '#url' => \Drupal\Core\Url::fromRoute('summergame.player'),
+            '#url' => Url::fromRoute('summergame.player'),
             '#suffix' => '</div>'
           ];
         }
@@ -298,7 +300,7 @@ class SummerGameHomeCodeForm extends FormBase {
     $notify_email = $summergame_settings->get('summergame_homecode_notify_email');
     mail($notify_email,
       'New Home Code: ' . $fields['text'],
-      \Drupal\Core\Url::fromRoute('summergame.admin.gamecode', ['code_id' => $code_id], ['absolute' => TRUE])->toString() . "\n\n" .
+      Url::fromRoute('summergame.admin.gamecode', ['code_id' => $code_id], ['absolute' => TRUE])->toString() . "\n\n" .
       $fields['text'] . ' created by User ID #' . $fields['creator_uid'] . "\n" .
       ($message ? 'User message: ' . $message . "\n" : '') .
       "\nAddress Info:\n" . str_replace('<br>', "\n", $clue['homecode']) . $clue['branchcode']

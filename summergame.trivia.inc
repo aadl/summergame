@@ -1,7 +1,7 @@
 <?php
 
 function summergame_trivia_page() {
-  drupal_add_js(drupal_get_path('module', 'summergame') . '/summergame.trivia.js');
+  drupal_add_js(\Drupal::service('extension.list.module')->getPath('summergame') . '/summergame.trivia.js');
   $content .= drupal_get_js();
   $content .=
 <<<JST
@@ -16,7 +16,7 @@ JST;
 
   $content .= '<div class="autorefresh_div">' .
               '<div style="text-align: center">' .
-              '<img src="' . base_path() . drupal_get_path('module', 'summergame') . '/loading.gif"><br />' .
+              '<img src="' . base_path() . \Drupal::service('extension.list.module')->getPath('summergame') . '/loading.gif"><br />' .
               'Loading Data...</div>' .
               '</div>';
   print $content;

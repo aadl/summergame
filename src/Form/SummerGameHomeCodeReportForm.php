@@ -7,6 +7,7 @@
 
 namespace Drupal\summergame\Form;
 
+use Drupal\Core\Url;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 
@@ -143,7 +144,7 @@ class SummerGameHomeCodeReportForm extends FormBase {
       "Creator Username: $code_data->name\n" .
       "Creator email: $code_data->mail\n\n" .
       "Reporting Player Details:\n" .
-      \Drupal\Core\Url::fromRoute('summergame.player', ['pid' => $player['pid']], ['absolute' => TRUE])->toString() . "\n" .
+      Url::fromRoute('summergame.player', ['pid' => $player['pid']], ['absolute' => TRUE])->toString() . "\n" .
       "Player Name: " . $player['name'] . "\n" .
       "Player Nickname: " . $player['nickname'] . "\n" .
       "Player Drupal User ID: " . $player['uid']

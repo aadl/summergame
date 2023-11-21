@@ -7,6 +7,7 @@
 
 namespace Drupal\summergame\Form;
 
+use Drupal\Core\Url;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 
@@ -52,7 +53,7 @@ class SummerGameGameCodeDeleteForm extends FormBase {
       $form['inline']['cancel'] = [
         '#type' => 'link',
         '#title' => $this->t('Cancel'),
-        '#url' => \Drupal\Core\Url::fromRoute('summergame.admin'),
+        '#url' => Url::fromRoute('summergame.admin'),
         '#suffix' => '</div>'
       ];
     }

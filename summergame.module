@@ -1,5 +1,7 @@
 <?php
 
+use Drupal\user\Entity\User;
+use Drupal\file\Entity\File;
 use PHPOnCouch\CouchClient;
 use Predis\Client;
 use \Drupal\node\Entity\Node;
@@ -829,7 +831,7 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
   }
 
   // Get new badges
-  $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+  $user = User::load(\Drupal::currentUser()->id());
   $play_tester = $user->hasPermission('play test summergame');
   $play_test_term_id = \Drupal::config('summergame.settings')->get('summergame_play_test_term_id');
 
@@ -852,9 +854,9 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
       }
     }
 
-    $fid = \Drupal\file\Entity\File::load($node->get('field_badge_image')->target_id);
+    $fid = File::load($node->get('field_badge_image')->target_id);
     if ($fid) {
-      $badge['img'] = file_create_url($fid->getFileUri());
+      $badge['img'] = \Drupal::service('file_url_generator')->generateAbsoluteString($fid->getFileUri());
     }
     $badge['title'] = $node->get('title')->value;
     $player_points[$game_term]['badges'][] = $badge;
