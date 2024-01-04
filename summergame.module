@@ -283,6 +283,19 @@ function summergame_get_game_terms() {
 }
 
 /**
+ * UTILITY: Get defined home page paths for Game Term patterns
+ */
+function summergame_get_game_term_homes() {
+  $game_term_homes = [];
+  $homes_setting = \Drupal::config('summergame.settings')->get('summergame_game_term_homes');
+  foreach (explode("\n", $homes_setting) as $homes_row) {
+    list($pattern, $path) = explode(':', $homes_row);
+    $game_term_homes[trim($pattern)] = trim($path);
+  }
+  return $game_term_homes;
+}
+
+/**
  * HOOK: Receive and respond to text messages
  */
 function summergame_twilio_respond($incoming) {
@@ -1344,10 +1357,10 @@ function summergame_player_check_badges($pid, $game_term) {
  */
 function summergame_player_award_badge($pid, $bid) {
   $db = \Drupal::database();
-  $res = $db->query('INSERT IGNORE INTO `sg_players_badges` (`pid`, `bid`, `timestamp`) VALUES (:pid, :bid, :timestamp)',
-                    [':pid' => $pid, ':bid' => $bid, ':timestamp' => time()]);
-  $res->allowRowCount = TRUE;
-  return $res->rowCount();
+  $statement = $db->prepareStatement('INSERT IGNORE INTO `sg_players_badges` (`pid`, `bid`, `timestamp`) VALUES (:pid, :bid, :timestamp)', [], TRUE);
+  $args = [':pid' => $pid, ':bid' => $bid, ':timestamp' => time()];
+  $statement->execute($args);
+  return $statement->rowCount();
 }
 
 /**

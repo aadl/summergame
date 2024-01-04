@@ -730,7 +730,7 @@ FBL;
     return $this->redirect('summergame.admin');
   }
 
-  public function badge_list() {
+  public function badge_list($game_term = '') {
     $db = \Drupal::database();
     $summergame_settings = \Drupal::config('summergame.settings');
     $user = User::load(\Drupal::currentUser()->id());
@@ -757,7 +757,7 @@ FBL;
     }
 
     $vocab = 'sg_badge_series';
-    $badgelist_game_term = $summergame_settings->get('summergame_badgelist_game_term');
+    $badgelist_game_term = ($game_term ? $game_term : $summergame_settings->get('summergame_badgelist_game_term'));
     $play_test_term_id = $summergame_settings->get('summergame_play_test_term_id');
     $play_tester = $user->hasPermission('play test summergame');
     $badges = [];

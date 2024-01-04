@@ -273,10 +273,11 @@ summergame.map.data:
   requirements:
     _permission: 'access content'
 summergame.badgelist:
-  path: '/summergame/badgelist'
+  path: '/summergame/badgelist/{game_term}'
   defaults:
     _controller: '\Drupal\summergame\Controller\DefaultController::badge_list'
     _title: 'Summer Game Badge List'
+    game_term: ''
   requirements:
     _permission: 'access content'
 # summergame.badge:
