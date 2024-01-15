@@ -30,7 +30,7 @@ class SummerGamePlayerForm extends FormBase {
     $user = \Drupal::currentUser();
 
     $submit_text = 'Save Player Changes';
-
+    
     if ($route == 'summergame.player.new') {
       // Check if user logged in
       if ($uid = $user->id()) {
@@ -38,18 +38,18 @@ class SummerGamePlayerForm extends FormBase {
         if ($player = summergame_player_load(['uid' => $uid])) {
           \Drupal::messenger()->addMessage('Redirecting to your existing player');
           return $this->redirect('summergame.player', ['pid' => $player['pid']]);
-        }
+        } 
         else {
           // Website user, no player, set up empty player record
           $player = ['uid' => $uid];
           $submit_text = 'Sign Up';
         }
-      }
+      } 
       else {
         \Drupal::messenger()->addMessage('You need to log in to the website before you can sign up a player');
         return $this->redirect('<front>')->send();
       }
-    }
+    } 
     else if ($route == 'summergame.player.extra') {
       // Check if user logged in
       if ($uid = $user->id()) {
@@ -57,26 +57,26 @@ class SummerGamePlayerForm extends FormBase {
         if (summergame_player_load(['uid' => $uid])) {
           // Website user, existing player, set up empty player record
           $extra_player_message = "Use the form below to add an extra player to your website account for another person in your household. " .
-                                  "You will be able to enter game codes and report reading / listening / " .
-                                  "watching activities for points. You will be able to switch the active player on your " .
-                                  "website account to specify which player receives points for online activities such as " .
-                                  "commenting, tagging, or writing reviews. If you wish this " .
-                                  "player to have a separate website identity for these online activites, please log " .
-                                  "out and create a new website account before signing up for the $gameDisplayName.<br><br>" .
-                                  "<b>Each player on your account must be a real person who lives in your home.</b>";
+            "You will be able to enter game codes and report reading / listening / " .
+            "watching activities for points. You will be able to switch the active player on your " .
+            "website account to specify which player receives points for online activities such as " .
+            "commenting, tagging, or writing reviews. If you wish this " .
+            "player to have a separate website identity for these online activites, please log " .
+            "out and create a new website account before signing up for the $gameDisplayName.<br><br>" .
+            "<b>Each player on your account must be a real person who lives in your home.</b>";
           \Drupal::messenger()->addMessage(['#markup' => $extra_player_message]);
           $player = ['uid' => $uid];
-        }
+        } 
         else {
           // Website user, no player, redirect to new player form
           return $this->redirect('summergame.player.new')->send();
         }
-      }
+      } 
       else {
         \Drupal::messenger()->addMessage('You need to log in to the website before you can sign up a player');
         return $this->redirect('summergame.player');
       }
-    }
+    } 
     else {
       $player = summergame_player_load($pid);
     }
@@ -90,7 +90,7 @@ class SummerGamePlayerForm extends FormBase {
       if (!$player['gamecard']) {
         $game_term = $summergame_settings->get('summergame_current_game_term');
         $signup = $db->query("SELECT * FROM sg_ledger WHERE pid = " . $player['pid'] .
-                             " AND type = 'Signup' AND game_term = '$game_term'")->fetchObject();
+          " AND type = 'Signup' AND game_term = '$game_term'")->fetchObject();
         if (!$signup->lid) {
           $form['signup_eligible'] = [
             '#type' => 'value',
@@ -100,9 +100,9 @@ class SummerGamePlayerForm extends FormBase {
       }
       $form['title'] = [
         '#value' => '<p style="float: right">' .
-                    '<a href="/summergame/player/' . $player['pid'] . '">Back to Player Score Card page</a>' .
-                    '</p>' .
-                    '<h1>Edit $gameDisplayName Player Information</h1>',
+          '<a href="/summergame/player/' . $player['pid'] . '">Back to Player Score Card page</a>' .
+          '</p>' .
+          '<h1>Edit $gameDisplayName Player Information</h1>',
       ];
     }
 
@@ -119,18 +119,18 @@ class SummerGamePlayerForm extends FormBase {
 
     if ($player['pid']) {
       $cancel_path = 'summergame/player/' . $player['pid'];
-    }
+    } 
     else if (strpos($_GET['q'], 'admin') !== FALSE) {
       $cancel_path = 'summergame/admin';
-    }
+    } 
     else {
       $cancel_path = '';
     }
     if ($player['pid']) {
       $form['buttons']['links'] = [
         '#markup' => '<a href="/' . $cancel_path . '">Cancel</a>' .
-                     '&nbsp;&nbsp;&nbsp;&nbsp;' .
-                     '<a href="/summergame/player/' . $player['pid'] . '/delete">Delete Player</a>',
+          '&nbsp;&nbsp;&nbsp;&nbsp;' .
+          '<a href="/summergame/player/' . $player['pid'] . '/delete">Delete Player</a>',
       ];
     }
 
@@ -177,7 +177,7 @@ class SummerGamePlayerForm extends FormBase {
         '#maxlength' => 64,
         '#description' => t('Enter a phone number to play by text message (rates may apply)'),
       ];
-    }
+    } 
     else if ($player['phone']) {
       $form['phone'] = [
         '#type' => 'value',
@@ -240,7 +240,7 @@ class SummerGamePlayerForm extends FormBase {
     ];
     if ($player['agegroup'] == 'youth' || $player['agegroup'] == 'teen') {
       $school_style = 'display: block';
-    }
+    } 
     else {
       $school_style = 'display: none';
     }
@@ -298,7 +298,7 @@ class SummerGamePlayerForm extends FormBase {
         '#maxlength' => 8,
         '#description' => t("Website User ID to connect this player") . $search_link,
       ];
-    }
+    } 
     else if ($player['uid']) {
       $form['uid'] = [
         '#type' => 'value',
@@ -323,11 +323,11 @@ class SummerGamePlayerForm extends FormBase {
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $summergame_settings = \Drupal::config('summergame.settings');
     $gameDisplayName = $summergame_settings->get('game_display_name');
-  // Check for merge ID
+    // Check for merge ID
     if ($form_state->getValue('pid') && $form_state->getValue('merge_id')) {
-      $form_state->setRedirect('summergame.admin.players.merge',
-                              ['pid1' => $form_state->getValue('merge_id'), 'pid2' => $form_state->getValue('pid')]);
-    }
+      $form_state->setRedirect('summergame.admin.players.merge', 
+      ['pid1' => $form_state->getValue('merge_id'), 'pid2' => $form_state->getValue('pid')]);
+    } 
     else {
       $player_info = [
         'name' => $form_state->getValue('name'),
@@ -344,7 +344,7 @@ class SummerGamePlayerForm extends FormBase {
         if (strlen($phone) == 7) {
           // preface with local area code
           $phone = '1734' . $phone;
-        }
+        } 
         else if (strlen($phone) == 10) {
           // preface with a 1
           $phone = '1' . $phone;
@@ -367,7 +367,7 @@ class SummerGamePlayerForm extends FormBase {
         if ($form_state->getValue('signup_eligible') && $form_state->getValue('gamecard')) {
           $signup_bonus = TRUE;
         }
-      }
+      } 
       else {
         $signup_bonus = TRUE;
       }
@@ -380,7 +380,7 @@ class SummerGamePlayerForm extends FormBase {
                                              'Signed Up for the Summer Game');
           \Drupal::messenger()->addMessage("Earned $points Summer Game points for signing up!");
         }
-    /*
+        /*
         // Check for referral bonus
         if ($form_state->getValue('referred_by']) {
           // Check for referral player
@@ -405,8 +405,13 @@ class SummerGamePlayerForm extends FormBase {
         }
     */
       }
-
-      $form_state->setRedirect('summergame.player', ['pid' => $player['pid']]);
+      if ($_GET['shelveit'] == true) {
+        \Drupal::messenger()->deleteAll();
+        $form_state->setRedirect('summergame.shelveit.connect');
+      } 
+      else {
+        $form_state->setRedirect('summergame.player', ['pid' => $player['pid']]);
+      }
     }
     return;
   }

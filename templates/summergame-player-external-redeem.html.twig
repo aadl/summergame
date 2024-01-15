@@ -1,0 +1,30 @@
+<div id="summergame-admin-page">
+  <h1>Connect Shelve It to player account</h1>
+  <p>Earn Summer Game points as you complete the daily puzzle by connecting your player account</p>
+ {% if players|length > 0 %}
+  <table class="not-fixed-table smaller-font">
+	<thead>
+		<th>Player Account</th>
+		<th></th>
+	</thead>
+	<tbody>
+	 {% for player in players %}
+		<tr>
+			<td><h2>{{player.nickname}}<h2></td>
+			<td><strong><a href="/summergame/shelveit/connect/{{player.pid}}">Connect</a><strong></td>
+		</tr>
+	{% endfor %}
+	</tbody>
+  </table>
+  <div>
+  <p>Need to create another player account for a household library account?</p>
+   <a class="button" href="/summergame/player/extra?shelveit=true">New Player</a>
+  </div>
+  {% else %}
+  <div>
+	<h2>No player accounts found.</h2>
+	 <p>Create a player account to earn points from completing Shelve it puzzles</p>
+	 <a class="button" href="/summergame/player/new?shelveit=true">New Player</a>
+	</div>
+  {% endif %}
+</div>

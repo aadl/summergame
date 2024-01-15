@@ -315,3 +315,17 @@ summergame.trivia.update:
     _title: 'Summer Game Trivia Update'
   requirements:
     _permission: 'access summergame'
+summergame.shelveit.connect:
+  path: '/summergame/shelveit/connect'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\ConnectionController:show'
+    _title: 'Summer Game Account Connection'
+  requirements:
+    _permission: 'access summergame'
+summergame.shelveit.connect_process:
+  path: '/summergame/shelveit/connect/{pid}'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\ConnectionController:connect'
+    _title: 'Summer Game Account Connection'
+  requirements:
+    _permission: 'access summergame'

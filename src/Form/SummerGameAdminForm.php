@@ -200,16 +200,16 @@ class SummerGameAdminForm extends ConfigFormBase {
       '#description' => 'Message to be displayed under the player shop balance when current points is greater than current point threshold',
     ];
     $form['game_display_name'] = [
-        '#type' => 'textfield',
-        '#title' => 'Game Display Name',
-        '#default_value' => $summergame_settings->get('game_display_name'),
-        '#description' => 'The name to be displayed throughout the SummerGame UI',
+      '#type' => 'textfield',
+      '#title' => 'Game Display Name',
+      '#default_value' => $summergame_settings->get('game_display_name'),
+      '#description' => 'The name to be displayed throughout the SummerGame UI',
     ];
     $form['summergame_homecode_geocode_url'] = [
-        '#type' => 'textfield',
-        '#title' => 'Home Code Geocode URL',
-        '#default_value' => $summergame_settings->get('summergame_homecode_geocode_url'),
-        '#description' => 'URL Address of Geocoding Service for Home Code address lookup (e.g. https://maps.googleapis.com/maps/api/geocode/json)',
+      '#type' => 'textfield',
+      '#title' => 'Home Code Geocode URL',
+      '#default_value' => $summergame_settings->get('summergame_homecode_geocode_url'),
+      '#description' => 'URL Address of Geocoding Service for Home Code address lookup (e.g. https://maps.googleapis.com/maps/api/geocode/json)',
     ];
     $form['summergame_homecode_geocode_api_key'] = [
       '#type' => 'textfield',
@@ -218,10 +218,10 @@ class SummerGameAdminForm extends ConfigFormBase {
       '#description' => 'API Key for Geocoding Service for Home Code address lookup',
     ];
     $form['summergame_homecode_notify_email'] = [
-        '#type' => 'textfield',
-        '#title' => 'Home Code Notify Email',
-        '#default_value' => $summergame_settings->get('summergame_homecode_notify_email'),
-        '#description' => 'Email address to send notifications of new home codes',
+      '#type' => 'textfield',
+      '#title' => 'Home Code Notify Email',
+      '#default_value' => $summergame_settings->get('summergame_homecode_notify_email'),
+      '#description' => 'Email address to send notifications of new home codes',
     ];
     $form['summergame_homecode_message'] = [
       '#type' => 'textarea',
@@ -235,8 +235,14 @@ class SummerGameAdminForm extends ConfigFormBase {
       '#default_value' => $summergame_settings->get('summergame_homecode_report_threshold'),
       '#description' => 'Number of player reports needed to remove a Home Code from the map',
     ];
+    $form['summergame_shelveit_key'] =
+      [
+        '#type' => 'textfield',
+        '#title' => 'Shelve It App Key',
+        '#default_value' => $summergame_settings->get('summergame_shelveit_key'),
+        '#description' => 'Key for Shelve It session creation',
+      ];
 
     return parent::buildForm($form, $form_state);
   }
-
 }
