@@ -73,5 +73,9 @@
   {% else %}
     <p><em>You don't have permission to view this player's badge list.</em></p>
   {% endif %}
-  {% include directory ~ "/templates/base/nodes/sidebars/summergame.html.twig" %}
+  {% if game_term == 'ByteClub' %}
+    <p>Byte Club Sidebar</p>
+  {% else %}
+    {% include directory ~ "/templates/base/nodes/sidebars/summergame.html.twig" %}
+  {% endif %}
 </div>
