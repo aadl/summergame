@@ -959,8 +959,9 @@ function summergame_redeem_code($player, $code_text) {
   // Remove non-alphanumerics from Game Code text and convert to upper case
   $code_text = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $code_text));
 
-  // Check for Game Code
-  $code = $db->query("SELECT * FROM sg_game_codes WHERE text = :text", [':text' => $code_text])->fetchObject();
+  // Check for Game Code (limit to the latest one when text is reused)
+  $code = $db->query("SELECT * FROM sg_game_codes WHERE text = :text ORDER BY created DESC LIMIT 1",
+                      [':text' => $code_text])->fetchObject();
   if ($code->code_id) {
     // Existing code
     $now = time();

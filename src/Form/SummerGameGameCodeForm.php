@@ -228,13 +228,15 @@ class SummerGameGameCodeForm extends FormBase {
   public function validateForm(array &$form, FormStateInterface $form_state) {
     // Remove non-alphanumerics from Game Code text
     $text = preg_replace('/[^A-Za-z0-9]/', '', $form_state->getValue('text'));
+    $game_term = $form_state->getValue('game_term');
 
     // Check whether new game code is unique
     if (!$form_state->getValue('code_id')) {
       $db = \Drupal::database();
-      $code = $db->query("SELECT code_id FROM sg_game_codes WHERE text LIKE :text", [':text' => $text])->fetchObject();
-      if ($code->code_id) {
-        $form_state->setErrorByName('text', 'Code text is already in use. Please select another code.');
+      $code = $db->query("SELECT code_id FROM sg_game_codes WHERE text LIKE :text AND game_term LIKE :game_term",
+                         [':text' => $text, ':game_term' => $game_term])->fetchObject();
+      if (isset($code->code_id)) {
+        $form_state->setErrorByName('text', 'Code text is already in use for this game term. Please select another code.');
       }
     }
 
