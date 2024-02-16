@@ -210,7 +210,9 @@ class SummerGameHomeCodeForm extends FormBase {
     $text = preg_replace('/[^A-Za-z0-9]/', '', $form_state->getValue('text'));
 
     // Check whether new game code is unique
-    $code = $db->query("SELECT code_id FROM sg_game_codes WHERE text LIKE :text", [':text' => $text])->fetchObject();
+    $game_term = \Drupal::config('summergame.settings')->get('summergame_current_game_term');
+    $code = $db->query("SELECT code_id FROM sg_game_codes WHERE text LIKE :text AND game_term LIKE :game_term",
+                       [':text' => $text, ':game_term' => $game_term])->fetchObject();
     if (!empty($code->code_id)) {
       $form_state->setErrorByName('text', 'Code text is already in use. Please select another code.');
     }
