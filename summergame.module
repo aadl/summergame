@@ -978,8 +978,9 @@ function summergame_redeem_code($player, $code_text) {
     }
     else {
       // check if player has already redeemed this code
-      $existing = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND metadata LIKE :metadata",
-                            [':pid' => $player['pid'], ':metadata' => 'gamecode:' . $code->text])->fetchObject();
+      $existing = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND metadata LIKE :metadata AND game_term = :game_term",
+                            [':pid' => $player['pid'], ':metadata' => 'gamecode:' . $code->text, ':game_term' => $code->game_term])
+                            ->fetchObject();
       if (isset($existing->lid)) {
         $existing_date = date('F j, Y, g:i a', $existing->timestamp);
         return ['error' => "Code \"$code->text\" already redeemed on $existing_date"];
@@ -1453,13 +1454,14 @@ function summergame_players_merge($pid1, $pid2) {
   $res = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND metadata LIKE '%gamecode:%'", [':pid' => $pid1]);
   while ($row = $res->fetchAssoc()) {
     if (preg_match('/gamecode:([\w]+)/', $row['metadata'], $matches)) {
-      $duplicate_codes[] = $matches[1];
+      $duplicate_codes[] = [$matches[1], $row['game_term']];
     }
   }
   if (count($duplicate_codes)) {
     foreach ($duplicate_codes as $duplicate) {
-      $metadata = "%gamecode:$duplicate%";
-      $db->query("DELETE FROM sg_ledger WHERE pid = :pid AND metadata like :metadata", [':pid' => $pid2, ':metadata' => $metadata]);
+      $metadata = '%gamecode:' . $duplicate[0] . '%';
+      $db->query("DELETE FROM sg_ledger WHERE pid = :pid AND metadata LIKE :metadata AND game_term = :game_term",
+                 [':pid' => $pid2, ':metadata' => $metadata, ':game_term' => $duplicate[1]]);
     }
   }
 
