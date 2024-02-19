@@ -211,3 +211,4 @@ ALTER TABLE `sg_game_codes` ADD `link` VARCHAR(255) NOT NULL, ADD INDEX (`link`)
 
 ALTER TABLE `sg_game_codes` DROP INDEX `text`;
 ALTER TABLE `sg_game_codes` ADD UNIQUE `text_game_term` (`text`, `game_term`);
+ALTER TABLE `sg_game_codes` ADD `search_phrase` varchar(255) NOT NULL;
