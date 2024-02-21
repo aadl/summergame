@@ -27,7 +27,9 @@ class SummerGameGameCodeForm extends FormBase {
     $db = \Drupal::database();
     $code_id = (int) $code_id;
 
-    $form = [];
+    $form = [
+      '#attributes' => ['class' => 'form-width-exception']
+    ];
 
     if ($code_id) {
       $game_code = $db->query("SELECT * FROM sg_game_codes WHERE code_id = $code_id")->fetchAssoc();
@@ -135,6 +137,22 @@ class SummerGameGameCodeForm extends FormBase {
         '100' => '100',
       ],
       '#description' => t('Number of players who can receive points for this award'),
+    ];
+    $form['sequence_num'] = [
+      '#type' => 'textfield',
+      '#title' => t('Sequence Number'),
+      '#default_value' => $game_code['sequence_num'],
+      '#size' => 8,
+      '#maxlength' => 3,
+      '#description' => t('Number of this code if part of a sequence (will be displayed on messages and signs)'),
+    ];
+    $form['sequence_total'] = [
+      '#type' => 'textfield',
+      '#title' => t('Sequence Total'),
+      '#default_value' => $game_code['sequence_total'],
+      '#size' => 8,
+      '#maxlength' => 3,
+      '#description' => t('Total number of codes if this code is part of a sequence (will be displayed on messages and signs)'),
     ];
     $form['valid_start'] = [
       '#type' => 'textfield',
@@ -294,6 +312,8 @@ class SummerGameGameCodeForm extends FormBase {
       'everlasting' => $form_state->getValue('everlasting'),
       'link' => trim($form_state->getValue('link')),
       'search_phrase' => $form_state->getValue('search_phrase'),
+      'sequence_num' => $form_state->getValue('sequence_num'),
+      'sequence_total' => $form_state->getValue('sequence_total'),
     ];
 
     // reformat link text if node url or catalog url to id format
