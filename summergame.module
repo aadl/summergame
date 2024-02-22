@@ -4,7 +4,8 @@ use Drupal\user\Entity\User;
 use Drupal\file\Entity\File;
 use PHPOnCouch\CouchClient;
 use Predis\Client;
-use \Drupal\node\Entity\Node;
+use Drupal\node\Entity\Node;
+use Drupal\Core\Entity\EntityInterface;
 
 function summergame_leaderboard_update() {
   $summergame_settings = \Drupal::config('summergame.settings');
@@ -267,6 +268,22 @@ function summergame_entity_storage_load(array $entities, $entity_type) {
         $entity->gamecodes[$game_term][] = $game_code;
       }
     }
+  }
+}
+
+/**
+ * HOOK: strip whitespace and copy formula for badge nodes on presave.
+ */
+function summergame_entity_presave(EntityInterface $node) {
+  if ($node->bundle() == 'sg_badge') {
+    // Trim leading and trailing whitespace on each line and concatonate into a single line formula
+    $formula = '';
+    $formula_lines = explode("\n", $node->get('field_badge_formula_long')->value);
+    foreach ($formula_lines as $formula_line) {
+      $formula .= trim($formula_line);
+    }
+    // Set field_badge_formula as cleaned up version
+    $node->set('field_badge_formula', $formula);
   }
 }
 
