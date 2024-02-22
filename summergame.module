@@ -272,7 +272,7 @@ function summergame_entity_storage_load(array $entities, $entity_type) {
 }
 
 /**
- * Form Alter: strip whitespace and copy formula for badge nodes.
+ * HOOK: strip whitespace and copy formula for badge nodes on presave.
  */
 function summergame_entity_presave(EntityInterface $node) {
   if ($node->bundle() == 'sg_badge') {
