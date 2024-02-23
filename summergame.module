@@ -292,7 +292,7 @@ function summergame_entity_presave(EntityInterface $node) {
  * FORM ALTER: alter the Badge edit form
  */
 function summergame_form_alter(&$form, FormStateInterface $form_state, $form_id) {
-  if ($form_id == 'node_sg_badge_edit_form') {
+  if ($form_id == 'node_sg_badge_form' || $form_id == 'node_sg_badge_edit_form') {
     // set the field_badge_formula field to disabled
     $form['field_badge_formula']['widget'][0]['value']['#attributes']['disabled'] = TRUE;
   }
