@@ -100,8 +100,12 @@ class SummerGameGameCodeBatchForm extends FormBase {
       // Assign field names
       $csv_row = array_combine($field_names, str_getcsv($csv_row));
 
+      // Lookup game term for unique code check
+      $game_term = isset($csv_row['game_term']) ? trim($csv_row['game_term']) : $summergame_settings->get('summergame_current_game_term');
+
       // Check whether new game code is unique
-      $code = $db->query("SELECT code_id FROM sg_game_codes WHERE text LIKE :text", [':text' =>  $csv_row['text']])->fetchObject();
+      $code = $db->query("SELECT code_id FROM sg_game_codes WHERE text LIKE :text AND game_term LIKE :game_term",
+                         [':text' =>  $csv_row['text'], ':game_term' => $game_term])->fetchObject();
       if ($code->code_id) {
         \Drupal::messenger()->addError('Code ' . $csv_row['text'] . ' is already in use. Please select another code.');
         continue;
@@ -121,7 +125,7 @@ class SummerGameGameCodeBatchForm extends FormBase {
         'max_redemptions' => isset($csv_row['max_redemptions']) ? $csv_row['max_redemptions'] : 0,
         'valid_start' => isset($csv_row['valid_start']) ? strtotime($csv_row['valid_start']) : $now,
         'valid_end' => isset($csv_row['valid_end']) ? strtotime($csv_row['valid_end']) : '',
-        'game_term' => isset($csv_row['game_term']) ? trim($csv_row['game_term']) : $summergame_settings->get('summergame_current_game_term'),
+        'game_term' => $game_term,
         'everlasting' => isset($csv_row['everlasting']) ? $csv_row['everlasting'] : 0,
         'link' => isset($csv_row['link']) ? $csv_row['link'] : '',
       ];

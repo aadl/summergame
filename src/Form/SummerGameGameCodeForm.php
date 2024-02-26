@@ -27,7 +27,9 @@ class SummerGameGameCodeForm extends FormBase {
     $db = \Drupal::database();
     $code_id = (int) $code_id;
 
-    $form = [];
+    $form = [
+      '#attributes' => ['class' => 'form-width-exception']
+    ];
 
     if ($code_id) {
       $game_code = $db->query("SELECT * FROM sg_game_codes WHERE code_id = $code_id")->fetchAssoc();
@@ -136,6 +138,22 @@ class SummerGameGameCodeForm extends FormBase {
       ],
       '#description' => t('Number of players who can receive points for this award'),
     ];
+    $form['sequence_num'] = [
+      '#type' => 'textfield',
+      '#title' => t('Sequence Number'),
+      '#default_value' => $game_code['sequence_num'],
+      '#size' => 8,
+      '#maxlength' => 3,
+      '#description' => t('Number of this code if part of a sequence (will be displayed on messages and signs)'),
+    ];
+    $form['sequence_total'] = [
+      '#type' => 'textfield',
+      '#title' => t('Sequence Total'),
+      '#default_value' => $game_code['sequence_total'],
+      '#size' => 8,
+      '#maxlength' => 3,
+      '#description' => t('Total number of codes if this code is part of a sequence (will be displayed on messages and signs)'),
+    ];
     $form['valid_start'] = [
       '#type' => 'textfield',
       '#title' => t('Code Start Time Limit'),
@@ -177,7 +195,14 @@ class SummerGameGameCodeForm extends FormBase {
         '#required' => TRUE,
       ];
     }
-
+    $form['search_phrase'] = [
+      '#type' => 'textfield',
+      '#title' => t('Search Phrase'),
+      '#default_value' => $game_code['search_phrase'],
+      '#size' => 32,
+      '#maxlength' => 255,
+      '#description' => t('Catalog search phrase intended to find this code. Will be checked for duplicate phrases.'),
+    ];
     $link_description = 'Link this code to another page. Plain ID will be interpreted as catalog record ID. ' .
       'Accepted formats:<ul>' .
       '<li>nid:12345</li>' .
@@ -226,15 +251,30 @@ class SummerGameGameCodeForm extends FormBase {
    * {@inheritdoc}
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
+    $db = \Drupal::database();
+
     // Remove non-alphanumerics from Game Code text
     $text = preg_replace('/[^A-Za-z0-9]/', '', $form_state->getValue('text'));
+    $game_term = $form_state->getValue('game_term');
+    $code_id = $form_state->getValue('code_id');
 
     // Check whether new game code is unique
-    if (!$form_state->getValue('code_id')) {
-      $db = \Drupal::database();
-      $code = $db->query("SELECT code_id FROM sg_game_codes WHERE text LIKE :text", [':text' => $text])->fetchObject();
-      if ($code->code_id) {
-        $form_state->setErrorByName('text', 'Code text is already in use. Please select another code.');
+    if (!$code_id) {
+      $code = $db->query("SELECT code_id FROM sg_game_codes WHERE text LIKE :text AND game_term LIKE :game_term",
+                         [':text' => $text, ':game_term' => $game_term])->fetchObject();
+      if (isset($code->code_id)) {
+        $form_state->setErrorByName('text', 'Code text is already in use for this game term. Please select another code.');
+      }
+    }
+
+    // Check if search phrase is unique
+    $search_phrase = strtolower(trim($form_state->getValue('search_phrase')));
+    if ($search_phrase) {
+      $code = $db->query("SELECT code_id FROM sg_game_codes WHERE search_phrase LIKE :search_phrase AND game_term LIKE :game_term",
+                         [':search_phrase' => $search_phrase, ':game_term' => $game_term])->fetchObject();
+      if (isset($code->code_id) && ($code->code_id != $code_id)) {
+        $form_state->setErrorByName('search_phrase', "Search phrase is already in use for this game term by Code ID $code->code_id. " .
+                                                     "Please consider another search phrase/record for this code.");
       }
     }
 
@@ -246,6 +286,7 @@ class SummerGameGameCodeForm extends FormBase {
     // Update form_state fields
     $form_state->setValue('text', $text);
     $form_state->setValue('points', $points);
+    $form_state->setValue('search_phrase', $search_phrase);
   }
 
   /**
@@ -270,6 +311,9 @@ class SummerGameGameCodeForm extends FormBase {
       'game_term' => trim($form_state->getValue('game_term')),
       'everlasting' => $form_state->getValue('everlasting'),
       'link' => trim($form_state->getValue('link')),
+      'search_phrase' => $form_state->getValue('search_phrase'),
+      'sequence_num' => $form_state->getValue('sequence_num'),
+      'sequence_total' => $form_state->getValue('sequence_total'),
     ];
 
     // reformat link text if node url or catalog url to id format

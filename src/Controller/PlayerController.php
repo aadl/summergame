@@ -588,7 +588,8 @@ class PlayerController extends ControllerBase {
           }
           else {
             // Check if there is a hint for this game code
-            $hint_row = $db->query("SELECT hint FROM sg_game_codes WHERE text = :text", [ ':text' => $matches[1]])->fetch();
+            $hint_row = $db->query("SELECT hint FROM sg_game_codes WHERE text = :text AND game_term = :game_term",
+                                  [':text' => $matches[1], ':game_term' => $row['game_term']])->fetch();
             if ($hint_row->hint) {
               $row['description'] = $hint_row->hint;
             }

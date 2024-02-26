@@ -799,7 +799,12 @@ FBL;
 
           // Set Series info if not set yet
           if (!isset($badges[$term_id])) {
-            $series_info = explode("\n", strip_tags($term->get('description')->value));
+            if (isset($term->get('description')->value)) {
+              $series_info = explode("\n", strip_tags($term->get('description')->value));
+            }
+            else {
+              $series_info = '';
+            }
             $series_level = (int) ($series_info[2] ?? 1); // default to series level 1
             switch ($series_level) {
               case 2:

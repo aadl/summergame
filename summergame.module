@@ -4,7 +4,9 @@ use Drupal\user\Entity\User;
 use Drupal\file\Entity\File;
 use PHPOnCouch\CouchClient;
 use Predis\Client;
-use \Drupal\node\Entity\Node;
+use Drupal\node\Entity\Node;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Form\FormStateInterface;
 
 function summergame_leaderboard_update() {
   $summergame_settings = \Drupal::config('summergame.settings');
@@ -267,6 +269,32 @@ function summergame_entity_storage_load(array $entities, $entity_type) {
         $entity->gamecodes[$game_term][] = $game_code;
       }
     }
+  }
+}
+
+/**
+ * HOOK: strip whitespace and copy formula for badge nodes on presave.
+ */
+function summergame_entity_presave(EntityInterface $node) {
+  if ($node->bundle() == 'sg_badge') {
+    // Trim leading and trailing whitespace on each line and concatonate into a single line formula
+    $formula = '';
+    $formula_lines = explode("\n", $node->get('field_badge_formula_long')->value);
+    foreach ($formula_lines as $formula_line) {
+      $formula .= trim($formula_line);
+    }
+    // Set field_badge_formula as cleaned up version
+    $node->set('field_badge_formula', $formula);
+  }
+}
+
+/**
+ * FORM ALTER: alter the Badge edit form
+ */
+function summergame_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  if ($form_id == 'node_sg_badge_form' || $form_id == 'node_sg_badge_edit_form') {
+    // set the field_badge_formula field to disabled
+    $form['field_badge_formula']['widget'][0]['value']['#attributes']['disabled'] = TRUE;
   }
 }
 
@@ -972,8 +1000,9 @@ function summergame_redeem_code($player, $code_text) {
   // Remove non-alphanumerics from Game Code text and convert to upper case
   $code_text = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $code_text));
 
-  // Check for Game Code
-  $code = $db->query("SELECT * FROM sg_game_codes WHERE text = :text", [':text' => $code_text])->fetchObject();
+  // Check for Game Code (limit to the latest one when text is reused)
+  $code = $db->query("SELECT * FROM sg_game_codes WHERE text = :text ORDER BY created DESC LIMIT 1",
+                      [':text' => $code_text])->fetchObject();
   if ($code->code_id) {
     // Existing code
     $now = time();
@@ -990,8 +1019,9 @@ function summergame_redeem_code($player, $code_text) {
     }
     else {
       // check if player has already redeemed this code
-      $existing = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND metadata LIKE :metadata",
-                            [':pid' => $player['pid'], ':metadata' => 'gamecode:' . $code->text])->fetchObject();
+      $existing = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND metadata LIKE :metadata AND game_term = :game_term",
+                            [':pid' => $player['pid'], ':metadata' => 'gamecode:' . $code->text, ':game_term' => $code->game_term])
+                            ->fetchObject();
       if (isset($existing->lid)) {
         $existing_date = date('F j, Y, g:i a', $existing->timestamp);
         return ['error' => "Code \"$code->text\" already redeemed on $existing_date"];
@@ -1474,13 +1504,14 @@ function summergame_players_merge($pid1, $pid2) {
   $res = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND metadata LIKE '%gamecode:%'", [':pid' => $pid1]);
   while ($row = $res->fetchAssoc()) {
     if (preg_match('/gamecode:([\w]+)/', $row['metadata'], $matches)) {
-      $duplicate_codes[] = $matches[1];
+      $duplicate_codes[] = [$matches[1], $row['game_term']];
     }
   }
   if (count($duplicate_codes)) {
     foreach ($duplicate_codes as $duplicate) {
-      $metadata = "%gamecode:$duplicate%";
-      $db->query("DELETE FROM sg_ledger WHERE pid = :pid AND metadata like :metadata", [':pid' => $pid2, ':metadata' => $metadata]);
+      $metadata = '%gamecode:' . $duplicate[0] . '%';
+      $db->query("DELETE FROM sg_ledger WHERE pid = :pid AND metadata LIKE :metadata AND game_term = :game_term",
+                 [':pid' => $pid2, ':metadata' => $metadata, ':game_term' => $duplicate[1]]);
     }
   }
 
