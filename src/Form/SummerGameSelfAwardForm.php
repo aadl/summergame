@@ -52,9 +52,9 @@ class SummerGameSelfAwardForm extends FormBase {
     }
 */
 
-    $form = [
-      '#attributes' => ['class' => 'form-width-exception']
-    ];
+    $form = [];
+    $form['#attributes'] = ['class' => 'form-width-exception'];
+    $form['#attached']['library'][] = 'summergame/summergame-lib';
     $form['pid'] = [
       '#type' => 'value',
       '#value' => $player['pid'],
@@ -62,6 +62,10 @@ class SummerGameSelfAwardForm extends FormBase {
     $form['bid'] = [
       '#type' => 'value',
       '#value' => $bid,
+    ];
+    $form['tasks'] = [
+      '#type' => 'value',
+      '#value' => $tasks,
     ];
     $form['game_term'] = [
       '#type' => 'value',
@@ -72,6 +76,13 @@ class SummerGameSelfAwardForm extends FormBase {
     $form['tasks']['tasks_table_start']['#markup'] = "<table><tr><th>Task progress for $playername</th><th>Completed</th></tr>";
 
     foreach ($tasks as $i => $task) {
+      // search for link path
+      if (preg_match('/{(.*)}/', $task, $matches)) {
+        // remove path string & add link code
+        $task = str_replace($matches[0], '', $task);
+        $task = '<a href="' . $matches[1] . '" target="_blank">' . $task . '</a>';
+      }
+
       $row_prefix = "<tr><td>$task</td><td>";
       $row_suffix = '</td></tr>';
 
@@ -79,9 +90,10 @@ class SummerGameSelfAwardForm extends FormBase {
       $completed = $db->query("SELECT COUNT(lid) AS completed FROM `sg_ledger` WHERE `pid` = $pid AND metadata LIKE '%badgetask:$bid,$i%'")->fetchField();
       if ($completed) {
         $form['tasks']['completed-' . $i] = [
-          '#type' => 'item',
+          '#type' => 'button',
+          '#disabled' => TRUE,
           '#prefix' => $row_prefix,
-          '#markup' => 'COMPLETED: Task ' . $i + 1,
+          '#value' => 'COMPLETED!',
           '#suffix' => $row_suffix,
         ];
       }
@@ -89,7 +101,8 @@ class SummerGameSelfAwardForm extends FormBase {
         $form['tasks']['submit-' . $i] = [
           '#type' => 'submit',
           '#prefix' => $row_prefix,
-          '#value' => t('Task ' . $i + 1 . ' Completed'),
+          '#name' => 'submit-' . $i,
+          '#value' => t('I did this!'),
           '#suffix' => $row_suffix,
         ];
       }
@@ -121,10 +134,10 @@ class SummerGameSelfAwardForm extends FormBase {
     $game_term = $form_state->getValue('game_term');
     $te = $form_state->getTriggeringElement();
     $task_id = str_replace('edit-submit-', '', $te['#id']);
-    $task_description = $te['#value'];
+    $task_description = $form_state->getValue('tasks')[$task_id];
 
     summergame_player_points($pid, 0, 'Badge Task', $task_description, "badgetask:$bid,$task_id", $game_term);
-    \Drupal::messenger()->addMessage('Completed Task ' . $task_id + 1);
+    \Drupal::messenger()->addMessage('Completed Task: ' . $task_description);
 
     return;
   }

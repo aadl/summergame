@@ -1,3 +1,7 @@
-#summergame-admin-page #summergame-player-search-form {
-
+#summergame-self-award-form .button {
+  width: 100%;
+}
+#summergame-self-award-form .button[disabled] {
+  color: #1f4273;
+  background-color: #e5edf8;
 }
