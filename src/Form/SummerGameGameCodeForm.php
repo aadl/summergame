@@ -312,8 +312,8 @@ class SummerGameGameCodeForm extends FormBase {
       'everlasting' => $form_state->getValue('everlasting'),
       'link' => trim($form_state->getValue('link')),
       'search_phrase' => $form_state->getValue('search_phrase'),
-      'sequence_num' => $form_state->getValue('sequence_num'),
-      'sequence_total' => $form_state->getValue('sequence_total'),
+      'sequence_num' => (int) $form_state->getValue('sequence_num'),
+      'sequence_total' => (int) $form_state->getValue('sequence_total'),
     ];
 
     // reformat link text if node url or catalog url to id format
