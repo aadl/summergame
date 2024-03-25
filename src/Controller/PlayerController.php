@@ -658,7 +658,6 @@ class PlayerController extends ControllerBase {
     $session = \Drupal::request()->getSession();
     $recently_viewed_badges = $session->get('recently_viewed_badges');
     $resp = json_decode("{}");
-    $resp->data = [];
 
     foreach($recently_viewed_badges as $key=>$value){
 
