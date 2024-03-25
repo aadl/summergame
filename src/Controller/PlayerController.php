@@ -9,6 +9,10 @@ use Drupal\user\Entity\User;
 use Drupal\node\Entity\Node;
 use Drupal\Core\Controller\ControllerBase;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+
+use Drupal\summergame\Helper\BadgeRenderer;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Drupal\Component\Serialization\Json;
 //use Drupal\Core\Database\Database;
 //use Drupal\Core\Url;
 
@@ -649,4 +653,69 @@ class PlayerController extends ControllerBase {
       ]
     ];
   }
+
+  public function getRecentBadges() {
+
+    $session = \Drupal::request()->getSession();
+    $recently_viewed_badges = $session->get('recently_viewed_badges');
+    $resp = json_decode("{}");
+    $resp->data = [];
+
+    foreach($recently_viewed_badges as $key=>$value){
+
+      $node = \Drupal::entityTypeManager()->getStorage('node')->load($key);
+
+      $badgeData = array();
+      $badgeData['node'] = $node;
+      $badgeData['logged_in'] = \Drupal::currentUser()->isAuthenticated();
+      $badgeData = BadgeRenderer::abstractSGBadgeRender($badgeData);
+      $token_service = \Drupal::token();
+      $body_field_data = $node->get('body')->value;
+
+      $token_data = array(
+          'node' => $node,
+      );
+      $token_options = ['clear' => TRUE];
+      $badgeData["node"]=$node;
+      $badgeData["nid"]=$node->get('nid')->value;
+      $badgeData["title"]=$node->get('title')->value;
+      $badgeData["body"]= $token_service->replace($body_field_data, $token_data, $token_options);
+      $badgeData["created_raw"]= $node->get('created')->value;
+
+      if (isset($badgeData['node']->body)) {
+        $badgeData['parsed_body'] = [
+          '#type' => 'processed_text',
+          '#text' => $token_service->replace($badgeData['node']->body->value),
+          '#format' => $badgeData['node']->body->format,
+        ];
+
+        if (isset($badgeData['content']['body'][0]['#text'])) {
+          $badgeData['content']['body'][0]['#text'] = $badgeData['parsed_body']['#text'];
+        }
+      }
+
+      $renderArray = array(
+        "badge"=>$badgeData,
+        "node"=>$badgeData["node"],
+        "badge_url"=>$badgeData["node"]->toUrl()->setAbsolute()->toString()
+      );
+
+      $module_path = \Drupal::service('module_handler')->getModule('summergame')->getpath();
+      $html = $this->renderTwig($module_path."/templates/sg-badge-display-embed.html.twig",  $renderArray);
+      $resp->html[$key] = $html;
+      $resp->data[$key] = $badgeData;
+    }
+    $response = new JsonResponse($resp, 200);
+    return $response;
+  }
+
+  private function renderTwig($template_file, array $variables){
+    $renderArray = [
+      '#type'     => 'inline_template',
+      '#template' => \file_get_contents($template_file),
+      '#context'  => $variables,
+    ];
+    return (string) \Drupal::service('renderer')->renderPlain($renderArray);
+  }
+
 }
