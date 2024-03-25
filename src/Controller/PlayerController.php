@@ -9,7 +9,6 @@ use Drupal\user\Entity\User;
 use Drupal\node\Entity\Node;
 use Drupal\Core\Controller\ControllerBase;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-
 use Drupal\summergame\Helper\BadgeRenderer;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Drupal\Component\Serialization\Json;
