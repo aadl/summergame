@@ -702,7 +702,6 @@ class PlayerController extends ControllerBase {
       $module_path = \Drupal::service('module_handler')->getModule('summergame')->getpath();
       $html = $this->renderTwig($module_path."/templates/sg-badge-display-embed.html.twig",  $renderArray);
       $resp->html[$key] = $html;
-      $resp->data[$key] = $badgeData;
     }
     $response = new JsonResponse($resp, 200);
     return $response;
