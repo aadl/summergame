@@ -248,6 +248,12 @@ function summergame_theme() {
         'leaderboard_timestamp' => NULL,
         'leaderboard' => NULL,
       ]
+    ],
+    'summergame_player_external_redeem' => [
+      'variables' => [
+        'players' => NULL,
+        'uid' => NULL,
+      ]
     ]
   ];
 }

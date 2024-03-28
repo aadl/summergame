@@ -38,14 +38,13 @@ class ConnectionController extends PlayerController
 				'max-age' => 0, // Don't cache, always get fresh data
 			],
 			'#theme' => 'summergame_player_external_redeem',
+			'#uid' => $uid,
 			'#players' => $players,
 		];
 	}
-	public function connect($pid)
+	public function connect($uid)
 	{
 		$shelveItKey = \Drupal::config('summergame.settings')->get('summergame_shelveit_key');
-		$db = \Drupal::database();
-		$result = $db->query('SELECT * FROM sg_players WHERE pid = ' . (int) $pid)->fetch();
-		return new TrustedRedirectResponse('http://shelve-it.aadldev.test/connect?pid=' . $pid . '&nickname=' . $result->nickname . '&key=' . $shelveItKey);
+		return new TrustedRedirectResponse('http://shelve-it.aadldev.test/connect?uid=' . $uid . '&key=' . $shelveItKey);
 	}
 }

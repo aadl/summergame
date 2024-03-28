@@ -323,7 +323,7 @@ summergame.shelveit.connect:
   requirements:
     _permission: 'access summergame'
 summergame.shelveit.connect_process:
-  path: '/summergame/shelveit/connect/{pid}'
+  path: '/summergame/shelveit/connect/{uid}'
   defaults:
     _controller: '\Drupal\summergame\Controller\ConnectionController:connect'
     _title: 'Summer Game Account Connection'

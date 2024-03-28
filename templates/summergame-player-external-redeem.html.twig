@@ -1,17 +1,16 @@
 <div id="summergame-admin-page">
   <h1>Connect Shelve It to player account</h1>
-  <p>Earn Summer Game points as you complete the daily puzzle by connecting your player account</p>
+  <p>Earn Summer Game points as you complete the daily puzzle by connecting your player accounts. You may switch between accounts in the game.</p>
  {% if players|length > 0 %}
+ <a class="button" href="/summergame/shelveit/connect/{{uid}}">Connect</a>
   <table class="not-fixed-table smaller-font">
 	<thead>
-		<th>Player Account</th>
-		<th></th>
+		<th>Player Accounts</th>
 	</thead>
 	<tbody>
 	 {% for player in players %}
 		<tr>
-			<td><h2>{{player.nickname}}<h2></td>
-			<td><strong><a href="/summergame/shelveit/connect/{{player.pid}}">Connect</a><strong></td>
+			<td>{{player.nickname ? player.nickname : player.name}}</td>
 		</tr>
 	{% endfor %}
 	</tbody>
