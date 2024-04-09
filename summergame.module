@@ -1041,8 +1041,8 @@ function summergame_redeem_code($player, $code_text) {
     $result = ['success' => $message];
 
     // Look for Clue trigger
-    $gc = $db->query('SELECT * FROM sg_game_codes WHERE clue_trigger = :code_text',
-                     [':code_text' => $code->text])->fetchObject();
+    $gc = $db->query('SELECT * FROM sg_game_codes WHERE clue_trigger = :code_text AND game_term = :game_term',
+                     [':code_text' => $code->text, ':game_term' => $code->game_term])->fetchObject();
     if (isset($gc->code_id)) {
       $result['clue'] = $gc->clue;
     }
