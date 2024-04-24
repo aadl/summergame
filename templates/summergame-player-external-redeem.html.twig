@@ -1,8 +1,8 @@
 <div id="summergame-admin-page">
-  <h1>Connect Shelve It to player account</h1>
+  <h1>Connect Scatterlog to player account</h1>
   <p>Earn Summer Game points as you complete the daily puzzle by connecting your player accounts. You may switch between accounts in the game.</p>
  {% if players|length > 0 %}
- <a class="button" href="/summergame/shelveit/connect/{{uid}}">Connect</a>
+ <a class="button" href="/summergame/scatterlog/connect/{{uid}}">Connect</a>
   <table class="not-fixed-table smaller-font">
 	<thead>
 		<th>Player Accounts</th>
@@ -17,13 +17,13 @@
   </table>
   <div>
   <p>Need to create another player account for a household library account?</p>
-   <a class="button" href="/summergame/player/extra?shelveit=true">New Player</a>
+   <a class="button" href="/summergame/player/extra?scatterlog=true">New Player</a>
   </div>
   {% else %}
   <div>
 	<h2>No player accounts found.</h2>
-	 <p>Create a player account to earn points from completing Shelve it puzzles</p>
-	 <a class="button" href="/summergame/player/new?shelveit=true">New Player</a>
+	 <p>Create a player account to earn points from completing Scatterlog puzzles</p>
+	 <a class="button" href="/summergame/player/new?scatterlog=true">New Player</a>
 	</div>
   {% endif %}
 </div>

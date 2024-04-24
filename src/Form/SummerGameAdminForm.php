@@ -11,19 +11,22 @@ use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element;
 
-class SummerGameAdminForm extends ConfigFormBase {
+class SummerGameAdminForm extends ConfigFormBase
+{
 
   /**
    * {@inheritdoc}
    */
-  public function getFormId() {
+  public function getFormId()
+  {
     return 'summergame_admin_form';
   }
 
   /**
    * {@inheritdoc}
    */
-  public function submitForm(array &$form, FormStateInterface $form_state) {
+  public function submitForm(array &$form, FormStateInterface $form_state)
+  {
     $config = $this->config('summergame.settings');
 
     foreach (Element::children($form) as $variable) {
@@ -41,11 +44,13 @@ class SummerGameAdminForm extends ConfigFormBase {
   /**
    * {@inheritdoc}
    */
-  protected function getEditableConfigNames() {
+  protected function getEditableConfigNames()
+  {
     return ['summergame.settings'];
   }
 
-  public function buildForm(array $form, FormStateInterface $form_state) {
+  public function buildForm(array $form, FormStateInterface $form_state)
+  {
     $summergame_settings = \Drupal::config('summergame.settings');
     $form = [];
     $form['summergame_points_enabled'] = [
@@ -235,12 +240,19 @@ class SummerGameAdminForm extends ConfigFormBase {
       '#default_value' => $summergame_settings->get('summergame_homecode_report_threshold'),
       '#description' => 'Number of player reports needed to remove a Home Code from the map',
     ];
-    $form['summergame_shelveit_key'] =
+    $form['summergame_scatterlog_key'] =
       [
         '#type' => 'textfield',
-        '#title' => 'Shelve It App Key',
-        '#default_value' => $summergame_settings->get('summergame_shelveit_key'),
-        '#description' => 'Key for Shelve It session creation',
+        '#title' => 'Scatterlog App Key',
+        '#default_value' => $summergame_settings->get('summergame_scatterlog_key'),
+        '#description' => 'Key for Scatterlog session creation',
+      ];
+    $form['summergame_scatterlog_url'] =
+      [
+        '#type' => 'textfield',
+        '#title' => 'Scatterlog URL',
+        '#default_value' => $summergame_settings->get('summergame_scatterlog_url'),
+        '#description' => 'URL for scatter log',
       ];
 
     return parent::buildForm($form, $form_state);

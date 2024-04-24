@@ -24,7 +24,7 @@ class ConnectionController extends PlayerController
 	{
 		$user = \Drupal::currentUser();
 		if (!$user->isAuthenticated()) {
-			return new RedirectResponse('/user/login?destination=/summergame/shelveit/connect');
+			return new RedirectResponse('/user/login?destination=/summergame/scatterlog/connect');
 		}
 		$uid = $user->id();
 		$db = \Drupal::database();
@@ -44,7 +44,7 @@ class ConnectionController extends PlayerController
 	}
 	public function connect($uid)
 	{
-		$shelveItKey = \Drupal::config('summergame.settings')->get('summergame_shelveit_key');
-		return new TrustedRedirectResponse('http://shelve-it.aadldev.test/connect?uid=' . $uid . '&key=' . $shelveItKey);
+		$scatterlogKey = \Drupal::config('summergame.settings')->get('summergame_scatterlog_key');
+		return new TrustedRedirectResponse(\Drupal::config('summergame.settings')->get('summergame_scatterlog_url') . '/connect?uid=' . $uid . '&key=' . $scatterlogKey);
 	}
 }
