@@ -367,58 +367,34 @@ class AdminController extends ControllerBase {
         $params[':username'] = "%$search_term%";
         $new_player['name'] = $search_term;
       }
+      $sql .= ' LIMIT 101';
 
       // Run the search
-      $res = $db->query($sql, $params);
-      $res->allowRowCount = TRUE;
-      $count = $res->rowCount();
+      $matches = $db->query($sql, $params)->fetchAll();
 
-/*
-      // Rerun query with OR on terms if no results
-      if ($count == 0 && strpos($search_term, ' ') !== FALSE) {
-        $params = [];
-        $sql = "SELECT sg_players.*, users.name AS username FROM sg_players LEFT JOIN users ON sg_players.uid = users.uid WHERE (0 ";
-        foreach (explode(' ', $search_term) as $term) {
-          $sql .= "OR sg_players.name LIKE '%%%s%%' OR sg_players.nickname LIKE '%%%s%%' OR users.name LIKE '%%%s%%'";
-          $params[] = $term;
-          $params[] = $term;
-          $params[] = $term;
-        }
-        $sql .= ")";
-        $res = db_query($sql, $params);
-        $count = mysqli_num_rows($res);
-      }
-*/
-/*
-      $content .= '<div style="float: right">' .
-                  drupal_get_form('summergame_player_search_form', $search_term) .
-                  '</div>';
-      $content .= "<h2>Your search returned $count match" . ($count == 1 ? '' : 'es') . "</h2>";
-*/
-
-      if ($count == 0) {
+      if (count($matches) == 0) {
         // No matches, create a new player
         \Drupal::messenger()->addMessage("No existing players to match your search \"$search_term\". Create a new player with that information below:");
         return \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerForm'); // TODO Add new $new_player
       }
-      else if ($count > 100) {
+      else if (count($matches) > 100) {
         return [
           '#markup' => "<h2>Your search returned more than 100 matches: ($count)<h2><h3>Please search again</h3>"
         ];
       }
       else {
         // Found 1-100 matches, display them in a table
-        while ($player = $res->fetchAssoc()) {
+        foreach ($matches as $player) {
           $rows[] = [
-            'pid' => $player['pid'],
-            'RealName' => $player['name'],
-            'PlayerName' => $player['nickname'],
-            'WebUser' => ($player['uid'] ? '<a href="/user/' . $player['uid'] . '">' . $player['username'] . '</a>' : ''),
-            'Phone' => $player['phone'] ? $player['phone'] : '',
-            'AgeGroup' => $player['agegroup'],
-            'Gamecard' => $player['gamecard'],
-            'School' => $player['school'],
-            'Grade' => $player['grade'] ? $player['grade'] : '',
+            'pid' => $player->pid,
+            'RealName' => $player->name,
+            'PlayerName' => $player->nickname,
+            'WebUser' => ($player->uid ? '<a href="/user/' . $player->uid . '">' . $player->username . '</a>' : ''),
+            'Phone' => $player->phone ?? '',
+            'AgeGroup' => $player->agegroup,
+            'Gamecard' => $player->gamecard,
+            'School' => $player->school,
+            'Grade' => $player->grade ?? '',
           ];
         }
       }
