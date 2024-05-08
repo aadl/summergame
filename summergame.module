@@ -1374,10 +1374,26 @@ function summergame_player_check_badges($pid, $game_term) {
  */
 function summergame_player_award_badge($pid, $bid) {
   $db = \Drupal::database();
-  $res = $db->query('INSERT IGNORE INTO `sg_players_badges` (`pid`, `bid`, `timestamp`) VALUES (:pid, :bid, :timestamp)',
-                    [':pid' => $pid, ':bid' => $bid, ':timestamp' => time()]);
-  $res->allowRowCount = TRUE;
-  return $res->rowCount();
+  $awarded = 0;
+
+  // Check if player already has the badge
+  $existing = $db->select('sg_players_badges')
+    ->condition('pid', $pid)
+    ->condition('bid', $bid)
+    ->countQuery()
+    ->execute()
+    ->fetchField();
+
+  if (!$existing) {
+    $db->insert('sg_players_badges')->fields([
+      'pid' => $pid,
+      'bid' => $bid,
+      'timestamp' => time(),
+    ])->execute();
+    $awarded = 1;
+  }
+
+  return $awarded;
 }
 
 /**
