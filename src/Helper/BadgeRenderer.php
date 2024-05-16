@@ -247,7 +247,7 @@ class BadgeRenderer {
                                 'earned_on' => '');
 
                 // is it a game code?
-                $gc = $db->query("SELECT * FROM sg_game_codes WHERE text = :text", [':text' => $pattern])->fetch();
+                $gc = $db->query("SELECT * FROM sg_game_codes WHERE text = :text AND game_term = :game_term", [':text' => $pattern, ':game_term' => $badge->game_term])->fetch();
                 if (isset($gc->code_id)) {
                   $formula_type = ' game codes found';
                   $gc_row['game_code'] = '???????';
