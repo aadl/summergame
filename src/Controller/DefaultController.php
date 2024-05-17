@@ -701,16 +701,16 @@ FBL;
       $pdf->SetXY($lrMargin, 125);
       $pdf->Cell(0, 10, $event_points, 0, 1, 'C');
 
-    /*
-      // Description
-      $desc_Y = 192;
-      $pdf->SetFont('Quicksand-Bold', '', 13);
-      foreach ($description as $desc_line) {
-        $pdf->SetXY($pdf->lMargin, $desc_Y);
-        $pdf->Cell($page_width - 35, 7, $desc_line, 0);
-        $desc_Y -= 7;
+      // Display Sequence Number
+      if ($gamecode->sequence_num) {
+        $sequence_text = 'Code #' . $gamecode->sequence_num;
+        if ($gamecode->sequence_total) {
+          $sequence_text .= ' of ' . $gamecode->sequence_total;
+        }
+        $pdf->SetFont('Helvetica-Bold', '', 13);
+        $pdf->SetXY($lrMargin, 192);
+        $pdf->Cell($page_width - 35, 7, $sequence_text, 0);
       }
-    */
 
       // add the QR Code
       $pdf->SetXY(-50, -50);
