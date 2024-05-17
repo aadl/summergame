@@ -1031,6 +1031,15 @@ function summergame_redeem_code($player, $code_text) {
       $code->game_term = $code->game_term_override;
     }
 
+    // Add sequence number to description
+    if ($code->sequence_num) {
+      $code->description .= ' (' . $code->sequence_num;
+      if ($code->sequence_total) {
+        $code->description .= '/' . $code->sequence_total;
+      }
+      $code->description .= ')';
+    }
+
     $points = summergame_player_points($player['pid'], $code->points, 'Game Code', $code->description, 'gamecode:' . $code->text, $code->game_term);
     $message = ($player['nickname'] ? $player['nickname'] : $player['name']) .
                " redeemed code \"$code->text\" for $points $code->game_term points";
