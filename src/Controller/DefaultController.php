@@ -665,8 +665,8 @@ FBL;
       $description = array_reverse(explode("\n", wordwrap($description, 100)));
 
       $code_link = Url::fromRoute('summergame.player.gamecode',
-                                               ['pid' => 0, 'text' => $event_code],
-                                               ['absolute' => TRUE])->toString();
+                                  ['pid' => 0, 'text' => $event_code],
+                                  ['absolute' => TRUE])->toString();
 
       $qrcode = 'http://qrickit.com/api/qr?d=' . //'http://api.qrserver.com/v1/create-qr-code/?data=' .
                 urlencode($code_link);
@@ -707,7 +707,7 @@ FBL;
         if ($gamecode->sequence_total) {
           $sequence_text .= ' of ' . $gamecode->sequence_total;
         }
-        $pdf->SetFont('Helvetica-Bold', '', 13);
+        $pdf->SetFont('Helvetica-Bold', '', 20);
         $pdf->SetXY($lrMargin, 192);
         $pdf->Cell($page_width - 35, 7, $sequence_text, 0);
       }
