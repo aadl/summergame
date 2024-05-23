@@ -1,8 +1,10 @@
+{% if viewing_access %}
+<h1 class="t-center ruled-heading large-heading">
+  <span>Badge List{% if player.pid %} For {{ player.nickname ? player.nickname : player.name }}{% endif %}</span>
+</h1>
+{% endif %}
 <div class="sidebar-container">
   {% if viewing_access %}
-    <h1 class="t-center ruled-heading large-heading">
-      <span>Badge List{% if player.pid %} For {{ player.nickname ? player.nickname : player.name }}{% endif %}</span>
-    </h1>
     <div class="page-with-sidebar-content">
       {% if all_players|length > 1 %}
         <p id="badge-list-other-players">
