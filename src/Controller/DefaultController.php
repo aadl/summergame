@@ -668,8 +668,8 @@ FBL;
                                   ['pid' => 0, 'text' => $event_code],
                                   ['absolute' => TRUE])->toString();
 
-      $qrcode = 'http://qrickit.com/api/qr?d=' . //'http://api.qrserver.com/v1/create-qr-code/?data=' .
-                urlencode($code_link);
+      $qrcode = Url::fromRoute('aadl_content_management.qr_code_image', [],
+                               ['query' => ['data' => $code_link], 'absolute' => TRUE])->toString();
 
       // initiate FPDI
       $pdf = new Fpdi\Fpdi('L', 'mm', 'Letter');
