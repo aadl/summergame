@@ -97,7 +97,7 @@ class SummerGameGameCodeForm extends FormBase {
       '#default_value' => $game_code['clue_trigger'],
       '#size' => 32,
       '#maxlength' => 255,
-      '#description' => t('Game code text to trigger this clue (e.g. APPLES)'),
+      '#description' => t("Game code text to trigger this clue (e.g. APPLES) <strong>Don't use for 2024 badges unless needed</strong>"),
     ];
     $form['hint'] = [
       '#type' => 'textarea',
