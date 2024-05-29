@@ -1042,7 +1042,7 @@ function summergame_redeem_code($player, $code_text) {
                       "ORDER BY bid DESC LIMIT 1",
                       [':game_term' => $code->game_term, ':code_text' => "%$code->text%"])->fetchObject();
     if (isset($res->bid)) {
-      $code->description .= " Part of the $res->title badge.";
+      $code->description .= " (Part of the $res->title badge.)";
     }
 
     // Add sequence number to description
