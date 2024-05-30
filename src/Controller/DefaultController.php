@@ -372,6 +372,21 @@ We don't have all the details yet, but we'll reuse the signs for the 2023 game, 
         }
       }
 
+      // Bizcodes Data
+      $bizcodes = [];
+      $res = $db->query("SELECT * FROM sg_game_codes WHERE game_term = :game_term AND clue LIKE '%\"bizcode\"%'",
+                        [':game_term' => $game_term]);
+      while ($game_code = $res->fetchObject()) {
+        $geocode_data = json_decode($game_code->clue);
+
+        // Add game code data to geocode data
+        $geocode_data->code_id = $game_code->code_id;
+        $geocode_data->created = $game_code->created;
+        $geocode_data->num_redemptions = $game_code->num_redemptions;
+
+        $bizcodes[] = $geocode_data;
+      }
+
       // Badges Data
       $badges = [];
       $nids = \Drupal::entityQuery('node')
@@ -392,7 +407,7 @@ We don't have all the details yet, but we'll reuse the signs for the 2023 game, 
         ];
       }
     }
-    return new JsonResponse(['homecodes' => $homecodes, 'badges' => $badges]);
+    return new JsonResponse(['homecodes' => $homecodes, 'bizcodes' => $bizcodes, 'badges' => $badges]);
   }
 /*
   public function badge() {
