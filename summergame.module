@@ -449,6 +449,31 @@ function summergame_twilio_respond($incoming) {
             $responses[] = $response;
           }
         }
+
+        // Add any drupal messages that may have been set (badge awarding, limits)
+        $messages = \Drupal::messenger()->all();
+        if (isset($messages['status'])) {
+          foreach ($messages['status'] as $message) {
+            $response = $response_template;
+            $response['text'] = $message;
+            $responses[] = $response;
+          }
+        }
+        if (isset($messages['warning'])) {
+          foreach ($messages['warning'] as $message) {
+            $response = $response_template;
+            $response['text'] = 'WARNING: ' . $message;
+            $responses[] = $response;
+          }
+        }
+        if (isset($messages['error'])) {
+          foreach ($messages['error'] as $message) {
+            $response = $response_template;
+            $response['text'] = 'ERROR: ' . $message;
+            $responses[] = $response;
+          }
+        }
+
 /* No Do or Diag mode for now
         if (variable_get('summergame_dod_enabled', FALSE)) {
           if ($status['success']) {
