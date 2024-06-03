@@ -1,0 +1,29 @@
+<div id="summergame-admin-page">
+  <h1>Connect Scatterlog to player account</h1>
+  <p>Earn Summer Game points as you complete the daily puzzle by connecting your player accounts. You may switch between accounts in the game.</p>
+ {% if players|length > 0 %}
+ <a class="button" href="/summergame/scatterlog/connect/{{uid}}">Connect</a>
+  <table class="not-fixed-table smaller-font">
+	<thead>
+		<th>Player Accounts</th>
+	</thead>
+	<tbody>
+	 {% for player in players %}
+		<tr>
+			<td>{{player.nickname ? player.nickname : player.name}}</td>
+		</tr>
+	{% endfor %}
+	</tbody>
+  </table>
+  <div>
+  <p>Need to create another player account for a household library account?</p>
+   <a class="button" href="/summergame/player/extra?scatterlog=true">New Player</a>
+  </div>
+  {% else %}
+  <div>
+	<h2>No player accounts found.</h2>
+	 <p>Create a player account to earn points from completing Scatterlog puzzles</p>
+	 <a class="button" href="/summergame/player/new?scatterlog=true">New Player</a>
+	</div>
+  {% endif %}
+</div>
