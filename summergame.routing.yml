@@ -329,3 +329,10 @@ summergame.scatterlog.connect_process:
     _title: 'Summer Game Account Connection'
   requirements:
     _permission: 'access summergame'
+summergame.recent.badges:
+  path: '/summergame/recent-badges'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\PlayerController::getRecentBadges'
+    _title: 'Summer Game Recent Badges'
+  requirements:
+    _permission: 'access summergame'

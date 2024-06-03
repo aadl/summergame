@@ -372,6 +372,21 @@ We don't have all the details yet, but we'll reuse the signs for the 2023 game, 
         }
       }
 
+      // Bizcodes Data
+      $bizcodes = [];
+      $res = $db->query("SELECT * FROM sg_game_codes WHERE game_term = :game_term AND clue LIKE '%\"bizcode\"%'",
+                        [':game_term' => $game_term]);
+      while ($game_code = $res->fetchObject()) {
+        $geocode_data = json_decode($game_code->clue);
+
+        // Add game code data to geocode data
+        $geocode_data->code_id = $game_code->code_id;
+        $geocode_data->created = $game_code->created;
+        $geocode_data->num_redemptions = $game_code->num_redemptions;
+
+        $bizcodes[] = $geocode_data;
+      }
+
       // Badges Data
       $badges = [];
       $nids = \Drupal::entityQuery('node')
@@ -392,7 +407,7 @@ We don't have all the details yet, but we'll reuse the signs for the 2023 game, 
         ];
       }
     }
-    return new JsonResponse(['homecodes' => $homecodes, 'badges' => $badges]);
+    return new JsonResponse(['homecodes' => $homecodes, 'bizcodes' => $bizcodes, 'badges' => $badges]);
   }
 /*
   public function badge() {
@@ -665,11 +680,11 @@ FBL;
       $description = array_reverse(explode("\n", wordwrap($description, 100)));
 
       $code_link = Url::fromRoute('summergame.player.gamecode',
-                                               ['pid' => 0, 'text' => $event_code],
-                                               ['absolute' => TRUE])->toString();
+                                  ['pid' => 0, 'text' => $event_code],
+                                  ['absolute' => TRUE])->toString();
 
-      $qrcode = 'http://qrickit.com/api/qr?d=' . //'http://api.qrserver.com/v1/create-qr-code/?data=' .
-                urlencode($code_link);
+      $qrcode = Url::fromRoute('aadl_content_management.qr_code_image', [],
+                               ['query' => ['data' => $code_link], 'absolute' => TRUE])->toString();
 
       // initiate FPDI
       $pdf = new Fpdi\Fpdi('L', 'mm', 'Letter');
@@ -701,16 +716,16 @@ FBL;
       $pdf->SetXY($lrMargin, 125);
       $pdf->Cell(0, 10, $event_points, 0, 1, 'C');
 
-    /*
-      // Description
-      $desc_Y = 192;
-      $pdf->SetFont('Quicksand-Bold', '', 13);
-      foreach ($description as $desc_line) {
-        $pdf->SetXY($pdf->lMargin, $desc_Y);
-        $pdf->Cell($page_width - 35, 7, $desc_line, 0);
-        $desc_Y -= 7;
+      // Display Sequence Number
+      if ($gamecode->sequence_num) {
+        $sequence_text = 'Code #' . $gamecode->sequence_num;
+        if ($gamecode->sequence_total) {
+          $sequence_text .= ' of ' . $gamecode->sequence_total;
+        }
+        $pdf->SetFont('Helvetica-Bold', '', 20);
+        $pdf->SetXY($lrMargin, 192);
+        $pdf->Cell($page_width - 35, 7, $sequence_text, 0);
       }
-    */
 
       // add the QR Code
       $pdf->SetXY(-50, -50);
@@ -799,7 +814,12 @@ FBL;
 
           // Set Series info if not set yet
           if (!isset($badges[$term_id])) {
-            $series_info = explode("\n", strip_tags($term->get('description')->value));
+            if (isset($term->get('description')->value)) {
+              $series_info = explode("\n", strip_tags($term->get('description')->value));
+            }
+            else {
+              $series_info = '';
+            }
             $series_level = (int) ($series_info[2] ?? 1); // default to series level 1
             switch ($series_level) {
               case 2:

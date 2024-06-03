@@ -2,6 +2,7 @@
   // Build marker layers
   var badgeLayerGroup = new L.layerGroup();
   var branchLayerGroup = new L.layerGroup();
+  var bizcodeLayerGroup = new L.layerGroup();
   // var heatmapLayerGroup = new L.layerGroup();
   var homecodeLayerGroup = new L.layerGroup();
   var homecodeLayerGroupA = new L.layerGroup();
@@ -13,7 +14,7 @@
   var myMap = L.map('mapid', {
       center: [42.2781734, -83.74570792114082],
       zoom: 13,
-      layers: [badgeLayerGroup, branchLayerGroup, homecodeLayerGroup, homecodeLayerGroupA, homecodeLayerGroupB, homecodeLayerGroupC, homecodeLayerGroupD, homecodeLayerGroupE]
+      layers: [badgeLayerGroup, branchLayerGroup, bizcodeLayerGroup, homecodeLayerGroup, homecodeLayerGroupA, homecodeLayerGroupB, homecodeLayerGroupC, homecodeLayerGroupD, homecodeLayerGroupE]
   });
 
   var redIcon = new L.Icon({
@@ -143,6 +144,11 @@
         L.marker([element.lat, element.lon], {icon: badgeIcon}).bindPopup(element.popup).addTo(badgeLayerGroup);
       });
 
+      // Add Bizcodes
+      $.each(data.bizcodes, function(index, element) {
+        L.marker([element.lat, element.lon], {icon: redIcon}).bindPopup(element.bizcode).addTo(bizcodeLayerGroup);
+      });
+
       // Loop through homecode data and create markers
       $.each(data.homecodes, function(index, element) {
         if (drupalSettings.hc_points_enabled) {
@@ -213,6 +219,7 @@
   // Add layers to map
   var overlayMaps = {
     "Branches <img src=\"https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-violet.png\" height=\"15px\">": branchLayerGroup,
+    "Business Codes <img src=\"https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png\" height=\"15px\">": bizcodeLayerGroup,
     "Lawn Codes": homecodeLayerGroup,
     "< 3 days old <img src=\"https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png\" height=\"15px\">": homecodeLayerGroupA,
     "< 7 days old <img src=\"https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png\" height=\"15px\">": homecodeLayerGroupB,

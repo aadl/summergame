@@ -1,0 +1,54 @@
+
+
+<article>
+        <h1 class="no-margin">{{ badge.hide_badge ? 'Hidden Badge' : badge_node.title.value }}</h1>
+        
+        {% if badge.hide_badge %}
+          <p>This badge is hidden and needs another action to unlock it.</p>
+        {% else %}
+          <p>{{ badge.parsed_body }}</p>
+          <div id="badge-progress">
+            <p>{{ badge.badge_awards }}</p>
+            {% if badge.logged_in %}
+              <p>
+                {{ badge.badge_progress|raw }}
+                {% if badge.gc_rows %}
+                  <table id="gc_rows">
+                    <thead>
+                      <tr>
+                        <th>Game Code</th>
+                        <th>Description</th>
+                        <th>Earned On</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for row in badge.gc_rows %}
+                        {% if row.clue %}
+                          <tr {% if loop.index is even %}class="sg-code-row-pair"{% endif %}>
+                            <td colspan="3">
+                              {% if row.clue_unlocked %}
+                                Clue: {{ row.clue|raw }}
+                              {% else %}
+                                Clue not unlocked
+                              {% endif %}
+                            </td>
+                          </tr>
+                        {% endif %}
+                        <tr {% if loop.index is even %}class="sg-code-row-pair"{% endif %}>
+                          <td>{{ row.game_code|raw }}</td>
+                          <td>{{ row.description|raw }}</td>
+                          <td>{{ row.earned_on }}</td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                {% endif %}
+              </p>
+            {% else %}
+              <p><a href="/user/login?destination={{ path('<current>')|url_encode }}">Sign in</a> to see clues and check your progress on this badge</p>
+            {% endif %}
+          </div>
+        {% endif %}
+        
+      <a class="slideout-badge-link" href="{{ badge_url }}">Go to full badge page</a>
+  </article>
