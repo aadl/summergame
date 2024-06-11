@@ -1562,6 +1562,14 @@ function summergame_players_merge($pid1, $pid2) {
   $p1 = summergame_player_load(['pid' => $pid1]);
   $p2 = summergame_player_load(['pid' => $pid2]);
 
+  // Remove player 2 as active player id if set on drupal user account
+  if ($p2['uid']) {
+    $userData = \Drupal::service('user.data');
+    if ($p2['pid'] == $userData->get('summergame', $p2['uid'], 'sg_active_pid')) {
+      $userData->delete('summergame', $p2['uid'], 'sg_active_pid');
+    }
+  }
+
   // Don't check or try to update Badge IDs
   unset($p1['bids'], $p2['bids']);
 
