@@ -950,6 +950,24 @@ function summergame_get_player_log($pid, $game_term = '') {
 }
 
 /**
+ * UTILITY: Get a player's classic reading game completion status
+ */
+function summergame_get_classic_status($pid) {
+  $db = \Drupal::database();
+  $completion_gamecode = \Drupal::config('summergame.settings')->get('summergame_completion_gamecode');
+  $completed = 0;
+
+  // check if player has submitted the completion game code
+  $row = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND metadata LIKE :metadata",
+                    [':pid' => $pid, ':metadata' => "%gamecode:$completion_gamecode%"])->fetchObject();
+  if ($row->lid) {
+    $completed = $row->timestamp;
+  }
+
+  return $completed;
+}
+
+/**
  * UTILITY: Get a user's Home Code
  */
 function summergame_get_homecode($uid, $game_term = '') {
@@ -1073,7 +1091,7 @@ function summergame_redeem_code($player, $code_text) {
                       "ORDER BY bid DESC LIMIT 1",
                       [':game_term' => $code->game_term, ':code_text' => "%$code->text%"])->fetchObject();
     if (isset($res->bid)) {
-      $code->description .= " (Part of the $res->title badge.)";
+      $code->description .= " [Part of the $res->title badge.]";
     }
 
     // Add sequence number to description
@@ -1195,6 +1213,12 @@ function summergame_player_points($pid, $points, $type, $description = '', $meta
   // Remove extended characters from description field
   $description = preg_replace('/[^(\x20-\x7F)]*/','', $description);
 
+  // Adjust timestamp as needed
+  $timestamp = time();
+  if (preg_match('/time_adjust:(-?\d+)/', $metadata, $matches)) {
+    $timestamp += (int) $matches[1];
+  }
+
   $db->insert('sg_ledger')->fields([
     'pid' => $pid,
     'points' => $points,
@@ -1202,7 +1226,7 @@ function summergame_player_points($pid, $points, $type, $description = '', $meta
     'metadata' => $metadata,
     'description' => $description,
     'game_term' => $game_term,
-    'timestamp' => time(),
+    'timestamp' => $timestamp,
   ])->execute();
 
   // Check if the new points affect any badges
