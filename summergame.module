@@ -1032,6 +1032,7 @@ function summergame_player_delete($player_info) {
 function summergame_redeem_code($player, $code_text) {
   $db = \Drupal::database();
   $config = \Drupal::config('summergame.settings');
+  $result = [];
 
   // Remove non-alphanumerics from Game Code text and convert to upper case
   $code_text = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $code_text));
@@ -1092,6 +1093,7 @@ function summergame_redeem_code($player, $code_text) {
                       [':game_term' => $code->game_term, ':code_text' => "%$code->text%"])->fetchObject();
     if (isset($res->bid)) {
       $code->description .= " [Part of the $res->title badge.]";
+      $result['bid'] = $res->bid;
     }
 
     // Add sequence number to description
@@ -1110,7 +1112,7 @@ function summergame_redeem_code($player, $code_text) {
       $message .= ': ' . $code->description;
     }
 
-    $result = ['success' => $message];
+    $result['success'] = $message;
 
     // Look for Clue trigger
     $gc = $db->query('SELECT * FROM sg_game_codes WHERE clue_trigger = :code_text AND game_term = :game_term',
