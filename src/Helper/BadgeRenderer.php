@@ -27,7 +27,7 @@ class BadgeRenderer {
       $variables['badge_level'] = "⭐️⭐️⭐️ Super Tricky";
       break;
     case 4:
-        $variables['badge_level'] = "⭐️⭐️⭐️⭐️ Ambitious";
+        $variables['badge_level'] = "⭐️⭐️⭐️⭐️ Extremely Tricky";
         break;
     default:
       $variables['badge_level'] = "⭐️ Standard";
