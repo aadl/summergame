@@ -36,6 +36,11 @@ class DefaultController extends ControllerBase {
     $leaderboard = summergame_get_leaderboard($type, $range, $staff);
 
     return [
+      '#attached' => [
+        'library' => [
+          'summergame/summergame-lib'
+        ]
+      ],
       '#cache' => [
         'max-age' => 0, // Don't cache, always get fresh data
       ],

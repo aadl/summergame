@@ -5,8 +5,18 @@
 #}
 
 <div id="summergame-leaderboard-page">
-  <h1>{{ total|number_format }} POINTS earned from {{ player_count|number_format }} Player{% if player_count != 1 %}s{% endif %} so far today</h1>
-  <p>The new Leaderboard updates once a day. Check back tomorrow for score updates.<p>
+  <div id="summergame-live-points">
+    {{ total|number_format }} POINTS earned from {{ player_count|number_format }} Player{% if player_count != 1 %}s{% endif %} across all games so far today
+  </div>
+
+  {% if leaderboard %}
+    <h1>{{ staff ? 'Staff ' : '' }}{{ type }}
+    {{ range == 'alltime' ? 'All Time' :
+       range == 'day' ? 'Previous Day' :
+       range == 'week' ? 'Previous Week' :
+       range }}
+    Leaderboard</h1>
+  {% endif %}
 
   <!-- FILTER TABLES -->
   <form id="sg-scores-filter-form" class="form-width-exception">
@@ -21,8 +31,8 @@
     <div class="l-inline-b">
       <label for="sg-scores-range">Scores by Time:</label>
       <select id="sg-scores-range" class="form-width-exception">
-        <option value="day"{% if range == 'day' %} selected{% endif %}>Day</option>
-        <option value="week"{% if range == 'week' %} selected{% endif %}>Week</option>
+        <option value="day"{% if range == 'day' %} selected{% endif %}>Previous Day</option>
+        <option value="week"{% if range == 'week' %} selected{% endif %}>Previous Week</option>
         <option value="alltime"{% if range == 'alltime' %} selected{% endif %}>All Time</option>
       </select>
     </div>
@@ -39,8 +49,10 @@
   </form>
 
   {% if leaderboard %}
-    <h1>{{ staff ? 'Staff ' : '' }}{{ type }} Leaderboard for {{ range }}</h1>
-    <p>Updated {{ leaderboard_timestamp|date("l, F j, Y H:i:j") }}</p>
+    <p>
+      The Leaderboard updates once a day after midnight. Check back tomorrow to see points scored today.
+      Updated {{ leaderboard_timestamp|date("l, F j, Y H:i:j") }}
+    </p>
     <table>
     <tr>
       <th>Place</th>

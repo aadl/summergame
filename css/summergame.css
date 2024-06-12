@@ -1,3 +1,8 @@
-#summergame-admin-page #summergame-player-search-form {
-
+#summergame-live-points {
+  font-size: 1.25em;
+  font-weight: bold;
+  border: 2px solid #999;
+  margin: 1em;
+  padding: 0.5em;
+  text-align: center;
 }
