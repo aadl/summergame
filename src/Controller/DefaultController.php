@@ -398,6 +398,7 @@ We don't have all the details yet, but we'll reuse the signs for the 2023 game, 
 	      ->accessCheck(FALSE)
               ->condition('type', 'sg_badge')
               ->condition('field_badge_game_term', $game_term)
+              ->condition('status', 1)
               ->exists('field_badge_coordinates')
               ->execute();
       foreach ($nids as $nid) {
