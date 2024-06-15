@@ -2,15 +2,23 @@
   <h1>Connect Scatterlog to player account</h1>
   <p>Earn Summer Game points as you complete the daily puzzle by connecting your player accounts. You may switch between accounts in the game.</p>
  {% if players|length > 0 %}
+{% if type != 'apply' %}
  <a class="button" href="/summergame/scatterlog/connect/{{uid}}">Connect</a>
+{% endif %}
   <table class="not-fixed-table smaller-font">
 	<thead>
 		<th>Player Accounts</th>
+		<th></th>
 	</thead>
 	<tbody>
 	 {% for player in players %}
 		<tr>
 			<td>{{player.nickname ? player.nickname : player.name}}</td>
+			{% if type == 'apply' %}
+			<td> <a class="button" href="/summergame/scatterlog/connect/{{uid}}?apply={{player.pid}}">Connect and Apply Points</a></td>
+			{% else %}
+			<td></td>
+			{% endif %}
 		</tr>
 	{% endfor %}
 	</tbody>

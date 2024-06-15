@@ -255,6 +255,7 @@ function summergame_theme() {
       'variables' => [
         'players' => NULL,
         'uid' => NULL,
+        'type' => NULL,
       ]
     ]
   ];
