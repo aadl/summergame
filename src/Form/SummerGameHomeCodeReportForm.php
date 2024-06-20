@@ -123,11 +123,12 @@ class SummerGameHomeCodeReportForm extends FormBase {
 
       mail($code_data->mail,
         'Your Summer Game Lawn Code has been reported',
-        "Hello there, Summer Gamer!\n" .
-        "We have received a report that a player was unable to find your Lawn Code at the following address:\n\n" .
+        "Hello there!\n" .
+        "Some Summer Game players have reached out to let us know they are having difficulty locating your Lawn Code at this address:\n\n" .
         str_replace('<br>', "\n", $geocode_data->homecode) . "\n\n" .
-        "Please make sure that your sign is displayed in an easily viewable location from the street or sidewalk.\n" .
-        "If you have any questions, please Contact Us for more information!\n\n-The Summer Game Team",
+        "Would you please check to make sure your code is written clearly and is visible from the street or sidewalk?\n" .
+        "If you didn't make a lawn code or if you have any questions, please Contact Us for more information!\n" .
+        "Thank you so much and happy playing!\n\n-The Summer Game Team",
         $headers
       );
     }
