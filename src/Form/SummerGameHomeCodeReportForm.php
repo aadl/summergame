@@ -95,6 +95,7 @@ class SummerGameHomeCodeReportForm extends FormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $db = \Drupal::database();
+    $summergame_homecode_report_threshold = \Drupal::config('summergame.settings')->get('summergame_homecode_report_threshold');
     $code_id = $form_state->getValue('code_id');
     $player = $form_state->getValue('player');
 
@@ -113,21 +114,23 @@ class SummerGameHomeCodeReportForm extends FormBase {
 
     $homecode_email = \Drupal::config('summergame.settings')->get('summergame_homecode_notify_email');
 
-    // Send email to Home Code owner
-    $headers = "From: $homecode_email" . "\r\n" .
-               "Reply-To: $homecode_email" . "\r\n" .
-               "X-Mailer: PHP/" . phpversion() .
-               "Content-Type: text/html; charset=\"us-ascii\"";
+    if (count($geocode_data->reports) >= $summergame_homecode_report_threshold) {
+      // Send email to Home Code owner
+      $headers = "From: $homecode_email" . "\r\n" .
+                "Reply-To: $homecode_email" . "\r\n" .
+                "X-Mailer: PHP/" . phpversion() .
+                "Content-Type: text/html; charset=\"us-ascii\"";
 
-    mail($code_data->mail,
-      'Your Summer Game Lawn Code has been reported',
-      "Hello there, Summer Gamer!\n" .
-      "We have received a report that a player was unable to find your Lawn Code at the following address:\n\n" .
-      str_replace('<br>', "\n", $geocode_data->homecode) . "\n\n" .
-      "Please make sure that your sign is displayed in an easily viewable location from the street or sidewalk.\n" .
-      "If you have any questions, please Contact Us for more information!\n\n-The Summer Game Team",
-      $headers
-    );
+      mail($code_data->mail,
+        'Your Summer Game Lawn Code has been reported',
+        "Hello there, Summer Gamer!\n" .
+        "We have received a report that a player was unable to find your Lawn Code at the following address:\n\n" .
+        str_replace('<br>', "\n", $geocode_data->homecode) . "\n\n" .
+        "Please make sure that your sign is displayed in an easily viewable location from the street or sidewalk.\n" .
+        "If you have any questions, please Contact Us for more information!\n\n-The Summer Game Team",
+        $headers
+      );
+    }
 
     // Send email to staff
     $reports = (array)$geocode_data->reports;
