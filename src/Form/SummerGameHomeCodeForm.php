@@ -74,8 +74,6 @@ class SummerGameHomeCodeForm extends FormBase {
         }
         else if (\Drupal::config('summergame.settings')->get('summergame_homecode_form_enabled')) {
           $form['#attached']['library'][] = 'summergame/summergame-homecode-form-lib';
-          $form['#attached']['drupalSettings']['geocode_url'] =  \Drupal::config('summergame.settings')->get('summergame_homecode_geocode_url');
-          $form['#attached']['drupalSettings']['geocode_api_key'] =  \Drupal::config('summergame.settings')->get('summergame_homecode_geocode_api_key');
 
           $form['instructions'] = [
             '#markup' => \Drupal::config('summergame.settings')->get('summergame_homecode_message'),
