@@ -2,7 +2,7 @@
   var lookupBtn = document.getElementById('edit-lookup-address');
   lookupBtn.addEventListener('click', function() {
     var address = document.getElementById('edit-street').value + ' ' + document.getElementById('edit-zip').value;
-    geocode_address(address);
+    geocode_address(address.trim());
   }, false);
 
   // Build marker layers
@@ -30,6 +30,10 @@
   myMap.on('click', onMapClick);
 
   function geocode_address(address) {
+    if (address == '') {
+      setMapError("*Please enter address and zip code");
+    }
+    // Pull data from geocode service
     $.ajax({
       type: 'GET',
       url: drupalSettings.geocode_url + '?key=' + drupalSettings.geocode_api_key + '&address=' + address,
@@ -62,24 +66,34 @@ console.log("address_components: %o", result.address_components);
             }
           }
 
-          // Center map and zoom in
+          // Make map visible
+          document.getElementById("map-error").className = "visually-hidden";
+          document.getElementById("map-wrapper").className = "";
+
+          // Clear existing markers, center map and zoom in
+          homecodeLayerGroup.clearLayers();
+          myMap.invalidateSize();
           myMap.setView([result.geometry.location.lat, result.geometry.location.lng], 20);
           L.marker([result.geometry.location.lat, result.geometry.location.lng], {icon: redIcon}).bindPopup(formatted_address).addTo(homecodeLayerGroup);
-/*
 
-        $address = [
-          'formatted' => $formatted_address,
-          'lat' => $result->geometry->location->lat,
-          'lon' => $result->geometry->location->lng,
-        ];
-        foreach ($result->address_components as $address_component) {
-          $type = $address_component->types[0];
-          $address[$type] = $address_component->short_name;
+          // Show actions section
+          showActions();
         }
-*/
+        else {
+          setMapError("*Error looking up address, please try again");
         }
       }
     });
+  }
+
+  function setMapError(message) {
+    // Hide map and actions
+    document.getElementById("map-wrapper").className = "visually-hidden";
+    document.getElementById("homecode-form-actions").className = "visually-hidden";
+
+    // show error message
+    document.getElementById("map-error").innerHTML = message;
+    document.getElementById("map-error").className = "";
   }
 
   function onMapClick(e) {
@@ -99,8 +113,6 @@ console.log("onMapClick: %o", e);
 
 })(jQuery, Drupal);
 
-
-
 function checkCodeType() {
   element_to_check = document.getElementById('edit-type');
   if (element_to_check.value == 'lawn') {
@@ -118,6 +130,10 @@ function checkCodeType() {
     document.getElementById("lawn-elements").className = "";
     document.getElementById("library-elements").className = "";
   }
+}
+
+function showActions() {
+  document.getElementById("homecode-form-actions").className = "sg-form-actions";
 }
 
 window.onload = checkCodeType;

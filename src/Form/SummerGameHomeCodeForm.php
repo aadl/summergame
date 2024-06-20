@@ -93,13 +93,17 @@ class SummerGameHomeCodeForm extends FormBase {
               'library' => 'I have a Library Code card',
             ],
             '#required' => TRUE,
-            '#attributes' => array("onChange" => "checkCodeType()", "style" => "border: 1px solid")
+            '#attributes' => ["onChange" => "checkCodeType()"],
           ];
           $form['details'] = [
             '#prefix' => '<div id="homecode-form-details" class="visually-hidden">',
             '#suffix' => '</div>',
           ];
-          $form['details']['text'] = [
+          $form['details']['code'] = [
+            '#prefix' => '<div id="code-elements">',
+            '#suffix' => '</div>',
+          ];
+          $form['details']['code']['text'] = [
             '#type' => 'textfield',
             '#title' => t('Lawn or Library Code Text for User') . ' ' . $account->get('name')->value,
             '#default_value' => '',
@@ -108,7 +112,7 @@ class SummerGameHomeCodeForm extends FormBase {
             '#description' => t('Game Code Text for your sign (letters and numbers only, maximum 12 characters)'),
             '#required' => TRUE,
           ];
-          $form['details']['message'] = [
+          $form['details']['code']['message'] = [
             '#type' => 'textfield',
             '#title' => t('Code Message'),
             '#default_value' => '',
@@ -116,7 +120,7 @@ class SummerGameHomeCodeForm extends FormBase {
             '#maxlength' => 64,
             '#description' => t('A short message to display to players who redeem your Game Code (optional)'),
           ];
-          $form['details']['message_guidelines'] = [
+          $form['details']['code']['message_guidelines'] = [
             '#markup' => '<strong><p>Please avoid messages that are commercial, religious, or political. Thank you!</p></strong>'
           ];
           $form['details']['library'] = [
@@ -128,6 +132,7 @@ class SummerGameHomeCodeForm extends FormBase {
             '#title' => t('Library Branch'),
             '#options' => array_merge(['' => '- Select Branch -'], $this->branches()),
             '#description' => t('The library branch where you are posting your library code sign'),
+            '#attributes' => ["onChange" => "showActions()"],
           ];
           $form['details']['lawn'] = [
             '#prefix' => '<div id="lawn-elements">',
@@ -151,14 +156,16 @@ class SummerGameHomeCodeForm extends FormBase {
           ];
           $form['details']['lawn']['lookup_address'] = [
             '#type' => 'button',
-            '#value' => $this->t('Lookup Address'),
+            '#value' => $this->t('Map it!'),
             '#attributes' => [
               'onclick' => 'return false;'
             ],
           ];
           $form['details']['lawn']['map'] = [
-            '#markup' => '<div id="map-wrapper">' .
-                         '<div id="mapid" style="height: 180px;"></div>' .
+            '#markup' => '<div id="map-error" class="visually-hidden"></div>' .
+                         '<div id="map-wrapper" class="visually-hidden">' .
+                         '<p>*Click on map to adjust sign position (optional)</p>' .
+                         '<div id="mapid"></div>' .
                          '</div>',
           ];
           $form['details']['lawn']['formatted'] = [
@@ -185,18 +192,18 @@ class SummerGameHomeCodeForm extends FormBase {
           $form['details']['lawn']['guidelines'] = [
             '#markup' => '<strong><p>Make sure your lawn sign is next to the sidewalk, street, or parking lot!</p></strong>'
           ];
-          $form['details']['permission'] = [
+          $form['details']['actions'] = [
+            '#prefix' => '<div id="homecode-form-actions" class="visually-hidden">',
+            '#suffix' => '</div>',
+          ];
+          $form['details']['actions']['permission'] = [
             '#type' => 'checkbox',
             '#title' => 'I am a grownup, or I have permission from one to make this code and put up a code sign. (REQUIRED)',
             '#required' => TRUE,
           ];
-          $form['details']['actions'] = [
-            '#prefix' => '<div class="sg-form-actions">',
-            '#suffix' => '</div>',
-          ];
           $form['details']['actions']['submit'] = [
             '#type' => 'submit',
-            '#value' => t('Submit Code'),
+            '#value' => t('Create Code'),
           ];
           $form['details']['actions']['cancel'] = [
             '#type' => 'link',
