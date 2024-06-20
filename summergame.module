@@ -531,12 +531,12 @@ function summergame_twilio_respond($incoming) {
   }
 /*
 ALTER TABLE `sg_ledger_part` DROP PRIMARY KEY, ADD PRIMARY KEY(`lid`, `game_term`);
-ALTER TABLE `sg_ledger_part`
+ALTER TABLE `sg_ledger`
 PARTITION BY LIST COLUMNS (game_term)
 PARTITIONS 3 (
-  PARTITION p0 VALUES IN ('SummerGame2021'),
-  PARTITION p1 VALUES IN ('SummerGame2011', 'SummerGame2012', 'SummerGame2013', 'SummerGame2014', 'SummerGame2015', 'SummerGame2016', 'SummerGame2017', 'SummerGame2018', 'SummerGame2019', 'SummerGame2020', 'SummerGameClassic'),
-  PARTITION p2 VALUES IN ('BookPrizeToken', 'DownloadOfTheDay', 'Points-O-Matic', 'StreetsQuest', 'TreasureQuest', 'WorldHistoryQuest')
+  PARTITION p0 VALUES IN ('SummerGame2024'),
+  PARTITION p1 VALUES IN ('SummerGame2011', 'SummerGame2012', 'SummerGame2013', 'SummerGame2014', 'SummerGame2015', 'SummerGame2016', 'SummerGame2017', 'SummerGame2018', 'SummerGame2019', 'SummerGame2020', 'SummerGame2021', 'SummerGame2022', 'SummerGame2023','SummerGameClassic'),
+  PARTITION p2 VALUES IN ('BookPrizeToken', 'DownloadOfTheDay', 'HallOfFame', 'Points-O-Matic', 'StreetsQuest', 'TreasureQuest', 'WorldHistoryQuest')
 )
   // Do Or Diag
   else if (variable_get('summergame_dod_enabled', FALSE)) {

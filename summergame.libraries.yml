@@ -16,7 +16,12 @@ summergame-map-lib:
     js/homecodes.js: {}
 summergame-homecode-form-lib:
   version: 1.x
+  css:
+    theme:
+      https://unpkg.com/leaflet@1.6.0/dist/leaflet.css: { type: external }
+      css/homecode_form.css: {}
   js:
+    https://unpkg.com/leaflet@1.6.0/dist/leaflet.js: { type: external, minified: true }
     js/homecode_form.js: {}
 summergame-badgelist-lib:
   version: 1.x
