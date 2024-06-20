@@ -164,6 +164,33 @@ class DefaultController extends ControllerBase {
     return $this->redirect('summergame.map', ['game_term' => $game_term]);
   }
 
+  /**
+   * Wrapper for geocode API call
+   */
+  public function geocode($address = '') {
+    $guzzle = \Drupal::httpClient();
+    $geocode_url =  \Drupal::config('summergame.settings')->get('summergame_homecode_geocode_url');
+    $response_body = [];
+
+    $query = [
+      'address' =>  $address,
+      'key' => \Drupal::config('summergame.settings')->get('summergame_homecode_geocode_api_key'),
+    ];
+
+    try {
+      $response = $guzzle->request('GET', $geocode_url, ['query' => $query]);
+    }
+    catch (\Exception $e) {
+      \Drupal::messenger()->addError('Unable to lookup address');
+    }
+
+    if ($response) {
+      $response_body = json_decode($response->getBody()->getContents());
+    }
+
+    return new JsonResponse($response_body);
+  }
+
   public function map($game_term = '') {
     // Set default Game Term
     if (empty($game_term)) {

@@ -33,57 +33,52 @@
     if (address == '') {
       setMapError("*Please enter address and zip code");
     }
-    // Pull data from geocode service
-    $.ajax({
-      type: 'GET',
-      url: drupalSettings.geocode_url + '?key=' + drupalSettings.geocode_api_key + '&address=' + address,
-      dataType: 'json',
-      success: function (data) {
-console.log('success');
-        if (data.status == 'OK') {
-          // parse address components
-          var result = data.results[0];
-console.log("geocode object: %o", result);
-          var formatted_address = result.formatted_address.replace(', USA', '');
-console.log(formatted_address);
-          formatted_address = formatted_address.replace(', ', '<br>');
-          var pos = formatted_address.lastIndexOf(' ');
-          formatted_address = formatted_address.substring(0,pos) + '<br>' + formatted_address.substring(pos+1)
-console.log(formatted_address);
-          document.querySelector('[data-drupal-selector="edit-formatted"]').value = formatted_address;
-          //document.getElementById('edit-formatted').value = formatted_address;
-console.log(result.geometry.location.lat);
-          document.querySelector('[data-drupal-selector="edit-lat"]').value = result.geometry.location.lat;
-console.log(result.geometry.location.lng);
-          document.querySelector('[data-drupal-selector="edit-lon"]').value = result.geometry.location.lng;
+    else {
+      // Pull data from geocode service
+      $.ajax({
+        type: 'GET',
+        url: '/summergame/geocode/' + address,
+        dataType: 'json',
+        success: function (data) {
+          if (data.status == 'OK') {
+            // parse address components
+            var result = data.results[0];
+            var formatted_address = result.formatted_address.replace(', USA', '');
+            formatted_address = formatted_address.replace(', ', '<br>');
+            var pos = formatted_address.lastIndexOf(' ');
+            formatted_address = formatted_address.substring(0,pos) + '<br>' + formatted_address.substring(pos+1)
 
-console.log("address_components: %o", result.address_components);
-          for (var i = 0; i < result.address_components.length; i++) {
-            for (var j = 0; j < result.address_components[i].types.length; j++) {
-              if (result.address_components[i].types[j] == "route") {
-                document.querySelector('[data-drupal-selector="edit-route"]').value = result.address_components[i].short_name;
+            document.querySelector('[data-drupal-selector="edit-formatted"]').value = formatted_address;
+            document.querySelector('[data-drupal-selector="edit-lat"]').value = result.geometry.location.lat;
+            document.querySelector('[data-drupal-selector="edit-lon"]').value = result.geometry.location.lng;
+
+            for (var i = 0; i < result.address_components.length; i++) {
+              for (var j = 0; j < result.address_components[i].types.length; j++) {
+                if (result.address_components[i].types[j] == "route") {
+                  document.querySelector('[data-drupal-selector="edit-route"]').value = result.address_components[i].short_name;
+                }
               }
             }
+
+            // Make map visible
+            document.getElementById("map-error").className = "visually-hidden";
+            document.getElementById("map-wrapper").className = "";
+
+            // Clear existing markers, center map and zoom in
+            homecodeLayerGroup.clearLayers();
+            myMap.invalidateSize();
+            myMap.setView([result.geometry.location.lat, result.geometry.location.lng], 20);
+            L.marker([result.geometry.location.lat, result.geometry.location.lng], {icon: redIcon}).bindPopup(formatted_address).addTo(homecodeLayerGroup);
+
+            // Show actions section
+            showActions();
           }
-
-          // Make map visible
-          document.getElementById("map-error").className = "visually-hidden";
-          document.getElementById("map-wrapper").className = "";
-
-          // Clear existing markers, center map and zoom in
-          homecodeLayerGroup.clearLayers();
-          myMap.invalidateSize();
-          myMap.setView([result.geometry.location.lat, result.geometry.location.lng], 20);
-          L.marker([result.geometry.location.lat, result.geometry.location.lng], {icon: redIcon}).bindPopup(formatted_address).addTo(homecodeLayerGroup);
-
-          // Show actions section
-          showActions();
+          else {
+            setMapError("*Error looking up address, please try again");
+          }
         }
-        else {
-          setMapError("*Error looking up address, please try again");
-        }
-      }
-    });
+      });
+    }
   }
 
   function setMapError(message) {
@@ -108,7 +103,6 @@ console.log("address_components: %o", result.address_components);
     myMap.setView(e.latlng, 20);
     var formatted_address = document.querySelector('[data-drupal-selector="edit-formatted"]').value;
     L.marker(e.latlng, {icon: redIcon}).bindPopup(formatted_address).addTo(homecodeLayerGroup);
-console.log("onMapClick: %o", e);
   }
 
 })(jQuery, Drupal);
