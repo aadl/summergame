@@ -1,8 +1,7 @@
 (function ($, Drupal) {
   var lookupBtn = document.getElementById('edit-lookup-address');
   lookupBtn.addEventListener('click', function() {
-    var address = document.getElementById('edit-street').value + ' ' + document.getElementById('edit-zip').value;
-    geocode_address(address.trim());
+    geocode_address(document.getElementById('edit-street').value.trim(), document.getElementById('edit-zip').value.trim());
   }, false);
 
   // Build marker layers
@@ -29,15 +28,18 @@
 
   myMap.on('click', onMapClick);
 
-  function geocode_address(address) {
-    if (address == '') {
-      setMapError("*Please enter address and zip code");
+  function geocode_address(street, zip) {
+    if (street.search(/[\d].* .+/) == -1) {
+      setMapError("*Please enter street number and street name");
+    }
+    else if (zip == '') {
+      setMapError("*Please enter zip code");
     }
     else {
       // Pull data from geocode service
       $.ajax({
         type: 'GET',
-        url: '/summergame/geocode/' + address,
+        url: '/summergame/geocode/' + street + ' ' + zip,
         dataType: 'json',
         success: function (data) {
           if (data.status == 'OK') {
