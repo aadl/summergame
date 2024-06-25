@@ -45,35 +45,47 @@
           if (data.status == 'OK') {
             // parse address components
             var result = data.results[0];
-            var formatted_address = result.formatted_address.replace(', USA', '');
-            formatted_address = formatted_address.replace(', ', '<br>');
-            var pos = formatted_address.lastIndexOf(' ');
-            formatted_address = formatted_address.substring(0,pos) + '<br>' + formatted_address.substring(pos+1)
-
-            document.querySelector('[data-drupal-selector="edit-formatted"]').value = formatted_address;
-            document.querySelector('[data-drupal-selector="edit-lat"]').value = result.geometry.location.lat;
-            document.querySelector('[data-drupal-selector="edit-lon"]').value = result.geometry.location.lng;
-
+            var address_components = {};
             for (var i = 0; i < result.address_components.length; i++) {
               for (var j = 0; j < result.address_components[i].types.length; j++) {
-                if (result.address_components[i].types[j] == "route") {
-                  document.querySelector('[data-drupal-selector="edit-route"]').value = result.address_components[i].short_name;
-                }
+                address_components[result.address_components[i].types[j]] = result.address_components[i].short_name;
               }
             }
 
-            // Make map visible
-            document.getElementById("map-error").className = "visually-hidden";
-            document.getElementById("map-wrapper").className = "";
+            // Check for street number and route from geocode API
+            if ('street_number' in address_components) {
+              if ('route' in address_components) {
+                // format long address from geocode API
+                var formatted_address = result.formatted_address.replace(', USA', '');
+                formatted_address = formatted_address.replace(', ', '<br>');
+                var pos = formatted_address.lastIndexOf(' ');
+                formatted_address = formatted_address.substring(0,pos) + '<br>' + formatted_address.substring(pos+1)
 
-            // Clear existing markers, center map and zoom in
-            homecodeLayerGroup.clearLayers();
-            myMap.invalidateSize();
-            myMap.setView([result.geometry.location.lat, result.geometry.location.lng], 20);
-            L.marker([result.geometry.location.lat, result.geometry.location.lng], {icon: redIcon}).bindPopup(formatted_address).addTo(homecodeLayerGroup);
+                document.querySelector('[data-drupal-selector="edit-formatted"]').value = formatted_address;
+                document.querySelector('[data-drupal-selector="edit-lat"]').value = result.geometry.location.lat;
+                document.querySelector('[data-drupal-selector="edit-lon"]').value = result.geometry.location.lng;
+                document.querySelector('[data-drupal-selector="edit-route"]').value = address_components.route;
 
-            // Show actions section
-            showActions();
+                // Make map visible
+                document.getElementById("map-error").className = "visually-hidden";
+                document.getElementById("map-wrapper").className = "";
+
+                // Clear existing markers, center map and zoom in
+                homecodeLayerGroup.clearLayers();
+                myMap.invalidateSize();
+                myMap.setView([result.geometry.location.lat, result.geometry.location.lng], 20);
+                L.marker([result.geometry.location.lat, result.geometry.location.lng], {icon: redIcon}).bindPopup(formatted_address).addTo(homecodeLayerGroup);
+
+                // Show actions section
+                showActions();
+              }
+              else {
+                setMapError("*Street Name not found, please try again");
+              }
+            }
+            else {
+              setMapError("*Street Number not found, please try again");
+            }
           }
           else {
             setMapError("*Error looking up address, please try again");
