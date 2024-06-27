@@ -67,7 +67,7 @@ class PlayerController extends ControllerBase {
       // Check if player's score card is private and we don't have access
       if (!$player['show_myscore'] && !$player_access) {
         \Drupal::messenger()->addError("Player #$pid's Score Card is private");
-        $this->redirect('<front>');
+        return $this->redirect('<front>');
       }
 
       $other_players = array();
