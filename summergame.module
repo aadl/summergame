@@ -1092,9 +1092,13 @@ function summergame_redeem_code($player, $code_text) {
                       "AND f.field_badge_formula_value LIKE :code_text " .
                       "ORDER BY bid DESC LIMIT 1",
                       [':game_term' => $code->game_term, ':code_text' => "%$code->text%"])->fetchObject();
-    if (isset($res->bid) && strpos(strtolower($res->forumla), strtolower($code->text)) !== FALSE) {
-      $code->description .= " [Part of the $res->title badge.]";
-      $result['bid'] = $res->bid;
+    if (isset($res->bid)) {
+      $badge_formula = strtolower($res->formula);
+      $badge_formula_split = preg_split('/[,|]/', $badge_formula);
+      if (in_array(strtolower($code->text), $badge_formula_split)) {
+        $code->description .= " [Part of the $res->title badge.]";
+        $result['bid'] = $res->bid;
+      }
     }
 
     // Add sequence number to description
