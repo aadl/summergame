@@ -75,6 +75,11 @@ class SummerGamePlayerForm extends FormBase
         return $this->redirect('summergame.player');
       }
     } else {
+      $player_access = summergame_player_access($pid);
+      if (!$player_access) {
+        \Drupal::messenger()->addError('You cannot edit a player that is not on your account');
+        return $this->redirect('summergame.player');
+      }
       $player = summergame_player_load($pid);
     }
 
