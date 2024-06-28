@@ -1083,7 +1083,7 @@ function summergame_redeem_code($player, $code_text) {
     }
 
     // Add Badge title to description if code is part of a formula
-    $res = $db->query("SELECT gt.entity_id AS bid, n.title AS title " .
+    $res = $db->query("SELECT gt.entity_id AS bid, n.title AS title, f.field_badge_formula_value as formula" .
                       "FROM node_field_data n, node__field_badge_game_term gt, node__field_badge_formula f " .
                       "WHERE n.nid = gt.entity_id " .
                       "AND gt.entity_id = f.entity_id " .
@@ -1093,8 +1093,12 @@ function summergame_redeem_code($player, $code_text) {
                       "ORDER BY bid DESC LIMIT 1",
                       [':game_term' => $code->game_term, ':code_text' => "%$code->text%"])->fetchObject();
     if (isset($res->bid)) {
-      $code->description .= " [Part of the $res->title badge.]";
-      $result['bid'] = $res->bid;
+      $badge_formula = strtolower($res->formula);
+      $badge_formula_split = preg_split('/[,|]/', $badge_formula);
+      if (in_array(strtolower($code->text), $badge_formula_split)) {
+        $code->description .= " [Part of the $res->title badge.]";
+        $result['bid'] = $res->bid;
+      }
     }
 
     // Add sequence number to description
