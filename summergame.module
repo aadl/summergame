@@ -1083,7 +1083,7 @@ function summergame_redeem_code($player, $code_text) {
     }
 
     // Add Badge title to description if code is part of a formula
-    $res = $db->query("SELECT gt.entity_id AS bid, n.title AS title, f.field_badge_formula_value as formula" .
+    $res = $db->query("SELECT gt.entity_id AS bid, n.title AS title, f.field_badge_formula_value AS formula " .
                       "FROM node_field_data n, node__field_badge_game_term gt, node__field_badge_formula f " .
                       "WHERE n.nid = gt.entity_id " .
                       "AND gt.entity_id = f.entity_id " .
