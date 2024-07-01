@@ -421,10 +421,12 @@ We don't have all the details yet, but we'll reuse the signs for the 2023 game, 
 
       // Badges Data
       $badges = [];
+      $play_test_term_id = \Drupal::config('summergame.settings')->get('summergame_play_test_term_id');
       $nids = \Drupal::entityQuery('node')
 	      ->accessCheck(FALSE)
               ->condition('type', 'sg_badge')
               ->condition('field_badge_game_term', $game_term)
+              ->condition('field_sg_badge_series_multiple', $play_test_term_id, '<>')
               ->condition('status', 1)
               ->exists('field_badge_coordinates')
               ->execute();
