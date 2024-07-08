@@ -423,15 +423,24 @@ We don't have all the details yet, but we'll reuse the signs for the 2023 game, 
       $badges = [];
       $play_test_term_id = \Drupal::config('summergame.settings')->get('summergame_play_test_term_id');
       $nids = \Drupal::entityQuery('node')
-	      ->accessCheck(FALSE)
+              ->accessCheck(FALSE)
               ->condition('type', 'sg_badge')
               ->condition('field_badge_game_term', $game_term)
-              ->condition('field_sg_badge_series_multiple', $play_test_term_id, '<>')
               ->condition('status', 1)
               ->exists('field_badge_coordinates')
+              ->sort('nid', 'DESC')
               ->execute();
+
       foreach ($nids as $nid) {
         $badge = \Drupal::entityTypeManager()->getStorage('node')->load($nid);
+
+        // Remove play test badges from display
+        foreach ($badge->field_sg_badge_series_multiple as $badge_series) {
+          if ($badge_series->target_id == $play_test_term_id) {
+            continue 2;
+          }
+        }
+
         $image_url = '/files/badge-derivs/100/' . $badge->field_badge_image->entity->getFilename();
         list($lat, $lon) = explode(',', $badge->field_badge_coordinates->value);
         $badges[] = [
