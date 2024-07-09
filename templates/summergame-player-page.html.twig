@@ -58,10 +58,10 @@
                       {% if badge.nid %}
                         {% set badge_img = badge.img|split('/')|last %}
                         <a href="/node/{{ badge.nid }}">
-                          <img class="summergame-badge" title="{{ badge.title }}" src="/files/badge-derivs/100/{{ badge_img }}">
+                          <img class="summergame-badge" title="{{ badge.title }}" src="/files/badge-derivs/100/{{ badge_img }}" loading="lazy">
                         </a>
                       {% else %}
-                        <img class="summergame-badge" title="{{ badge.title }}" src="{{ badge.img }}">
+                        <img class="summergame-badge" title="{{ badge.title }}" src="{{ badge.img }}" loading="lazy">
                       {% endif %}
                     {% endfor %}
                   {% else %}
