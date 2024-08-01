@@ -114,7 +114,7 @@ class SummerGameHomeCodeReportForm extends FormBase {
 
     $homecode_email = \Drupal::config('summergame.settings')->get('summergame_homecode_notify_email');
 
-    if (count($geocode_data->reports) >= $summergame_homecode_report_threshold) {
+    if (count((array)$geocode_data->reports) >= $summergame_homecode_report_threshold) {
       // Send email to Home Code owner
       $headers = "From: $homecode_email" . "\r\n" .
                 "Reply-To: $homecode_email" . "\r\n" .
