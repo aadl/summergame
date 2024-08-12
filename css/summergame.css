@@ -5,3 +5,11 @@
   color: #1f4273;
   background-color: #e5edf8;
 }
+#summergame-live-points {
+  font-size: 1.25em;
+  font-weight: bold;
+  border: 2px solid #999;
+  margin: 1em;
+  padding: 0.5em;
+  text-align: center;
+}

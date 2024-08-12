@@ -74,6 +74,7 @@ class SummerGameHomeCodeForm extends FormBase {
         }
         else if (\Drupal::config('summergame.settings')->get('summergame_homecode_form_enabled')) {
           $form['#attached']['library'][] = 'summergame/summergame-homecode-form-lib';
+
           $form['instructions'] = [
             '#markup' => \Drupal::config('summergame.settings')->get('summergame_homecode_message'),
           ];
@@ -90,13 +91,17 @@ class SummerGameHomeCodeForm extends FormBase {
               'library' => 'I have a Library Code card',
             ],
             '#required' => TRUE,
-            '#attributes' => array("onChange" => "checkCodeType()", "style" => "border: 1px solid")
+            '#attributes' => ["onChange" => "checkCodeType()"],
           ];
           $form['details'] = [
             '#prefix' => '<div id="homecode-form-details" class="visually-hidden">',
             '#suffix' => '</div>',
           ];
-          $form['details']['text'] = [
+          $form['details']['code'] = [
+            '#prefix' => '<div id="code-elements">',
+            '#suffix' => '</div>',
+          ];
+          $form['details']['code']['text'] = [
             '#type' => 'textfield',
             '#title' => t('Lawn or Library Code Text for User') . ' ' . $account->get('name')->value,
             '#default_value' => '',
@@ -105,7 +110,7 @@ class SummerGameHomeCodeForm extends FormBase {
             '#description' => t('Game Code Text for your sign (letters and numbers only, maximum 12 characters)'),
             '#required' => TRUE,
           ];
-          $form['details']['message'] = [
+          $form['details']['code']['message'] = [
             '#type' => 'textfield',
             '#title' => t('Code Message'),
             '#default_value' => '',
@@ -113,7 +118,7 @@ class SummerGameHomeCodeForm extends FormBase {
             '#maxlength' => 64,
             '#description' => t('A short message to display to players who redeem your Game Code (optional)'),
           ];
-          $form['details']['message_guidelines'] = [
+          $form['details']['code']['message_guidelines'] = [
             '#markup' => '<strong><p>Please avoid messages that are commercial, religious, or political. Thank you!</p></strong>'
           ];
           $form['details']['library'] = [
@@ -125,6 +130,7 @@ class SummerGameHomeCodeForm extends FormBase {
             '#title' => t('Library Branch'),
             '#options' => array_merge(['' => '- Select Branch -'], $this->branches()),
             '#description' => t('The library branch where you are posting your library code sign'),
+            '#attributes' => ["onChange" => "showActions()"],
           ];
           $form['details']['lawn'] = [
             '#prefix' => '<div id="lawn-elements">',
@@ -146,6 +152,36 @@ class SummerGameHomeCodeForm extends FormBase {
             '#size' => 5,
             '#description' => t('5 digit Zip Code where the Game Code sign will be displayed (example "48103")'),
           ];
+          $form['details']['lawn']['lookup_address'] = [
+            '#type' => 'button',
+            '#value' => $this->t('Map it!'),
+            '#attributes' => [
+              'onclick' => 'return false;'
+            ],
+          ];
+          $form['details']['lawn']['map'] = [
+            '#markup' => '<div id="map-error" class="visually-hidden"></div>' .
+                         '<div id="map-wrapper" class="visually-hidden">' .
+                         '<p>*Click on map to adjust sign position (optional)</p>' .
+                         '<div id="mapid"></div>' .
+                         '</div>',
+          ];
+          $form['details']['lawn']['formatted'] = [
+            '#type' => 'hidden',
+            '#default_value' => '',
+          ];
+          $form['details']['lawn']['route'] = [
+            '#type' => 'hidden',
+            '#default_value' => '',
+          ];
+          $form['details']['lawn']['lat'] = [
+            '#type' => 'hidden',
+            '#default_value' => '',
+          ];
+          $form['details']['lawn']['lon'] = [
+            '#type' => 'hidden',
+            '#default_value' => '',
+          ];
           $form['details']['lawn']['display'] = [
             '#type' => 'checkbox',
             '#title' => 'Display my Address on Public Lawn Codes Map',
@@ -154,18 +190,18 @@ class SummerGameHomeCodeForm extends FormBase {
           $form['details']['lawn']['guidelines'] = [
             '#markup' => '<strong><p>Make sure your lawn sign is next to the sidewalk, street, or parking lot!</p></strong>'
           ];
-          $form['details']['permission'] = [
+          $form['details']['actions'] = [
+            '#prefix' => '<div id="homecode-form-actions" class="visually-hidden">',
+            '#suffix' => '</div>',
+          ];
+          $form['details']['actions']['permission'] = [
             '#type' => 'checkbox',
             '#title' => 'I am a grownup, or I have permission from one to make this code and put up a code sign. (REQUIRED)',
             '#required' => TRUE,
           ];
-          $form['details']['actions'] = [
-            '#prefix' => '<div class="sg-form-actions">',
-            '#suffix' => '</div>',
-          ];
           $form['details']['actions']['submit'] = [
             '#type' => 'submit',
-            '#value' => t('Submit Code'),
+            '#value' => t('Create Code'),
           ];
           $form['details']['actions']['cancel'] = [
             '#type' => 'link',
@@ -220,13 +256,7 @@ class SummerGameHomeCodeForm extends FormBase {
 
     if ($form_state->getValue('type') == 'lawn') {
       // Check geocode of address
-      $street = trim($form_state->getValue('street'));
-      $zip = $form_state->getValue('zip');
-
-      if ($geocode_data = $this->geocode_lookup($street, $zip)) {
-        $form_state->setValue('geocode_data', $geocode_data);
-      }
-      else {
+      if (empty($form_state->getValue('formatted'))) {
         $form_state->setErrorByName('street', 'Unable to locate street address. Please try again.');
       }
     }
@@ -250,16 +280,15 @@ class SummerGameHomeCodeForm extends FormBase {
 
     if ($form_state->getValue('type') == 'lawn') {
       // Format code description
-      $geocode_data = $form_state->getValue('geocode_data');
-      $description = "You found a Lawn Code on " . $geocode_data['route'] . '.';
+      $description = "You found a Lawn Code on " . $form_state->getValue('route') . '.';
       if ($message = $form_state->getValue('message')) {
         $description .= ' ' . trim($message);
       }
 
       $clue = [
-        'homecode' => $geocode_data['formatted'],
-        'lat' => $geocode_data['lat'],
-        'lon' => $geocode_data['lon'],
+        'homecode' => $form_state->getValue('formatted'),
+        'lat' => $form_state->getValue('lat'),
+        'lon' => $form_state->getValue('lon'),
         'display' => $form_state->getValue('display'),
       ];
     }
@@ -293,6 +322,7 @@ class SummerGameHomeCodeForm extends FormBase {
       'game_term' => $summergame_settings->get('summergame_current_game_term'),
       'everlasting' => 0,
       'link' => '',
+      'search_phrase' => '',
     ];
 
     $code_id = $db->insert('sg_game_codes')->fields($fields)->execute();

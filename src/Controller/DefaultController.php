@@ -36,6 +36,11 @@ class DefaultController extends ControllerBase {
     $leaderboard = summergame_get_leaderboard($type, $range, $staff);
 
     return [
+      '#attached' => [
+        'library' => [
+          'summergame/summergame-lib'
+        ]
+      ],
       '#cache' => [
         'max-age' => 0, // Don't cache, always get fresh data
       ],
@@ -159,6 +164,33 @@ class DefaultController extends ControllerBase {
     return $this->redirect('summergame.map', ['game_term' => $game_term]);
   }
 
+  /**
+   * Wrapper for geocode API call
+   */
+  public function geocode($address = '') {
+    $guzzle = \Drupal::httpClient();
+    $geocode_url =  \Drupal::config('summergame.settings')->get('summergame_homecode_geocode_url');
+    $response_body = [];
+
+    $query = [
+      'address' =>  $address,
+      'key' => \Drupal::config('summergame.settings')->get('summergame_homecode_geocode_api_key'),
+    ];
+
+    try {
+      $response = $guzzle->request('GET', $geocode_url, ['query' => $query]);
+    }
+    catch (\Exception $e) {
+      \Drupal::messenger()->addError('Unable to lookup address');
+    }
+
+    if ($response) {
+      $response_body = json_decode($response->getBody()->getContents());
+    }
+
+    return new JsonResponse($response_body);
+  }
+
   public function map($game_term = '') {
     // Set default Game Term
     if (empty($game_term)) {
@@ -177,10 +209,15 @@ class DefaultController extends ControllerBase {
     }
 */
     if ($summergame_points_enabled) {
-      // 2023 Lawn & Library Codes Explaination
-      $explaination_markup .= '<p>Would you love to create your VERY OWN Summer Game Code??? YOU CAN with LAWN & LIBRARY CODES!</p>' .
-                              '<p>FIRST, stop by any of our AADL locations to pick up either a (new and improved) Lawn Code Sign OR a Library Code Card. THEN create your code by clicking "My Players." Scroll down to your My Summer Game page until you see "Player Details." You\'ll see the words, "Create Your Lawn Code or Library Code," click it and fill out the form to make your code real and active! Write the code legibly in ALLCAPS on your lawn sign or code card and get it out there for fellow players to find!!! If you make a Lawn Code, you can decide if you want a pin for it to be displayed on the Summer Game Map! (Serious note: No personal information is given on the map. Just the address linked to the code!). If you make a Library Code Card, you get to choose which Summer Game Stop post you want to attach it to (we have one at each of our locations)!!</p>' .
-                              '<p>DID YOU MAKE A LAWN CODE? Please make sure the code is displayed on YOUR lawn (or one you have permission to use) near a sidewalk, so that players aren\'t searching high and low or out in traffic. Thank you!!</p>' .
+/*
+      // Lawn & Library Codes Creation Explaination
+      $explaination_markup .= '<p>Would you love to create your VERY OWN Summer Game Code??? YOU CAN with LAWN & LIBRARY CODES starting JUNE 21st!!!</p>' .
+                              '<p>FIRST, stop by any of our AADL locations to pick up either a (new and improved) Lawn Code Sign OR a Library Code Card. THEN create your code by clicking "My Players." Scroll down to your My Summer Game page until you see "Player Details." You\'ll see the words, "Create Your Lawn Code or Library Code," click it and fill out the form to make your code real and active! Write the code legibly in ALLCAPS on your lawn sign or code card and get it out there for fellow players to find!!! If you make a Lawn Code, you can decide if you want a pin for it to be displayed on the Summer Game Map! (Serious note: No personal information is given on the map. Just the address linked to the code!). If you make a Library Code Card, you get to choose which Summer Game Stop post you want to attach it to (we have one at each of our locations)!!</p>';
+*/
+      // Creation unavailable Explaination
+      $explaination_markup .= '<p>Lawn and Library Code creation for Summer Game 2024 ended at 11:59pm on August 11th, but the good news is that leaves you with plenty of time to find some codes out in the wild before Summer Game ends at 11:59pm on August 25th!!</p>';
+
+      $explaination_markup .= '<p>DID YOU MAKE A LAWN CODE? Please make sure the code is displayed on YOUR lawn (or one you have permission to use) near a sidewalk, so that players aren\'t searching high and low or out in traffic. Thank you!!</p>' .
                               '<p>CAN\'T FIND A CODE? Use the "Can\'t find it?" link to report a missing Lawn Code! PLEASE DON\'T KNOCK ON ANY DOORS OR TRY TO ASK THE RESIDENT. Just use the tool!! Keep it cool!! The Summer Game doesn\'t involve knocking on peoples\' doors! EVER!!!!</p>' .
                               '<p>WANT TO CLEAR UP YOUR MAP? We know there is nothing more mildly inconvenient than trying to redeem a code you redeemed two weeks ago, so you\'ll notice we\'ve added a nifty new feature that allows you to hide Lawn Code pins from your map based on how long ago they were created! Just check off some of those boxes in the SG Map\'s key to only view the newest, oldest, and/or middle-aged-est Lawn Codes!</p>';
 /*
@@ -372,16 +409,43 @@ We don't have all the details yet, but we'll reuse the signs for the 2023 game, 
         }
       }
 
+      // Bizcodes Data
+      $bizcodes = [];
+      $res = $db->query("SELECT * FROM sg_game_codes WHERE game_term = :game_term AND clue LIKE '%\"bizcode\"%'",
+                        [':game_term' => $game_term]);
+      while ($game_code = $res->fetchObject()) {
+        $geocode_data = json_decode($game_code->clue);
+
+        // Add game code data to geocode data
+        $geocode_data->code_id = $game_code->code_id;
+        $geocode_data->created = $game_code->created;
+        $geocode_data->num_redemptions = $game_code->num_redemptions;
+
+        $bizcodes[] = $geocode_data;
+      }
+
       // Badges Data
       $badges = [];
+      $play_test_term_id = \Drupal::config('summergame.settings')->get('summergame_play_test_term_id');
       $nids = \Drupal::entityQuery('node')
-	      ->accessCheck(FALSE)
+              ->accessCheck(FALSE)
               ->condition('type', 'sg_badge')
               ->condition('field_badge_game_term', $game_term)
+              ->condition('status', 1)
               ->exists('field_badge_coordinates')
+              ->sort('nid', 'DESC')
               ->execute();
+
       foreach ($nids as $nid) {
         $badge = \Drupal::entityTypeManager()->getStorage('node')->load($nid);
+
+        // Remove play test badges from display
+        foreach ($badge->field_sg_badge_series_multiple as $badge_series) {
+          if ($badge_series->target_id == $play_test_term_id) {
+            continue 2;
+          }
+        }
+
         $image_url = '/files/badge-derivs/100/' . $badge->field_badge_image->entity->getFilename();
         list($lat, $lon) = explode(',', $badge->field_badge_coordinates->value);
         $badges[] = [
@@ -392,7 +456,7 @@ We don't have all the details yet, but we'll reuse the signs for the 2023 game, 
         ];
       }
     }
-    return new JsonResponse(['homecodes' => $homecodes, 'badges' => $badges]);
+    return new JsonResponse(['homecodes' => $homecodes, 'bizcodes' => $bizcodes, 'badges' => $badges]);
   }
 /*
   public function badge() {
@@ -665,11 +729,11 @@ FBL;
       $description = array_reverse(explode("\n", wordwrap($description, 100)));
 
       $code_link = Url::fromRoute('summergame.player.gamecode',
-                                               ['pid' => 0, 'text' => $event_code],
-                                               ['absolute' => TRUE])->toString();
+                                  ['pid' => 0, 'text' => $event_code],
+                                  ['absolute' => TRUE])->toString();
 
-      $qrcode = 'http://qrickit.com/api/qr?d=' . //'http://api.qrserver.com/v1/create-qr-code/?data=' .
-                urlencode($code_link);
+      $qrcode = Url::fromRoute('aadl_content_management.qr_code_image', [],
+                               ['query' => ['data' => $code_link], 'absolute' => TRUE])->toString();
 
       // initiate FPDI
       $pdf = new Fpdi\Fpdi('L', 'mm', 'Letter');
@@ -701,16 +765,16 @@ FBL;
       $pdf->SetXY($lrMargin, 125);
       $pdf->Cell(0, 10, $event_points, 0, 1, 'C');
 
-    /*
-      // Description
-      $desc_Y = 192;
-      $pdf->SetFont('Quicksand-Bold', '', 13);
-      foreach ($description as $desc_line) {
-        $pdf->SetXY($pdf->lMargin, $desc_Y);
-        $pdf->Cell($page_width - 35, 7, $desc_line, 0);
-        $desc_Y -= 7;
+      // Display Sequence Number
+      if ($gamecode->sequence_num) {
+        $sequence_text = 'Code #' . $gamecode->sequence_num;
+        if ($gamecode->sequence_total) {
+          $sequence_text .= ' of ' . $gamecode->sequence_total;
+        }
+        $pdf->SetFont('Helvetica-Bold', '', 20);
+        $pdf->SetXY($lrMargin, 192);
+        $pdf->Cell($page_width - 35, 7, $sequence_text, 0);
       }
-    */
 
       // add the QR Code
       $pdf->SetXY(-50, -50);
@@ -814,7 +878,7 @@ FBL;
                 $level_output = "⭐️⭐️⭐️ Super Tricky";
                 break;
               case 4:
-                $level_output = "⭐️⭐️⭐️⭐️ Ambitious";
+                $level_output = "⭐️⭐️⭐️⭐️ Extremely Tricky";
                 break;
               default:
                 $level_output = "⭐️ Standard";

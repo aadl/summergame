@@ -1,0 +1,24 @@
+#code-elements, #lawn-elements {
+  border: 1px solid black;
+  padding: 0 1em;
+  margin-top: 1.5em;
+}
+#map-wrapper {
+  position: relative;
+  padding: 1em;
+}
+#map-wrapper p {
+  font-style: italic;
+  font-weight: bold;
+}
+#mapid {
+  height: 500px;
+  max-height: 50vh;
+}
+#map-error {
+  display: inline-block;
+  margin-left: 1em;
+  font-style: italic;
+  font-weight: bold;
+  color: red;
+}

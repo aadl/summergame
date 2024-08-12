@@ -118,6 +118,9 @@ class SummerGamePlayerRedeemForm extends FormBase {
         if (!empty($status['clue'])) {
           \Drupal::messenger()->addWarning(['#markup' => 'New Clue: ' . $status['clue']]);
         }
+        if (!empty($status['bid'])) {
+          $form_state->setRedirect('entity.node.canonical', ['node' => $status['bid']]);
+        }
       }
     }
 

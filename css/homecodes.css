@@ -37,10 +37,10 @@
 .leaflet-control-layers-overlays::before {
   content: "Display:";
 }
-.leaflet-control-layers-overlays label:nth-child(2) {
+.leaflet-control-layers-overlays label:nth-child(3) {
   border-bottom: 1px solid #000;
   padding-bottom: 5px;
 }
-.leaflet-control-layers-overlays label:nth-child(n+3):nth-child(-n+7) {
+.leaflet-control-layers-overlays label:nth-child(n+4):nth-child(-n+8) {
   margin-left: 20px;
 }

@@ -250,6 +250,13 @@ function summergame_theme() {
         'leaderboard_timestamp' => NULL,
         'leaderboard' => NULL,
       ]
+    ],
+    'summergame_player_external_redeem' => [
+      'variables' => [
+        'players' => NULL,
+        'uid' => NULL,
+        'type' => NULL,
+      ]
     ]
   ];
 }
@@ -462,6 +469,31 @@ function summergame_twilio_respond($incoming) {
             $responses[] = $response;
           }
         }
+
+        // Add any drupal messages that may have been set (badge awarding, limits)
+        $messages = \Drupal::messenger()->all();
+        if (isset($messages['status'])) {
+          foreach ($messages['status'] as $message) {
+            $response = $response_template;
+            $response['text'] = $message;
+            $responses[] = $response;
+          }
+        }
+        if (isset($messages['warning'])) {
+          foreach ($messages['warning'] as $message) {
+            $response = $response_template;
+            $response['text'] = 'WARNING: ' . $message;
+            $responses[] = $response;
+          }
+        }
+        if (isset($messages['error'])) {
+          foreach ($messages['error'] as $message) {
+            $response = $response_template;
+            $response['text'] = 'ERROR: ' . $message;
+            $responses[] = $response;
+          }
+        }
+
 /* No Do or Diag mode for now
         if (variable_get('summergame_dod_enabled', FALSE)) {
           if ($status['success']) {
@@ -513,12 +545,12 @@ function summergame_twilio_respond($incoming) {
   }
 /*
 ALTER TABLE `sg_ledger_part` DROP PRIMARY KEY, ADD PRIMARY KEY(`lid`, `game_term`);
-ALTER TABLE `sg_ledger_part`
+ALTER TABLE `sg_ledger`
 PARTITION BY LIST COLUMNS (game_term)
 PARTITIONS 3 (
-  PARTITION p0 VALUES IN ('SummerGame2021'),
-  PARTITION p1 VALUES IN ('SummerGame2011', 'SummerGame2012', 'SummerGame2013', 'SummerGame2014', 'SummerGame2015', 'SummerGame2016', 'SummerGame2017', 'SummerGame2018', 'SummerGame2019', 'SummerGame2020', 'SummerGameClassic'),
-  PARTITION p2 VALUES IN ('BookPrizeToken', 'DownloadOfTheDay', 'Points-O-Matic', 'StreetsQuest', 'TreasureQuest', 'WorldHistoryQuest')
+  PARTITION p0 VALUES IN ('SummerGame2024'),
+  PARTITION p1 VALUES IN ('SummerGame2011', 'SummerGame2012', 'SummerGame2013', 'SummerGame2014', 'SummerGame2015', 'SummerGame2016', 'SummerGame2017', 'SummerGame2018', 'SummerGame2019', 'SummerGame2020', 'SummerGame2021', 'SummerGame2022', 'SummerGame2023','SummerGameClassic'),
+  PARTITION p2 VALUES IN ('BookPrizeToken', 'DownloadOfTheDay', 'HallOfFame', 'Points-O-Matic', 'StreetsQuest', 'TreasureQuest', 'WorldHistoryQuest')
 )
   // Do Or Diag
   else if (variable_get('summergame_dod_enabled', FALSE)) {
@@ -932,6 +964,24 @@ function summergame_get_player_log($pid, $game_term = '') {
 }
 
 /**
+ * UTILITY: Get a player's classic reading game completion status
+ */
+function summergame_get_classic_status($pid) {
+  $db = \Drupal::database();
+  $completion_gamecode = \Drupal::config('summergame.settings')->get('summergame_completion_gamecode');
+  $completed = 0;
+
+  // check if player has submitted the completion game code
+  $row = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND metadata LIKE :metadata",
+                    [':pid' => $pid, ':metadata' => "%gamecode:$completion_gamecode%"])->fetchObject();
+  if ($row->lid) {
+    $completed = $row->timestamp;
+  }
+
+  return $completed;
+}
+
+/**
  * UTILITY: Get a user's Home Code
  */
 function summergame_get_homecode($uid, $game_term = '') {
@@ -996,6 +1046,7 @@ function summergame_player_delete($player_info) {
 function summergame_redeem_code($player, $code_text) {
   $db = \Drupal::database();
   $config = \Drupal::config('summergame.settings');
+  $result = [];
 
   // Remove non-alphanumerics from Game Code text and convert to upper case
   $code_text = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $code_text));
@@ -1044,6 +1095,34 @@ function summergame_redeem_code($player, $code_text) {
       $code->game_term = $code->game_term_override;
     }
 
+    // Add Badge title to description if code is part of a formula
+    $res = $db->query("SELECT gt.entity_id AS bid, n.title AS title, f.field_badge_formula_value AS formula " .
+                      "FROM node_field_data n, node__field_badge_game_term gt, node__field_badge_formula f " .
+                      "WHERE n.nid = gt.entity_id " .
+                      "AND gt.entity_id = f.entity_id " .
+                      "AND n.status = 1 " .
+                      "AND gt.field_badge_game_term_value = :game_term " .
+                      "AND f.field_badge_formula_value LIKE :code_text " .
+                      "ORDER BY bid DESC LIMIT 1",
+                      [':game_term' => $code->game_term, ':code_text' => "%$code->text%"])->fetchObject();
+    if (isset($res->bid)) {
+      $badge_formula = strtolower($res->formula);
+      $badge_formula_split = preg_split('/[,|]/', $badge_formula);
+      if (in_array(strtolower($code->text), $badge_formula_split)) {
+        $code->description .= " [Part of the $res->title badge.]";
+        $result['bid'] = $res->bid;
+      }
+    }
+
+    // Add sequence number to description
+    if ($code->sequence_num) {
+      $code->description .= ' (' . $code->sequence_num;
+      if ($code->sequence_total) {
+        $code->description .= '/' . $code->sequence_total;
+      }
+      $code->description .= ')';
+    }
+
     $points = summergame_player_points($player['pid'], $code->points, 'Game Code', $code->description, 'gamecode:' . $code->text, $code->game_term);
     $message = ($player['nickname'] ? $player['nickname'] : $player['name']) .
                " redeemed code \"$code->text\" for $points $code->game_term points";
@@ -1051,11 +1130,11 @@ function summergame_redeem_code($player, $code_text) {
       $message .= ': ' . $code->description;
     }
 
-    $result = ['success' => $message];
+    $result['success'] = $message;
 
     // Look for Clue trigger
-    $gc = $db->query('SELECT * FROM sg_game_codes WHERE clue_trigger = :code_text',
-                     [':code_text' => $code->text])->fetchObject();
+    $gc = $db->query('SELECT * FROM sg_game_codes WHERE clue_trigger = :code_text AND game_term = :game_term',
+                     [':code_text' => $code->text, ':game_term' => $code->game_term])->fetchObject();
     if (isset($gc->code_id)) {
       $result['clue'] = $gc->clue;
     }
@@ -1154,6 +1233,12 @@ function summergame_player_points($pid, $points, $type, $description = '', $meta
   // Remove extended characters from description field
   $description = preg_replace('/[^(\x20-\x7F)]*/','', $description);
 
+  // Adjust timestamp as needed
+  $timestamp = time();
+  if (preg_match('/time_adjust:(-?\d+)/', $metadata, $matches)) {
+    $timestamp += (int) $matches[1];
+  }
+
   $db->insert('sg_ledger')->fields([
     'pid' => $pid,
     'points' => $points,
@@ -1161,7 +1246,7 @@ function summergame_player_points($pid, $points, $type, $description = '', $meta
     'metadata' => $metadata,
     'description' => $description,
     'game_term' => $game_term,
-    'timestamp' => time(),
+    'timestamp' => $timestamp,
   ])->execute();
 
   // Check if the new points affect any badges
@@ -1396,10 +1481,26 @@ function summergame_player_check_badges($pid, $game_term) {
  */
 function summergame_player_award_badge($pid, $bid) {
   $db = \Drupal::database();
-  $statement = $db->prepareStatement('INSERT IGNORE INTO `sg_players_badges` (`pid`, `bid`, `timestamp`) VALUES (:pid, :bid, :timestamp)', [], TRUE);
-  $args = [':pid' => $pid, ':bid' => $bid, ':timestamp' => time()];
-  $statement->execute($args);
-  return $statement->rowCount();
+  $awarded = 0;
+
+  // Check if player already has the badge
+  $existing = $db->select('sg_players_badges')
+    ->condition('pid', $pid)
+    ->condition('bid', $bid)
+    ->countQuery()
+    ->execute()
+    ->fetchField();
+
+  if (!$existing) {
+    $db->insert('sg_players_badges')->fields([
+      'pid' => $pid,
+      'bid' => $bid,
+      'timestamp' => time(),
+    ])->execute();
+    $awarded = 1;
+  }
+
+  return $awarded;
 }
 
 /**
@@ -1487,6 +1588,14 @@ function summergame_players_merge($pid1, $pid2) {
   $db = \Drupal::database();
   $p1 = summergame_player_load(['pid' => $pid1]);
   $p2 = summergame_player_load(['pid' => $pid2]);
+
+  // Remove player 2 as active player id if set on drupal user account
+  if ($p2['uid']) {
+    $userData = \Drupal::service('user.data');
+    if ($p2['pid'] == $userData->get('summergame', $p2['uid'], 'sg_active_pid')) {
+      $userData->delete('summergame', $p2['uid'], 'sg_active_pid');
+    }
+  }
 
   // Don't check or try to update Badge IDs
   unset($p1['bids'], $p2['bids']);

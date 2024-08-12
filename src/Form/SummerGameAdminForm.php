@@ -11,19 +11,22 @@ use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element;
 
-class SummerGameAdminForm extends ConfigFormBase {
+class SummerGameAdminForm extends ConfigFormBase
+{
 
   /**
    * {@inheritdoc}
    */
-  public function getFormId() {
+  public function getFormId()
+  {
     return 'summergame_admin_form';
   }
 
   /**
    * {@inheritdoc}
    */
-  public function submitForm(array &$form, FormStateInterface $form_state) {
+  public function submitForm(array &$form, FormStateInterface $form_state)
+  {
     $config = $this->config('summergame.settings');
 
     foreach (Element::children($form) as $variable) {
@@ -41,11 +44,13 @@ class SummerGameAdminForm extends ConfigFormBase {
   /**
    * {@inheritdoc}
    */
-  protected function getEditableConfigNames() {
+  protected function getEditableConfigNames()
+  {
     return ['summergame.settings'];
   }
 
-  public function buildForm(array $form, FormStateInterface $form_state) {
+  public function buildForm(array $form, FormStateInterface $form_state)
+  {
     $summergame_settings = \Drupal::config('summergame.settings');
     $form = [];
     $form['summergame_points_enabled'] = [
@@ -206,16 +211,16 @@ class SummerGameAdminForm extends ConfigFormBase {
       '#description' => 'Message to be displayed under the player shop balance when current points is greater than current point threshold',
     ];
     $form['game_display_name'] = [
-        '#type' => 'textfield',
-        '#title' => 'Game Display Name',
-        '#default_value' => $summergame_settings->get('game_display_name'),
-        '#description' => 'The name to be displayed throughout the SummerGame UI',
+      '#type' => 'textfield',
+      '#title' => 'Game Display Name',
+      '#default_value' => $summergame_settings->get('game_display_name'),
+      '#description' => 'The name to be displayed throughout the SummerGame UI',
     ];
     $form['summergame_homecode_geocode_url'] = [
-        '#type' => 'textfield',
-        '#title' => 'Home Code Geocode URL',
-        '#default_value' => $summergame_settings->get('summergame_homecode_geocode_url'),
-        '#description' => 'URL Address of Geocoding Service for Home Code address lookup (e.g. https://maps.googleapis.com/maps/api/geocode/json)',
+      '#type' => 'textfield',
+      '#title' => 'Home Code Geocode URL',
+      '#default_value' => $summergame_settings->get('summergame_homecode_geocode_url'),
+      '#description' => 'URL Address of Geocoding Service for Home Code address lookup (e.g. https://maps.googleapis.com/maps/api/geocode/json)',
     ];
     $form['summergame_homecode_geocode_api_key'] = [
       '#type' => 'textfield',
@@ -224,10 +229,10 @@ class SummerGameAdminForm extends ConfigFormBase {
       '#description' => 'API Key for Geocoding Service for Home Code address lookup',
     ];
     $form['summergame_homecode_notify_email'] = [
-        '#type' => 'textfield',
-        '#title' => 'Home Code Notify Email',
-        '#default_value' => $summergame_settings->get('summergame_homecode_notify_email'),
-        '#description' => 'Email address to send notifications of new home codes',
+      '#type' => 'textfield',
+      '#title' => 'Home Code Notify Email',
+      '#default_value' => $summergame_settings->get('summergame_homecode_notify_email'),
+      '#description' => 'Email address to send notifications of new home codes',
     ];
     $form['summergame_homecode_message'] = [
       '#type' => 'textarea',
@@ -241,8 +246,21 @@ class SummerGameAdminForm extends ConfigFormBase {
       '#default_value' => $summergame_settings->get('summergame_homecode_report_threshold'),
       '#description' => 'Number of player reports needed to remove a Home Code from the map',
     ];
+    $form['summergame_scatterlog_key'] =
+      [
+        '#type' => 'textfield',
+        '#title' => 'Scatterlog App Key',
+        '#default_value' => $summergame_settings->get('summergame_scatterlog_key'),
+        '#description' => 'Key for Scatterlog session creation',
+      ];
+    $form['summergame_scatterlog_url'] =
+      [
+        '#type' => 'textfield',
+        '#title' => 'Scatterlog URL',
+        '#default_value' => $summergame_settings->get('summergame_scatterlog_url'),
+        '#description' => 'URL for scatter log',
+      ];
 
     return parent::buildForm($form, $form_state);
   }
-
 }

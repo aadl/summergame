@@ -232,6 +232,14 @@ summergame.leaderboard:
     _title: 'Summer Game Leaderboard'
   requirements:
     _permission: 'access content'
+summergame.geocode:
+  path: '/summergame/geocode/{address}'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\DefaultController::geocode'
+    _title: 'Summer Game Geocode'
+    address: ''
+  requirements:
+    _permission: 'access summergame'
 summergame.map:
   path: '/summergame/map/{game_term}'
   defaults:
@@ -314,5 +322,26 @@ summergame.trivia.update:
   defaults:
     _controller: '\Drupal\summergame\Controller\TriviaController::update'
     _title: 'Summer Game Trivia Update'
+  requirements:
+    _permission: 'access summergame'
+summergame.scatterlog.connect:
+  path: '/summergame/scatterlog/connect'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\ConnectionController:show'
+    _title: 'Summer Game Account Connection'
+  requirements:
+    _permission: 'access summergame'
+summergame.scatterlog.connect_process:
+  path: '/summergame/scatterlog/connect/{uid}'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\ConnectionController:connect'
+    _title: 'Summer Game Account Connection'
+  requirements:
+    _permission: 'access summergame'
+summergame.recent.badges:
+  path: '/summergame/recent-badges'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\PlayerController::getRecentBadges'
+    _title: 'Summer Game Recent Badges'
   requirements:
     _permission: 'access summergame'

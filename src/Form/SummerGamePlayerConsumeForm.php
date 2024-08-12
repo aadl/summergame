@@ -8,6 +8,7 @@
 namespace Drupal\summergame\Form;
 
 use Drupal\Core\Url;
+use Drupal\Core\Link;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 
@@ -25,9 +26,23 @@ class SummerGamePlayerConsumeForm extends FormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state, $pid = 0) {
     $player = summergame_player_load($pid);
+    $user_players = summergame_player_load_all($player['uid']);
     $guzzle = \Drupal::httpClient();
     $api_url = \Drupal::config('arborcat.settings')->get('api_url');
     $db = \Drupal::database();
+
+    // Prepare links to other players if needed
+    $other_players_markup = '';
+    if (count($user_players) > 1) {
+      $other_players_links = ' -- Switch to another player: ';
+      foreach ($user_players as $user_player) {
+        if ($user_player['pid'] != $player['pid']) {
+          // Add to other player list
+          $name = $user_player['nickname'] ? $user_player['nickname'] : $user_player['name'];
+          $other_players_links .= Link::createFromRoute($name, 'summergame.player.consume', ['pid' => $user_player['pid']])->toString() . ' ';
+        }
+      }
+    }
 
     $finished_default = 0;
 
@@ -59,8 +74,8 @@ class SummerGamePlayerConsumeForm extends FormBase {
     ];
     $form['message'] = [
       '#markup' => '<p>Logging points for player: <strong>' .
-                   ($player['nickname'] ? $player['nickname'] : $player['name']) . '</strong>. ' .
-                   'Earn 50 points for each day that you log something!</p>'
+                   ($player['nickname'] ? $player['nickname'] : $player['name']) . "</strong>$other_players_links</p>" .
+                   '<p>Earn 50 points for each of the first 10 items that you log! After completion, you can earn a 50 point bonus once per day that you finish something.</p>'
     ];
     $form['consume_type'] = [
       '#type' => 'select',
@@ -69,6 +84,15 @@ class SummerGamePlayerConsumeForm extends FormBase {
         'watch' => 'I watched something',
         'listen' => 'I listened to something',
       ],
+      '#required' => TRUE,
+    ];
+    $form['consume_day'] = [
+      '#type' => 'select',
+      '#options' => [
+        'today' => 'Today',
+        'yesterday' => 'Yesterday',
+      ],
+      '#default_value' => 'today',
       '#required' => TRUE,
     ];
     $form['title'] = [
@@ -100,6 +124,7 @@ class SummerGamePlayerConsumeForm extends FormBase {
 
     // Display Classic Reading Game Log
     $log_rows = [];
+    $row_number = 0;
     $player_log = summergame_get_player_log($pid);
     foreach ($player_log as $log_row) {
       $delete = ['data' => ['#markup' => '[ <a href="/summergame/player/' . $pid . '/ledger/' .
@@ -107,15 +132,18 @@ class SummerGamePlayerConsumeForm extends FormBase {
       $log_rows[] = [++$row_number, $log_row->description, date('F j', $log_row->timestamp), $delete];
     }
 
+    $form['log_count'] = [
+      '#type' => 'value',
+      '#value' => count($log_rows),
+    ];
+
     // Determine Classic Reading Game status
-    $completion_gamecode = \Drupal::config('summergame.settings')->get('summergame_completion_gamecode');
-    $row = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND metadata LIKE :metadata",
-                      [':pid' => $pid, ':metadata' => "%gamecode:$completion_gamecode%"])->fetchObject();
-    if ($row->lid) {
-      $log_text = 'You completed the Classic Reading Game on ' . date('F j, Y', $row->timestamp);
+    if ($completed = summergame_get_classic_status($pid)) {
+      $log_text = 'You completed the Classic Reading Game on ' . date('F j, Y', $completed);
     }
     else if (count($log_rows) >= 10) {
-      // Completed, display the completion code
+      // Completed, display the completion code (shouldn't be displayed with auto submit but here just in case)
+      $completion_gamecode = \Drupal::config('summergame.settings')->get('summergame_completion_gamecode');
       $log_text = "You've completed the Classic Reading Game! " .
                   '<a href="/summergame/player/' . $pid . '/gamecode?text=' . $completion_gamecode . '">' .
                   "Enter code $completion_gamecode to receive the Badge</a>";
@@ -150,28 +178,62 @@ class SummerGamePlayerConsumeForm extends FormBase {
     $pid = $form_state->getValue('pid');
     $player = summergame_player_load($pid);
     $consume_type = $form_state->getValue('consume_type');
+    $consume_day = $form_state->getValue('consume_day');
     $title = $form_state->getValue('title');
     $finished = $form_state->getValue('finished');
+    $log_count = $form_state->getValue('log_count');
 
     $points = 0;
+    $award_classic_completion = FALSE;
     $type = 'Read Watched Listened';
     $metadata = [
       'consume_type' => $consume_type,
     ];
 
-    // check for daily read watch listen bonus
-    $res = $db->query("SELECT * FROM sg_ledger WHERE pid=:pid AND type='Read Watched Listened Daily Bonus' ORDER BY lid DESC LIMIT 1", [':pid' => $pid])->fetch();
-    if (date('mdY', $res->timestamp) != date('mdY', time())) {
-      $type .= ' Daily Bonus';
-      $points = 50;
+    // Check for time offset
+    if ($consume_day == 'yesterday') {
+      $metadata['time_adjust'] = '-86400';
     }
 
     if ($finished && (($consume_type == 'read' || $consume_type == 'listen') || ($player['agegroup'] == 'adult' && $consume_type == 'watch'))) {
       $metadata['logged'] = 1;
+      $log_count++;
+
+      if (!summergame_get_classic_status($pid)) {
+        $type .= ' Classic Reading Game';
+        $points = 50;
+
+        if ($log_count >= 10) {
+          // Not completed yet but has 10 or more logged rows
+          $award_classic_completion = TRUE;
+        }
+      }
+    }
+
+    if ($points == 0) {
+      // check for daily read watch listen bonus
+      $check_date = date('mdY', ($consume_day == 'yesterday' ? time() - 86400 : time()));
+      $res = $db->query("SELECT *, DATE_FORMAT(FROM_UNIXTIME(`timestamp`), '%m%d%Y') AS 'date_formatted' " .
+                        "FROM sg_ledger " .
+                        "WHERE pid=:pid " .
+                        "AND type LIKE 'Read Watched Listened%' " .
+                        "AND points = 50 " .
+                        "HAVING date_formatted=:check_date " .
+                        "LIMIT 1", [':pid' => $pid, ':check_date' => $check_date])->fetchObject();
+      if (!isset($res->lid)) {
+        $type .= ' Daily Bonus';
+        $points = 50;
+      }
     }
 
     $points = summergame_player_points($pid, $points, $type, $title, $metadata);
     \Drupal::messenger()->addMessage("Earned $points points for $title");
+
+    // Check for classic reading game completion
+    if ($award_classic_completion) {
+      $completion_gamecode = \Drupal::config('summergame.settings')->get('summergame_completion_gamecode');
+      summergame_redeem_code($player, $completion_gamecode);
+    }
 
     return;
   }
