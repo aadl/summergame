@@ -84,7 +84,7 @@ class BadgeRenderer {
           $pid = $player['pid'];
         }
 
-        $badge = new StdClass();
+        $badge = new \StdClass();
         $badge->game_term = $variables['node']->field_badge_game_term->value;
         $badge->level = $variables['node']->field_badge_level->value;
         $badge->formula = $variables['node']->field_badge_formula->value;
