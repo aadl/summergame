@@ -776,9 +776,11 @@ FBL;
         $pdf->Cell($page_width - 35, 7, $sequence_text, 0);
       }
 
-      // add the QR Code
-      $pdf->SetXY(-50, -50);
-      $pdf->Image($qrcode, NULL, NULL, 30, 30, 'PNG');
+      // add the QR Code if Summer Game code
+      if (strpos($gamecode->game_term, 'SummerGame') === 0) {
+        $pdf->SetXY(-50, -50);
+        $pdf->Image($qrcode, NULL, NULL, 30, 30, 'PNG');
+      }
 
       $pdf->Output($event_code . '_code.pdf', 'D');
     }
