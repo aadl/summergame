@@ -206,9 +206,10 @@ function summergame_theme() {
         'pointsomatic_weekly_totals' => NULL,
         'progress' => NULL,
         'summergame_current_game_term' => NULL,
+        'commerce_shop_term' => NULL,
         'summergame_shop_message_threshold' => NULL,
         'summergame_shop_message' => NULL,
-        'summergame_shop_game_term' => NULL,
+        'commerce_game_term' => NULL,
         'completed_classic' => NULL,
         'website_user' => NULL,
         'homecode' => NULL,
@@ -566,7 +567,7 @@ PARTITION BY LIST COLUMNS (game_term)
 PARTITIONS 3 (
   PARTITION p0 VALUES IN ('SummerGame2024'),
   PARTITION p1 VALUES IN ('SummerGame2011', 'SummerGame2012', 'SummerGame2013', 'SummerGame2014', 'SummerGame2015', 'SummerGame2016', 'SummerGame2017', 'SummerGame2018', 'SummerGame2019', 'SummerGame2020', 'SummerGame2021', 'SummerGame2022', 'SummerGame2023','SummerGameClassic'),
-  PARTITION p2 VALUES IN ('BookPrizeToken', 'DownloadOfTheDay', 'HallOfFame', 'Points-O-Matic', 'StreetsQuest', 'TreasureQuest', 'WorldHistoryQuest')
+  PARTITION p2 VALUES IN ('BookPrizeToken', 'DownloadOfTheDay', 'HallOfFame', 'MLEADershipGame', 'Points-O-Matic', 'StreetsQuest', 'TreasureQuest', 'WorldHistoryQuest')
 )
   // Do Or Diag
   else if (variable_get('summergame_dod_enabled', FALSE)) {

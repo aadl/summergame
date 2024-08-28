@@ -33,8 +33,8 @@
         <h2>Shop Balances</h2>
         <table class="account-summary not-fixed-table">
           <tr><th>Type</th><th>Balance</th></tr>
-          <tr><td>Summer Game Shop Total</td><td><strong>{{ attribute(balances, summergame_shop_game_term) }}</strong></td></tr>
-          <tr><td>{{summergame_current_game_term}} Prize Count</td><td>({{ balances.prize_count }}/4 items)</td></tr>
+          <tr><td>Summer Game Shop Total</td><td><strong>{{ attribute(balances, commerce_game_term) }}</strong></td></tr>
+          <tr><td>{{commerce_shop_term}} Prize Count</td><td>({{ balances.prize_count }}/4 items)</td></tr>
           {% if balances.BookPrizeToken is defined %}
             <tr><td>- Book Prize Token</td><td>{{ balances.BookPrizeToken }}</td></tr>
           {% endif %}
