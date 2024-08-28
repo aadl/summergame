@@ -403,8 +403,7 @@ function summergame_twilio_respond($incoming) {
     }
     else {
       $response = $response_template;
-      $gameDisplayName = \Drupal::config('summergame.settings')->get('game_display_name');
-      $response['text'] = ($player['nickname'] ? $player['nickname'] : $player['name']) . "'s $gameDisplayName Shop Balance: ";
+      $response['text'] = ($player['nickname'] ? $player['nickname'] : $player['name']) . "'s Shop Balance: ";
 
       if (\Drupal::moduleHandler()->moduleExists('commerce_summergame')) {
         $summergame_shop_game_term = \Drupal::config('commerce_summergame.settings')->get('commerce_summergame_game_term');
