@@ -16,6 +16,8 @@ class BadgeRenderer {
 
   static function abstractSGBadgeRender($variables){
 
+    
+
   $variables['test_data'] = "Some data";
 
   $badge_level = $variables['node']->field_badge_level->value;

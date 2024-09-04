@@ -1,11 +1,23 @@
 {% if viewing_access %}
+{% if not isByteClub %}
 <h1 class="t-center ruled-heading large-heading">
   <span>{{ game_term == 'ByteClub' ? 'ByteClub' : ''}} Badge List{% if player.pid %} For {{ player.nickname ? player.nickname : player.name }}{% endif %}</span>
 </h1>
+{% else %}
+  <!-- BYTE CLUB -->
+  <h1 class="t-center ruled-heading large-heading">
+    <span>Bits &#38; Badges</span>
+  </h1>
 {% endif %}
+
+{% endif %}
+{% if not isByteClub %}
 <div class="sidebar-container {{ game_term == 'ByteClub' ? 'byteclub-container' : ''}}">
+{% endif %}
   {% if viewing_access %}
+{% if not isByteClub %}
     <div class="page-with-sidebar-content">
+{% endif %}
       {% if all_players|length > 1 %}
         <p id="badge-list-other-players">
           <b>Show Badge List for other Players: </b>
@@ -39,7 +51,9 @@
         {% endif %}
       </div>
       <div id="badge-list">
+        {% if not isByteClub %}  
         <h2>{{ game_term|replace({'_': ' '}) }}</h2>
+        {% endif %}
         {% for term_id, series in badge_list %}
           <div class="badgelist-series {{ series.classes|join(' ') }} show">
             <h3 id="series-{{ term_id }}" class="no-margin-bottom">{{ series.name }} Badge Series</h3>
@@ -71,13 +85,13 @@
           </div>
         {% endfor %}
       </div>
+    {% if not isByteClub %}  
     </div>
+    {% endif %}
   {% else %}
     <p><em>You don't have permission to view this player's badge list.</em></p>
   {% endif %}
-  {% if game_term == 'ByteClub' %}
-    {% include '@summergame/byteclub-sidebar.html.twig' %}
-  {% else %}
-    {% include directory ~ "/templates/base/nodes/sidebars/summergame.html.twig" %}
-  {% endif %}
+{% if not isByteClub %}
 </div>
+  {% include directory ~ "/templates/base/nodes/sidebars/summergame.html.twig" %}
+{% endif %}

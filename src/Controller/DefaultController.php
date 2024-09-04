@@ -886,7 +886,7 @@ FBL;
 
             $badges[$term_id] = [
               'name' => $term->get('name')->value,
-              'description' => $series_info[0],
+              'description' => isset($series_info[0]) ? $series_info[0] : "",
               'level' => $level_output,
               'tags' => [],
               'diff_class' => 'diff' . $series_level,
@@ -950,10 +950,13 @@ FBL;
       }
     }
 
+
+
     return [
       '#attached' => [
         'library' => [
           'summergame/summergame-badgelist-lib',
+          'summergame/summergame-byteclub-lib'
         ],
       ],
       '#cache' => [
@@ -965,7 +968,8 @@ FBL;
       '#viewing_access' => true,
       '#game_term' => $badgelist_game_term,
       '#list_tags' => $list_tags,
-      '#badge_list' => $badges
+      '#badge_list' => $badges,
+      '#isByteClub'=>isByteClubPage()
     ];
   }
 
