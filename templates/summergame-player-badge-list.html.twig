@@ -1,7 +1,7 @@
 {% if viewing_access %}
 {% if not isByteClub %}
 <h1 class="t-center ruled-heading large-heading">
-  <span>{{ game_term == 'ByteClub' ? 'ByteClub' : ''}} Badge List{% if player.pid %} For {{ player.nickname ? player.nickname : player.name }}{% endif %}</span>
+  <span>Badge List{% if player.pid %} For {{ player.nickname ? player.nickname : player.name }}{% endif %}</span>
 </h1>
 {% else %}
   <!-- BYTE CLUB -->
@@ -87,11 +87,12 @@
       </div>
     {% if not isByteClub %}  
     </div>
+    {% include directory ~ "/templates/base/nodes/sidebars/summergame.html.twig" %}
     {% endif %}
   {% else %}
     <p><em>You don't have permission to view this player's badge list.</em></p>
   {% endif %}
 {% if not isByteClub %}
 </div>
-  {% include directory ~ "/templates/base/nodes/sidebars/summergame.html.twig" %}
+  
 {% endif %}
