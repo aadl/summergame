@@ -45,6 +45,13 @@ body.byte-club-skin #main-content a{
 }
 
 
+body.byte-club-skin #main-content textarea, body.byte-club-skin #main-content input{
+  color:#000000;
+}
+
+body.byte-club-skin #main-content input.button{
+  color:#ffffff;
+}
 
 body.byte-club-skin #main-content #badge-filters {
   display:none;
@@ -125,6 +132,19 @@ body.byte-club-skin .t-center.ruled-heading.large-heading {
 body.byte-club-skin #main-content .md-margin{
   width:80%;
   margin-left:10%;
+}
+
+
+body.byte-club-skin #main-content #summergame-self-award-form a {
+  color: #000;
+}
+
+body.byte-club-skin #main-content #summergame-self-award-form {
+  color: #000;
+}
+
+body.byte-club-skin #main-content #summergame-self-award-form th {
+  padding-left: 1em;
 }
 
 
