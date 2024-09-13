@@ -14,7 +14,12 @@
     }
 
 
-   
+:root {
+  --byteclub-red: #e23c28;
+  --byteclub-blue: #219ebc;
+  --byteclub-button-blue: #16778f;
+}
+
 
 @keyframes animatedBackground {
   0% { background-position: 0 0; }
@@ -51,10 +56,15 @@ body.byte-club-skin #main-content textarea, body.byte-club-skin #main-content in
 
 body.byte-club-skin #main-content input.button{
   color:#ffffff;
+  background: var(--byteclub-blue)
 }
 
 body.byte-club-skin #main-content #badge-filters {
   display:none;
+}
+
+body.byte-club-skin #main-content #badge-list{
+  text-align:center;
 }
 
 
@@ -80,6 +90,14 @@ body.byte-club-skin .t-center.ruled-heading.large-heading {
 }
 
 
+body.byte-club-skin .sg-badge-progress-bar[value]::-moz-progress-bar {
+  background-color: var(--byteclub-blue);
+}
+
+
+
+
+
 
   .byteclub-top-menu{
     display:flex;
@@ -103,7 +121,12 @@ body.byte-club-skin .t-center.ruled-heading.large-heading {
     }
 
     body.byte-club-skin #main-content a.bc-link:hover {
-      color: #e23c28;
+      color: var(--byteclub-red);
+      text-decoration:underline;
+    }
+
+    body.byte-club-skin #main-content .button:hover {
+      background: var(--byteclub-red);
       text-decoration:underline;
     }
 
@@ -145,6 +168,17 @@ body.byte-club-skin #main-content #summergame-self-award-form {
 
 body.byte-club-skin #main-content #summergame-self-award-form th {
   padding-left: 1em;
+}
+
+body.byte-club-skin #main-content #summergame-self-award-form .button{
+  background:var(--byteclub-red);
+}
+body.byte-club-skin #main-content #summergame-self-award-form .button:hover{
+  background:var(--byteclub-blue);
+}
+
+body.byte-club-skin #main-content #summergame-self-award-form .button[disabled]{
+  background:var(--byteclub-blue);
 }
 
 
