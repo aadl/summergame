@@ -157,13 +157,24 @@ body.byte-club-skin #main-content .md-margin{
   margin-left:10%;
 }
 
+body.byte-club-skin #main-content table tbody{
+background: transparent;
+}
+
+body.byte-club-skin #main-content #summergame-self-award-form table{
+  border: 1px solid #ffffffb2;
+}
+
+body.byte-club-skin #main-content #summergame-self-award-form table tr:hover > th, body.byte-club-skin #main-content #summergame-self-award-form table tr:hover > td {
+  background: #ffffff29 !important;
+}
 
 body.byte-club-skin #main-content #summergame-self-award-form a {
-  color: #000;
+  color: #fff;
 }
 
 body.byte-club-skin #main-content #summergame-self-award-form {
-  color: #000;
+  color: #fff;
 }
 
 body.byte-club-skin #main-content #summergame-self-award-form th {
@@ -180,6 +191,12 @@ body.byte-club-skin #main-content #summergame-self-award-form .button:hover{
 body.byte-club-skin #main-content #summergame-self-award-form .button[disabled]{
   background:var(--byteclub-blue);
 }
+
+body.byte-club-skin #main-content textarea, body.byte-club-skin #main-content input[type=text]{
+  background:black;
+  color:white;
+}
+
 
 
     /*
