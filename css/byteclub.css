@@ -90,6 +90,10 @@ body.byte-club-skin .t-center.ruled-heading.large-heading {
 }
 
 
+body.byte-club-skin .sg-badge-progress-bar::-webkit-progress-value {
+    background-color: var(--byteclub-blue);
+}
+
 body.byte-club-skin .sg-badge-progress-bar[value]::-moz-progress-bar {
   background-color: var(--byteclub-blue);
 }
