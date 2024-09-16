@@ -197,6 +197,20 @@ body.byte-club-skin #main-content textarea, body.byte-club-skin #main-content in
   color:white;
 }
 
+@keyframes swirl {
+  from {background-position: 50% 100%;}
+  to {background-position: 50% 0%;}
+}
+
+
+body.byte-club-skin #main-content #summergame-self-award-form .button:active{
+   background-image:url('data:image/svg+xml,<%3Fxml version="1.0" encoding="UTF-8" standalone="no"%3F><!-- Created with Inkscape (http://www.inkscape.org/) --><svg width="209.99998mm" height="190.5556mm" viewBox="0 0 209.99998 190.5556" version="1.1" id="svg1" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg"><sodipodi:namedview id="namedview1" pagecolor="%23ffffff" bordercolor="%23000000" borderopacity="0.25" inkscape:showpageshadow="2" inkscape:pageopacity="0.0" inkscape:pagecheckerboard="0" inkscape:deskcolor="%23d1d1d1" inkscape:document-units="mm" /><defs id="defs1" /><g inkscape:label="Layer 1" inkscape:groupmode="layer" id="layer1" transform="translate(2.1457673e-6,-48.744238)"><rect style="fill:%23219ebc;fill-opacity:1;stroke:%23219ebc;stroke-width:1.80244;stroke-opacity:1" id="rect1" width="208.19756" height="188.75317" x="0.90121788" y="49.645458" inkscape:export-filename="spiral.svg" inkscape:export-xdpi="96" inkscape:export-ydpi="96" /><rect style="fill:%23e23c28;fill-opacity:1;stroke:%23e23c28;stroke-width:2.89535;stroke-opacity:1" id="rect2" width="306.80115" height="279.60034" x="179.12268" y="-103.25136" transform="matrix(0.74246777,0.66988179,-0.74246777,0.66988179,0,0)" /></g></svg>');
+  animation-name: swirl;
+  animation-duration: 0.5s;
+  animation-iteration-count: infinite;
+  background-size: 200%;
+}
+
 
 
     /*

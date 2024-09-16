@@ -93,7 +93,7 @@ class SummerGameSelfAwardForm extends FormBase {
           '#type' => 'button',
           '#disabled' => TRUE,
           '#prefix' => $row_prefix,
-          '#value' => 'COMPLETED!',
+          '#value' => 'Bit Complete!',
           '#suffix' => $row_suffix,
         ];
       }
@@ -102,7 +102,7 @@ class SummerGameSelfAwardForm extends FormBase {
           '#type' => 'submit',
           '#prefix' => $row_prefix,
           '#name' => 'submit-' . $i,
-          '#value' => t('I did this!'),
+          '#value' => t('Do this Bit!'),
           '#suffix' => $row_suffix,
         ];
       }
