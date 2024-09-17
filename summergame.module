@@ -46,7 +46,9 @@ function summergame_preprocess_html(&$variables) {
     $renderArray = [
       '#type'     => 'inline_template',
       '#template' => \file_get_contents($module_path."/templates/byteclub-header.html.twig"),
-      '#context'  => [],
+      '#context'  => [
+        'sg_active_player'=>summergame_get_active_player()
+      ],
     ];
 
     $bc_header = (string) \Drupal::service('renderer')->renderPlain($renderArray);
