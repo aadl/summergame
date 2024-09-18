@@ -73,7 +73,7 @@ class SummerGameSelfAwardForm extends FormBase {
     ];
 
     $playername = ($player['nickname'] ? $player['nickname'] : $player['name']);
-    $form['tasks']['tasks_table_start']['#markup'] = "<table><tr><th>Task progress for $playername</th><th>Completed</th></tr>";
+    $form['tasks']['tasks_table_start']['#markup'] = "<table><tr><th>Bits for $playername</th><th>Status</th></tr>";
 
     foreach ($tasks as $i => $task) {
       // search for link path
