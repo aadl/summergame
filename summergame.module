@@ -8,6 +8,75 @@ use Drupal\node\Entity\Node;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 
+function isByteClubPage(){
+
+  //badgelist page
+  $path = \Drupal::request()->getRequestUri();
+  if (strpos($path, '/summergame/badgelist/byteclub') !== FALSE) {
+    return true;
+  }
+
+  //taxonomy page and all other byteclub pages
+  if (strpos($path, '/byteclub') !== FALSE) {
+    return true;
+  }
+
+  //badge pages
+  $node = \Drupal::request()->attributes->get('node');
+  if ($node) {
+    if ($node->getType() == "sg_badge") {
+      if ($node->field_badge_game_term->value == "ByteClub") {
+        return true;
+      }
+    }
+  }
+
+
+  return false;
+
+}
+
+function summergame_preprocess_html(&$variables) {
+  if(isByteClubPage()){
+    
+    $variables['attributes']['class'][] = 'byte-club-skin';
+
+
+    $module_path = \Drupal::service('module_handler')->getModule('summergame')->getpath();
+    $renderArray = [
+      '#type'     => 'inline_template',
+      '#template' => \file_get_contents($module_path."/templates/byteclub-header.html.twig"),
+      '#context'  => [
+        'sg_active_player'=>summergame_get_active_player()
+      ],
+    ];
+
+    $bc_header = (string) \Drupal::service('renderer')->renderPlain($renderArray);
+    
+   
+    if (isset($variables['page']['content']['aadl_content']['#prefix'])) {
+      $bc_header = $bc_header . $variables['page']['content']['aadl_content']['#prefix'];
+    }
+
+    $variables['page']['content']['aadl_content']['#prefix'] = $bc_header;
+      
+  }
+
+}
+
+function summergame_node_view_alter(array &$build) {
+  // @see \Drupal\Tests\embed\Functional\EmbedPreviewTest::testPreview
+  if (isByteClubPage()) {
+    $build['#attached']['library'][] = 'summergame/summergame-byteclub-lib';
+  }
+}
+
+
+
+
+
+
+
 function summergame_leaderboard_update() {
   $summergame_settings = \Drupal::config('summergame.settings');
   $staff_rid = $summergame_settings->get('summergame_staff_role_id');
@@ -236,6 +305,7 @@ function summergame_theme() {
         'game_term' => NULL,
         'list_tags' => NULL,
         'badge_list' => NULL,
+        'isByteClub' => NULL,
       ]
     ],
     'summergame_leaderboard_page' => [

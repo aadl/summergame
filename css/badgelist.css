@@ -13,3 +13,18 @@
 .button.active {
   background-color: #09f;
 }
+
+
+/*
+* byteclub
+*/
+
+.byteclub-container{
+  min-height:700px;
+}
+
+.byteclub-container .sidebar-summbergame-logo a {
+  display: block;
+  z-index: 2;
+  position: relative;
+}

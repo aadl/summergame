@@ -16,6 +16,8 @@ class BadgeRenderer {
 
   static function abstractSGBadgeRender($variables){
 
+
+
   $variables['test_data'] = "Some data";
 
   $badge_level = $variables['node']->field_badge_level->value;
@@ -145,7 +147,9 @@ class BadgeRenderer {
             $tasks = explode('|', substr($badge->formula, strlen('SELFAWARD:')));
             $total_count = count($tasks);
             $player_count = $db->query("SELECT COUNT(lid) AS player_count FROM `sg_ledger` WHERE `pid` = $pid AND metadata LIKE '%badgetask:$bid%'")->fetchField();
-            $formula_type = 'self awarded task' . ($total_count > 1 ? 's' : '');
+            //$formula_type = 'self awarded task' . ($total_count > 1 ? 's' : '');
+            $formula_type = 'Bits Complete';
+            
           }
           elseif (strpos($badge->formula, '**') !== FALSE) {
             // Multi Game Term ("Hall of Fame") Badge

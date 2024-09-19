@@ -1,0 +1,279 @@
+@font-face {
+       font-family: montserrat;
+       src: url(../fonts/Montserrat-Regular.ttf) format("ttf");
+    }
+@font-face {
+       font-family: montserrat;
+       src: url(../fonts/Montserrat-Bold.ttf) format("ttf");
+       font-weight: bold;
+    }
+@font-face {
+       font-family: montserrat;
+       src: url(../fonts/Montserrat-ExtraBold.ttf) format("ttf");
+       font-weight: 900;
+    }
+
+
+:root {
+  --byteclub-red: #e23c28;
+  --byteclub-blue: #219ebc;
+  --byteclub-button-blue: #16778f;
+}
+
+
+@keyframes animatedBackground {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 -1000px; }
+}
+
+body.byte-club-skin #main-content{
+  background:black;
+  background-image:url(../images/bc-splatter.jpg);
+  font-family: montserrat !important;
+  color:white;
+  background-size: 100%;
+  
+  background-repeat: repeat-y;
+  animation: animatedBackground 420s linear alternate infinite;
+  min-height:100vh;
+
+}
+
+
+body.byte-club-skin.no-sidebars #search-results {
+  margin-left: 10%;
+  width: 80%;
+}
+
+body.byte-club-skin #main-content a{
+  color:white;
+}
+
+
+body.byte-club-skin #main-content textarea, body.byte-club-skin #main-content input{
+  color:#000000;
+}
+
+body.byte-club-skin #main-content input.button, body.byte-club-skin #main-content a.button{
+  color:#ffffff;
+  background: var(--byteclub-blue)
+}
+
+body.byte-club-skin #main-content #badge-filters {
+  display:none;
+}
+
+
+body.byte-club-skin #main-content #badge-list-other-players {
+  text-align: center;
+}
+
+
+body.byte-club-skin #main-content #badge-list{
+  text-align:center;
+}
+
+
+body.byte-club-skin #main-content #record-image-metadata{
+  background: #219ebc69;
+}
+
+
+body.byte-club-skin #record-info {
+  box-sizing: border-box;
+  padding-right: 1em;
+}
+
+body.byte-club-skin #block-aadl-content {
+  box-sizing: border-box;
+  padding: 1em;
+}
+
+body.byte-club-skin .t-center.ruled-heading.large-heading {
+  margin-top: 0.1em;
+  font-size: 6rem;
+  font-weight:900;
+}
+
+
+body.byte-club-skin .sg-badge-progress-bar::-webkit-progress-value {
+    background-color: var(--byteclub-blue);
+}
+
+body.byte-club-skin .sg-badge-progress-bar[value]::-moz-progress-bar {
+  background-color: var(--byteclub-blue);
+}
+
+
+
+
+
+
+  .byteclub-top-menu{
+    display:flex;
+    justify-content: flex-start;
+  }
+
+  .byteclub-top-menu a{
+
+    padding: 1em 0.8em;
+    margin: 0 1em;
+
+  }
+
+    body.byte-club-skin #main-content a.bc-link {
+      color: #219ebc;
+      text-decoration: none;
+      font-family: "montserrat";
+      font-weight: bold;
+      font-size: 1.3em;
+      align-self:center;
+    }
+
+    body.byte-club-skin #main-content a.bc-link:hover {
+      color: var(--byteclub-red);
+      text-decoration:underline;
+    }
+
+    body.byte-club-skin #main-content .button:hover {
+      background: var(--byteclub-red);
+      text-decoration:underline;
+    }
+
+  .byteclub-top-menu .bc-logo{
+    display:block;
+    width: 8em;
+    margin-left:2em;
+  }
+
+  .byteclub-top-menu .bc-logo img{
+      width:100%;
+  }
+
+  .byteclub-big-logo{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+  }
+
+  .byteclub-big-logo img {
+    margin-top:3em;
+      width:70%;
+      margin-bottom: 5em;
+  }
+
+body.byte-club-skin #main-content .md-margin{
+  width:80%;
+  margin-left:10%;
+}
+
+body.byte-club-skin #main-content table tbody{
+background: transparent;
+}
+
+body.byte-club-skin #main-content #summergame-self-award-form table{
+  border: 1px solid #ffffffb2;
+}
+
+body.byte-club-skin #main-content #summergame-self-award-form table tr:hover > th, body.byte-club-skin #main-content #summergame-self-award-form table tr:hover > td {
+  background: #ffffff29 !important;
+}
+
+body.byte-club-skin #main-content #summergame-self-award-form a {
+  color: #fff;
+}
+
+body.byte-club-skin #main-content #summergame-self-award-form {
+  color: #fff;
+}
+
+body.byte-club-skin #main-content #summergame-self-award-form th {
+  padding-left: 1em;
+}
+
+body.byte-club-skin #main-content #summergame-self-award-form .button{
+  background:var(--byteclub-red);
+}
+body.byte-club-skin #main-content #summergame-self-award-form .button:hover{
+  background:var(--byteclub-blue);
+}
+
+body.byte-club-skin #main-content #summergame-self-award-form .button[disabled]{
+  background:var(--byteclub-blue);
+}
+
+body.byte-club-skin #main-content textarea, body.byte-club-skin #main-content input[type=text]{
+  background:black;
+  color:white;
+}
+
+@keyframes swirl {
+  from {background-position: 50% 100%;}
+  to {background-position: 50% 0%;}
+}
+
+
+body.byte-club-skin #main-content #summergame-self-award-form .button:active{
+   background-image:url('data:image/svg+xml,<%3Fxml version="1.0" encoding="UTF-8" standalone="no"%3F><!-- Created with Inkscape (http://www.inkscape.org/) --><svg width="209.99998mm" height="190.5556mm" viewBox="0 0 209.99998 190.5556" version="1.1" id="svg1" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg"><sodipodi:namedview id="namedview1" pagecolor="%23ffffff" bordercolor="%23000000" borderopacity="0.25" inkscape:showpageshadow="2" inkscape:pageopacity="0.0" inkscape:pagecheckerboard="0" inkscape:deskcolor="%23d1d1d1" inkscape:document-units="mm" /><defs id="defs1" /><g inkscape:label="Layer 1" inkscape:groupmode="layer" id="layer1" transform="translate(2.1457673e-6,-48.744238)"><rect style="fill:%23219ebc;fill-opacity:1;stroke:%23219ebc;stroke-width:1.80244;stroke-opacity:1" id="rect1" width="208.19756" height="188.75317" x="0.90121788" y="49.645458" inkscape:export-filename="spiral.svg" inkscape:export-xdpi="96" inkscape:export-ydpi="96" /><rect style="fill:%23e23c28;fill-opacity:1;stroke:%23e23c28;stroke-width:2.89535;stroke-opacity:1" id="rect2" width="306.80115" height="279.60034" x="179.12268" y="-103.25136" transform="matrix(0.74246777,0.66988179,-0.74246777,0.66988179,0,0)" /></g></svg>');
+  animation-name: swirl;
+  animation-duration: 0.5s;
+  animation-iteration-count: infinite;
+  background-size: 200%;
+}
+
+
+
+
+
+    /*
+    * tablet
+    */
+
+  @media only screen and (max-width: 900px) {
+
+    .byteclub-top-menu .bc-logo{
+      display:none;
+    }
+     
+    }
+
+    /*
+    * mobile
+    */
+    @media only screen and (max-width: 600px) {
+        .byteclub-top-menu{
+          flex-wrap: wrap;
+        }
+
+        .bc-link {
+          font-size: 1em;
+        }
+      
+
+      .byteclub-top-menu a {
+          padding: 0.5em 0.5em;
+          margin: 0 0.5em;
+        }
+
+        .byteclub-big-logo img {
+      margin-top:1em;
+          width:70%;
+          margin-bottom:2em;
+      }
+  
+    }
+
+
+
+/*
+* admin editing defaults
+*/
+
+body.byte-club-skin #main-content .contextual-links{
+  color:#333333;
+}
+
+
+body.byte-club-skin #main-content .contextual-links a{
+  color:#333333;
+}

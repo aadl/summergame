@@ -73,7 +73,7 @@ class SummerGameSelfAwardForm extends FormBase {
     ];
 
     $playername = ($player['nickname'] ? $player['nickname'] : $player['name']);
-    $form['tasks']['tasks_table_start']['#markup'] = "<table><tr><th>Task progress for $playername</th><th>Completed</th></tr>";
+    $form['tasks']['tasks_table_start']['#markup'] = "<table><tr><th>Bits for $playername</th><th>Status</th></tr>";
 
     foreach ($tasks as $i => $task) {
       // search for link path
@@ -93,7 +93,7 @@ class SummerGameSelfAwardForm extends FormBase {
           '#type' => 'button',
           '#disabled' => TRUE,
           '#prefix' => $row_prefix,
-          '#value' => 'COMPLETED!',
+          '#value' => 'Bit Complete!',
           '#suffix' => $row_suffix,
         ];
       }
@@ -102,7 +102,7 @@ class SummerGameSelfAwardForm extends FormBase {
           '#type' => 'submit',
           '#prefix' => $row_prefix,
           '#name' => 'submit-' . $i,
-          '#value' => t('I did this!'),
+          '#value' => t('Do this Bit!'),
           '#suffix' => $row_suffix,
         ];
       }
