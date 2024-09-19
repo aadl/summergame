@@ -1,3 +1,10 @@
+#summergame-self-award-form .button {
+  width: 100%;
+}
+#summergame-self-award-form .button[disabled] {
+  color: #1f4273;
+  background-color: #e5edf8;
+}
 #summergame-live-points {
   font-size: 1.25em;
   font-weight: bold;

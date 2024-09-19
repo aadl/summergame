@@ -16,6 +16,8 @@ class BadgeRenderer {
 
   static function abstractSGBadgeRender($variables){
 
+
+
   $variables['test_data'] = "Some data";
 
   $badge_level = $variables['node']->field_badge_level->value;
@@ -37,9 +39,10 @@ class BadgeRenderer {
   if (\Drupal::moduleHandler()->moduleExists('summergame')) {
     $sg_enabled = \Drupal::config('summergame.settings')->get('summergame_points_enabled');
     $user = \Drupal::currentUser();
+    $bid = $variables['node']->id();
 
     $db = \Drupal::database();
-    $awarded = $db->query("SELECT COUNT(pid) AS pcount FROM sg_players_badges WHERE bid=:bid", [':bid' => $variables['node']->id()])->fetch();
+    $awarded = $db->query("SELECT COUNT(pid) AS pcount FROM sg_players_badges WHERE bid=:bid", [':bid' => $bid])->fetch();
     $variables['badge_awards'] = "This badge has been awarded to $awarded->pcount players";
 
     // Prepare taxonomy terms
@@ -61,6 +64,16 @@ class BadgeRenderer {
       }
     }
 
+    // Get home path for game term
+    $variables['game_home_path'] = 'play'; // default to play
+    $game_term_homes = summergame_get_game_term_homes();
+    foreach ($game_term_homes as $game_term_pattern => $game_term_path) {
+      if (strpos($game_term_pattern, $variables['node']->field_badge_game_term->value) !== FALSE) {
+        $variables['game_home_path'] = $game_term_path;
+        break;
+      }
+    }
+
     $badge_progress = '';
     $badge_list = '';
     if ($user->isAuthenticated()) {
@@ -73,8 +86,6 @@ class BadgeRenderer {
           $pid = $player['pid'];
         }
 
-        $variables['redeem_form'] = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerRedeemForm', $pid);
-
         $badge = new \StdClass();
         $badge->game_term = $variables['node']->field_badge_game_term->value;
         $badge->level = $variables['node']->field_badge_level->value;
@@ -82,44 +93,16 @@ class BadgeRenderer {
         $badge->points = $variables['node']->field_badge_points->value;
         $badge->reveal = $variables['node']->field_badge_reveal->value;
 
-        $player_badge_status = '<p class="player-badge-status">';
-        $earned = $db->query("SELECT * FROM sg_players_badges WHERE pid=:pid AND bid=:bid", [':pid' => $pid, ':bid' => $variables['node']->id()])->fetch();
-        if (!empty($earned->timestamp)) {
-          $player_badge_status .= 'You received this badge on ' . date('F j, Y g:i A', $earned->timestamp);
+        // Look up if the badge was earned and when
+        $earned_ts = (int) $db->query("SELECT timestamp FROM sg_players_badges WHERE pid=:pid AND bid=:bid",
+                                      [':pid' => $pid, ':bid' => $bid])->fetchField();
 
-              // $share_links .= '<div class="share-links">';
-
-              // $share_links .= '<div>Share your accomplishment:</div>';
-
-              // $share_links .= '<div class="twitter-share">';
-              // $share_links .= '<script type="text/javascript" src="http://platform.twitter.com/widgets.js"></script>';
-              // $share_links .= '<a href="http://twitter.com/share/?url=/" class="twitter-share-button" data-text="I earned the ' .
-              //                         $badge->title . ' Badge in the @aadl #summergame! ' . url($_GET['q'], array('absolute' => TRUE)) .
-              //                         ' Play along at http://play.aadl.org/." data-count="none">Tweet</a>';
-              // $share_links .= '</div>';
-
-              // $share_links .= '<div class="facebook-share">';
-              //         $share_links .= <<<FBL
-              // <div id="fb-root"></div>
-              // <script>(function(d, s, id) {
-              //   var js, fjs = d.getElementsByTagName(s)[0];
-              //   if (d.getElementById(id)) return;
-              //   js = d.createElement(s); js.id = id;
-              //   js.src = "//connect.facebook.net/en_US/all.js#xfbml=1";
-              //   fjs.parentNode.insertBefore(js, fjs);
-              // }(document, 'script', 'facebook-jssdk'));</script>
-              // <fb:like send="false" layout="standard" width="225" show_faces="true" colorscheme="light" action="like"></fb:like>
-              // FBL;
-              // $share_links .= '</div>';
-
-              // $share_links .= '</div>';
-
-              // $player_badge_status .= $share_links;
+        if (strpos($badge->formula, 'SELFAWARD:') === 0) {
+          $variables['self_award_form'] = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGameSelfAwardForm', $pid, $bid);
         }
         else {
-          $player_badge_status .= 'You have not yet earned this badge';
+          $variables['redeem_form'] = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerRedeemForm', $pid);
         }
-        $player_badge_status .= '</p>';
 
         // Handle hidden badges
         $variables['hide_badge'] = FALSE;
@@ -159,7 +142,16 @@ class BadgeRenderer {
 
         if (!$variables['hide_badge']) {
           $player_count = 0;
-          if (strpos($badge->formula, '**') !== FALSE) {
+          if (strpos($badge->formula, 'SELFAWARD:') === 0) {
+            // Self Awarding Badge
+            $tasks = explode('|', substr($badge->formula, strlen('SELFAWARD:')));
+            $total_count = count($tasks);
+            $player_count = $db->query("SELECT COUNT(lid) AS player_count FROM `sg_ledger` WHERE `pid` = $pid AND metadata LIKE '%badgetask:$bid%'")->fetchField();
+            //$formula_type = 'self awarded task' . ($total_count > 1 ? 's' : '');
+            $formula_type = 'Bits Complete';
+            
+          }
+          elseif (strpos($badge->formula, '**') !== FALSE) {
             // Multi Game Term ("Hall of Fame") Badge
             list($hof_type, $game_term_pattern, $total_count) = explode('**', $badge->formula);
             if ($hof_type == 'game_terms') {
@@ -309,7 +301,16 @@ class BadgeRenderer {
             $badge_progress .= '<h3>Player ' . ($player['nickname'] ? $player['nickname'] : $player['name']);
             $badge_progress .= " Progress: $percentage% ($player_count / $total_count $formula_type)</h3>";
             $badge_progress .= "<progress class=\"sg-badge-progress-bar\" value=\"$percentage\" max=\"100\"></progress><br>";
-            $badge_progress .= $player_badge_status;
+
+            // Show badge status under progress bar
+            $badge_progress .= '<p class="player-badge-status">';
+            if ($earned_ts) {
+              $badge_progress .= 'You received this badge on ' . date('F j, Y g:i A', $earned_ts);
+            }
+            else {
+              $badge_progress .= 'You have not yet earned this badge';
+            }
+            $badge_progress .= '</p>';
           }
 
           if (!empty($gc_rows)) {

@@ -30,3 +30,8 @@ summergame-badgelist-lib:
       css/badgelist.css: {}
   js:
     js/badgelist.js: {}
+summergame-byteclub-lib:
+  version: 1.x
+  css:
+    theme:
+      css/byteclub.css: {}

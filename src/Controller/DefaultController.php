@@ -796,7 +796,7 @@ FBL;
     return $this->redirect('summergame.admin');
   }
 
-  public function badge_list() {
+  public function badge_list($game_term = '') {
     $db = \Drupal::database();
     $summergame_settings = \Drupal::config('summergame.settings');
     $user = User::load(\Drupal::currentUser()->id());
@@ -823,7 +823,7 @@ FBL;
     }
 
     $vocab = 'sg_badge_series';
-    $badgelist_game_term = $summergame_settings->get('summergame_badgelist_game_term');
+    $badgelist_game_term = ($game_term ? $game_term : $summergame_settings->get('summergame_badgelist_game_term'));
     $play_test_term_id = $summergame_settings->get('summergame_play_test_term_id');
     $play_tester = $user->hasPermission('play test summergame');
     $badges = [];
@@ -888,7 +888,7 @@ FBL;
 
             $badges[$term_id] = [
               'name' => $term->get('name')->value,
-              'description' => $series_info[0],
+              'description' => isset($series_info[0]) ? $series_info[0] : "",
               'level' => $level_output,
               'tags' => [],
               'diff_class' => 'diff' . $series_level,
@@ -952,10 +952,13 @@ FBL;
       }
     }
 
+
+
     return [
       '#attached' => [
         'library' => [
           'summergame/summergame-badgelist-lib',
+          'summergame/summergame-byteclub-lib'
         ],
       ],
       '#cache' => [
@@ -967,7 +970,8 @@ FBL;
       '#viewing_access' => true,
       '#game_term' => $badgelist_game_term,
       '#list_tags' => $list_tags,
-      '#badge_list' => $badges
+      '#badge_list' => $badges,
+      '#isByteClub'=>isByteClubPage()
     ];
   }
 
