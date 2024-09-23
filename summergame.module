@@ -24,9 +24,11 @@ function isByteClubPage(){
   //badge pages
   $node = \Drupal::request()->attributes->get('node');
   if ($node) {
-    if ($node->getType() == "sg_badge") {
-      if ($node->field_badge_game_term->value == "ByteClub") {
-        return true;
+    if (method_exists($node, 'getType')) {
+      if ($node->getType() == "sg_badge") {
+        if ($node->field_badge_game_term->value == "ByteClub") {
+          return true;
+        }
       }
     }
   }
