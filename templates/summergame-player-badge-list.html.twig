@@ -61,7 +61,9 @@
               {% if series.description %}
                 {{ series.description }}<br>
               {% endif %}
+              {% if not isByteClub %}
               Difficulty: {{ series.level|raw }}
+              {% endif %}
               {% if series.tags %}
                 <br>Tags: {{ series.tags|join(', ') }}
               {% endif %}
@@ -71,7 +73,11 @@
                 <div class="badgelist-badge {{ node.classes|join(' ') }} show-ib">
                   {% if node.hide_badge %}
                     <a href="/node/{{ node.id }}" target="_blank">
-                      <img class="sg-admin-badge" src="/{{ directory }}/images/hidden_100.png" alt="Hidden Badge image">
+                      {% if isByteClub %}
+                        <img class="sg-admin-badge" src="/modules/custom/summergame/images/bc-empty-badge.png" alt="Hidden Badge image">
+                      {% else %}
+                        <img class="sg-admin-badge" src="/{{ directory }}/images/hidden_100.png" alt="Hidden Badge image">
+                      {% endif %}
                     </a>
                   {% elseif file_url(node.field_badge_image[0].entity.fileuri) %}
                     {% set badge_image = node.field_badge_image[0].entity.fileuri|split('/')|last %}
