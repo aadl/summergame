@@ -20,6 +20,8 @@ class BadgeRenderer {
 
   $variables['test_data'] = "Some data";
 
+  $variables['isByteClub'] = \isByteClubPage();
+
   $badge_level = $variables['node']->field_badge_level->value;
   switch ($badge_level) {
     case 2:
