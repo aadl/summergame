@@ -457,6 +457,100 @@ class AdminController extends ControllerBase {
     }
   }
 
+  public function admin_ledger() {
+    $summergame_settings = \Drupal::config('summergame.settings');
+
+    // build the pager
+    $pager_manager = \Drupal::service('pager.manager');
+    $page = \Drupal::service('pager.parameters')->findPage();
+    $per_page = 100;
+    $offset = $per_page * $page;
+
+    $db = \Drupal::database();
+    if (isset($_GET['term'])) {
+      $total = $db->query("SELECT COUNT(lid) as total FROM sg_ledger WHERE game_term = :term",
+      [':term' => $_GET['term']])->fetch();
+      $total = $total->total;
+      $result = $db->query("SELECT * FROM sg_ledger WHERE game_term = :term ORDER BY timestamp DESC LIMIT $offset, $per_page",
+      [':term' => $_GET['term']]);
+    } else {
+      $total = $db->query("SELECT COUNT(lid) as total FROM sg_ledger WHERE 1")->fetch();
+      $total = $total->total;
+      $result = $db->query("SELECT * FROM sg_ledger WHERE 1 ORDER BY timestamp DESC LIMIT $offset, $per_page");
+    }
+
+    $pager =\Drupal::service('pager.manager')->createPager($total, $per_page);
+
+    while ($row = $result->fetchAssoc()) {
+      // Change bnum: code to a link to the bib record
+      if (preg_match('/bnum:([\w-]+)/', $row['metadata'], $matches)) {
+        if (preg_match('/^\d{7}$/', $matches[1])) {
+          $row['description'] = '<img src="//cdn.aadl.com/covers/' . $matches[1] . '_100.jpg" width="50"> ' . $row['description'];
+        }
+        $row['description'] .= '<a href="/catalog/record/' . $matches[1] .  '">' .$row['description'] . '</a>';
+      }
+      // Translate material code to catalog material type
+      if (preg_match('/mat_code:([a-z])/', $row['metadata'], $matches)) {
+        $row['description'] = 'Points for ' . $locum->locum_config['formats'][$matches[1]] .
+                              ', ' . $row['description'];
+      }
+      // handle game codes
+      if (preg_match('/gamecode:([\w]+)/', $row['metadata'], $matches)) {
+        $row['type'] .= ': ' . $matches[1];
+      }
+      // link to nodes
+      if (preg_match('/nid:([\d]+)/', $row['metadata'], $matches)) {
+        $node = Node::load($matches[1]);
+        $node_title = $node->get('title')->value;
+        $nid = $node->get('nid')->value;
+        $row['description'] .= ": <a href=\"/node/$nid\">$node_title</a>";
+        // and link to comment
+        if (preg_match('/cid:([\d]+)/', $row['metadata'], $matches)) {
+          $comment = $matches[1];
+          $row['description'] .= " (<a href=\"/node/$nid#comment-$comment\">See comment</a>)";
+        }
+      }
+
+      $table_row = [
+        'pid' => $row['pid'],
+        'date' => date('F j, Y, g:i a', $row['timestamp']),
+        'type' => $row['type'],
+        'description' => $row['description'],
+        'points' => $row['points']
+      ];
+
+      if (strpos($row['metadata'], 'delete:no') === 0) {
+        $table_row['remove'] = '';
+      }
+      else {
+        $table_row['remove'] = '<a href="/summergame/player/' . $row['pid'] . '/ledger/' . $row['lid'] . '/deletescore">DELETE</a>';
+      }
+
+      $score_table[] = $table_row;
+    }
+
+    if (count($score_table)) {
+      $ledger = $score_table;
+    }
+    else {
+      $ledger = NULL;
+    }
+
+    return [
+      '#cache' => [
+        'max-age' => 0, // Don't cache, always get fresh data
+      ],
+      '#theme' => 'summergame_admin_ledger',
+      '#game_term_filter' => $_GET['term'] ?? '',
+      '#ledger' => $ledger,
+      '#pager' => [
+        '#type' => 'pager',
+        '#quantity' => 5,
+        '#game_display_name' => $summergame_settings->get('game_display_name'),
+      ]
+    ];
+  }
+
   public function lego_results() {
     $time_start = microtime(true);
     ////////////////////////////////////////////////////////////////////////////

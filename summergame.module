@@ -40,7 +40,7 @@ function isByteClubPage(){
 
 function summergame_preprocess_html(&$variables) {
   if(isByteClubPage()){
-    
+
     $variables['attributes']['class'][] = 'byte-club-skin';
 
 
@@ -54,14 +54,14 @@ function summergame_preprocess_html(&$variables) {
     ];
 
     $bc_header = (string) \Drupal::service('renderer')->renderPlain($renderArray);
-    
-   
+
+
     if (isset($variables['page']['content']['aadl_content']['#prefix'])) {
       $bc_header = $bc_header . $variables['page']['content']['aadl_content']['#prefix'];
     }
 
     $variables['page']['content']['aadl_content']['#prefix'] = $bc_header;
-      
+
   }
 
 }
@@ -264,6 +264,14 @@ function summergame_theme() {
         'pid2' => NULL,
         'rows' => NULL,
       ],
+    ],
+    'summergame_admin_ledger' => [
+      'variables' => [
+        'game_term_filter' => NULL,
+        'ledger' => NULL,
+        'pager' => NULL,
+        'game_display_name' => NULL,
+      ]
     ],
     'summergame_player_page' => [
       'variables' => [

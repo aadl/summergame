@@ -94,6 +94,13 @@ summergame.admin.badgeify:
     _form: '\Drupal\summergame\Form\SummerGameBadgeifierForm'
   requirements:
     _permission: 'administer summergame'
+summergame.admin.ledger:
+  path: '/summergame/admin/ledger'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\AdminController::admin_ledger'
+    _title: 'Summer Game Admin Ledger'
+  requirements:
+    _permission: 'administer summergame'
 summergame.admin.legoresults:
   path: '/summergame/admin/legoresults'
   defaults:

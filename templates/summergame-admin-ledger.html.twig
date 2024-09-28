@@ -1,0 +1,32 @@
+{% apply spaceless %}
+<h1 class="t-center ruled-heading large-heading"><span>Admin Ledger {{ game_term_filter }}</span></h1>
+<div>
+  <a href="/summergame/admin">Return to Summer Game Admin</a>
+  {{ pager }}
+  <table class="not-fixed-table">
+    <thead>
+      <tr>
+        <th>Player ID</th>
+        <th>Date</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Points</th>
+        <th>Remove?</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in ledger %}
+        <tr>
+          <td><a href="/summergame/player/{{ row.pid }}/ledger?term={{ game_term_filter }}">{{ row.pid }}</a></td>
+          <td>{{ row.date }}</td>
+          <td>{{ row.type }}</td>
+          <td>{{ row.description|raw }}</td>
+          <td>{{ row.points }}</td>
+          <td>{{ row.remove|raw }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {{ pager }}
+</div>
+{% endapply %}
