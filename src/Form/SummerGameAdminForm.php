@@ -160,7 +160,7 @@ class SummerGameAdminForm extends ConfigFormBase
       '#description' => t('Connection information for the redis server (e.g. tcp://127.0.0.1:6379?database=15)'),
     ];
     $user_roles = ['' => 'NONE'];
-    foreach (user_roles(TRUE) as $user_role) {
+    foreach (\Drupal\user\Entity\Role::loadMultiple() as $user_role) {
       $role_id = $user_role->get('id');
       $role_label = $user_role->get('label');
       $user_roles[$role_id] = $role_label;
