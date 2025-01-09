@@ -7,6 +7,7 @@ use Predis\Client;
 use Drupal\node\Entity\Node;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Link;
 
 function isByteClubPage(){
 
@@ -745,13 +746,13 @@ function summergame_dod_response($text, $pid) {
   $response = '';
   $db = \Drupal::database();
 
-  // Grab DoD Data from Couch
-  $libphp_path = variable_get('summergame_libphp_path', '');
-  include_once($libphp_path . 'contrib/PHP-on-Couch/lib/couch.php');
-  include_once($libphp_path . 'contrib/PHP-on-Couch/lib/couchClient.php');
-  include_once($libphp_path . 'contrib/PHP-on-Couch/lib/couchDocument.php');
-  $couch = new couchClient('COUCHDB_DSN_STRING', 'doordiag');
+  // Set a new connector to the CouchDB server
+  $summergame_settings = \Drupal::config('summergame.settings');
+  $dsn = $summergame_settings->get('summergame_couch_dsn');
+  $db = $summergame_settings->get('summergame_couch_db');
+  $couch = new CouchClient($dsn, $db);
 
+  // Grab DoD Data from Couch
   $track_lookup = array();
   try {
     $tracks = $couch->getDoc('tracks');
@@ -1267,6 +1268,7 @@ function summergame_get_ledger_count($pid, $filter = '') {
     }
   }
 
+  $db = \Drupal::database();
   $result = $db->query('SELECT COUNT(*) AS ledger_count FROM sg_ledger WHERE ' .
                      implode(' AND ', $query), $params);
   $count = $result->fetch();
@@ -1361,14 +1363,16 @@ function summergame_player_points($pid, $points, $type, $description = '', $meta
 }
 
 function summergame_other_players_message() {
-  // Check for other players if awarding points to logged in user
-  global $user;
   $message = '';
-  if ($user->other_players) {
+
+  // Check for other players if awarding points to logged in user
+  $player = summergame_get_active_player();
+  if (isset($player['other_players'])) {
     $other_links = array();
-    foreach ($user->other_players as $other_player) {
-      $other_links[] = l(($other_player['nickname'] ? $other_player['nickname'] : $other_player['name']),
-                         'summergame/player/' . $other_player['pid'] . '/setactive');
+    foreach ($player['other_players'] as $other_player) {
+      $other_links[] = Link::createFromRoute($other_player['nickname'] ? $other_player['nickname'] : $other_player['name'],
+                                             'summergame.player.setactive',
+                                             ['pid' => $other_player['pid']])->toString();
     }
     $message .= ' (Make another player active?: ' .
                 implode(' OR ', $other_links) . ')';
@@ -1846,54 +1850,6 @@ function summergame_players_merge($pid1, $pid2) {
   $db->query("UPDATE sg_ledger SET pid = :pid1 WHERE pid = :pid2", [':pid1' => $pid1, ':pid2' => $pid2]);
   $db->query("UPDATE sg_players_badges SET pid = :pid1 WHERE pid = :pid2", [':pid1' => $pid1, ':pid2' => $pid2]);
   $db->query("DELETE FROM sg_players WHERE pid = :pid", [':pid' => $pid2]);
-}
-
-function summergame_badgeifier_form(&$form_state) {
-  $form = array(
-    'title' => array('#value' => '<h1>Player Badgeifier</h1>'),
-  );
-
-  $form['pid'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Player ID'),
-    '#size' => 10,
-    '#maxlength' => 10,
-    '#description' => t('Player ID of the player to receive the Badge'),
-  );
-  $form['badge_id'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Badge ID'),
-    '#size' => 10,
-    '#maxlength' => 10,
-    '#description' => t('ID of the Badge to award to the player'),
-  );
-  $form['submit'] = array(
-    '#type' => 'submit',
-    '#value' => t('Badgeify'),
-  );
-
-  return $form;
-}
-
-function summergame_badgeifier_form_submit($form, &$form_state) {
-  $pid = $form_state['values']['pid'];
-  $badge_id = $form_state['values']['badge_id'];
-
-  if ($player = summergame_player_load(array('pid' => $pid))) {
-    $player_link = l('Player #' . $pid, 'summergame/player/' . $pid);
-    // Award badge to the player
-    if (summergame_player_award_badge($pid, $badge_id)) {
-      \Drupal::messenger()->addMessage("Awarded Badge #$badge_id to $player_link");
-    }
-    else {
-      \Drupal::messenger()->addError("Badge #$badge_id NOT awarded to $player_link. Already awarded?");
-    }
-  }
-  else {
-    \Drupal::messenger()->addError("No player with ID #$pid could be found");
-  }
-
-  drupal_goto('summergame/admin');
 }
 
 /**
