@@ -9,76 +9,62 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Link;
 
-function isByteClubPage(){
+function summergame_is_byteclub_page() {
+  $path = strtolower(\Drupal::request()->getRequestUri());
 
-  //badgelist page
-  $path = \Drupal::request()->getRequestUri();
-  if (strpos($path, '/summergame/badgelist/byteclub') !== FALSE) {
-    return true;
+  // badgelist page
+  if (strpos($path, '/summergame/badgelist/byteclub') === 0) {
+    return TRUE;
   }
 
-  //taxonomy page and all other byteclub pages
-  if (strpos($path, '/byteclub') !== FALSE) {
-    return true;
+  // taxonomy page and all other byteclub pages
+  if (strpos($path, '/byteclub') === 0) {
+    return TRUE;
   }
 
-  //badge pages
+  // badge pages
   $node = \Drupal::request()->attributes->get('node');
   if ($node) {
     if (method_exists($node, 'getType')) {
       if ($node->getType() == "sg_badge") {
         if ($node->field_badge_game_term->value == "ByteClub") {
-          return true;
+          return TRUE;
         }
       }
     }
   }
 
-
-  return false;
-
+  return FALSE;
 }
 
 function summergame_preprocess_html(&$variables) {
-  if(isByteClubPage()){
-
+  if (summergame_is_byteclub_page()) {
     $variables['attributes']['class'][] = 'byte-club-skin';
-
-
     $module_path = \Drupal::service('module_handler')->getModule('summergame')->getpath();
     $renderArray = [
       '#type'     => 'inline_template',
       '#template' => \file_get_contents($module_path."/templates/byteclub-header.html.twig"),
       '#context'  => [
-        'sg_active_player'=>summergame_get_active_player()
+        'sg_active_player' => summergame_get_active_player(),
       ],
     ];
 
     $bc_header = (string) \Drupal::service('renderer')->renderPlain($renderArray);
-
 
     if (isset($variables['page']['content']['aadl_content']['#prefix'])) {
       $bc_header = $bc_header . $variables['page']['content']['aadl_content']['#prefix'];
     }
 
     $variables['page']['content']['aadl_content']['#prefix'] = $bc_header;
-
   }
-
 }
 
 function summergame_node_view_alter(array &$build) {
   // @see \Drupal\Tests\embed\Functional\EmbedPreviewTest::testPreview
-  if (isByteClubPage()) {
+  if (summergame_is_byteclub_page()) {
     $build['#attached']['library'][] = 'summergame/summergame-byteclub-lib';
   }
 }
-
-
-
-
-
-
 
 function summergame_leaderboard_update() {
   $summergame_settings = \Drupal::config('summergame.settings');
@@ -309,7 +295,7 @@ function summergame_theme() {
         'game_term' => NULL,
         'list_tags' => NULL,
         'badge_list' => NULL,
-        'isByteClub' => NULL,
+        'is_byteclub' => NULL,
       ]
     ],
     'summergame_leaderboard_page' => [

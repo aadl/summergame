@@ -935,7 +935,7 @@ FBL;
                 }
                 else {
                   // Required Badge
-                  if (!$player['bids'][$required_part]) {
+                  if (!isset($player['bids'][$required_part])) {
                     $node->hide_badge = TRUE;
                     break;
                   }
@@ -951,8 +951,6 @@ FBL;
         }
       }
     }
-
-
 
     return [
       '#attached' => [
@@ -971,7 +969,7 @@ FBL;
       '#game_term' => $badgelist_game_term,
       '#list_tags' => $list_tags,
       '#badge_list' => $badges,
-      '#isByteClub'=>isByteClubPage()
+      '#is_byteclub' => summergame_is_byteclub_page(),
     ];
   }
 

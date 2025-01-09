@@ -1,5 +1,5 @@
 {% if viewing_access %}
-{% if not isByteClub %}
+{% if not is_byteclub %}
 <h1 class="t-center ruled-heading large-heading">
   <span>Badge List{% if player.pid %} For {{ player.nickname ? player.nickname : player.name }}{% endif %}</span>
 </h1>
@@ -11,11 +11,11 @@
 {% endif %}
 
 {% endif %}
-{% if not isByteClub %}
+{% if not is_byteclub %}
 <div class="sidebar-container {{ game_term == 'ByteClub' ? 'byteclub-container' : ''}}">
 {% endif %}
   {% if viewing_access %}
-{% if not isByteClub %}
+{% if not is_byteclub %}
     <div class="page-with-sidebar-content">
 {% endif %}
       {% if all_players|length > 1 %}
@@ -51,7 +51,7 @@
         {% endif %}
       </div>
       <div id="badge-list">
-        {% if not isByteClub %}  
+        {% if not is_byteclub %}
         <h2>{{ game_term|replace({'_': ' '}) }}</h2>
         {% endif %}
         {% for term_id, series in badge_list %}
@@ -61,7 +61,7 @@
               {% if series.description %}
                 {{ series.description }}<br>
               {% endif %}
-              {% if not isByteClub %}
+              {% if not is_byteclub %}
               Difficulty: {{ series.level|raw }}
               {% endif %}
               {% if series.tags %}
@@ -73,7 +73,7 @@
                 <div class="badgelist-badge {{ node.classes|join(' ') }} show-ib">
                   {% if node.hide_badge %}
                     <a href="/node/{{ node.id }}" target="_blank">
-                      {% if isByteClub %}
+                      {% if is_byteclub %}
                         <img class="sg-admin-badge" src="/modules/custom/summergame/images/bc-empty-badge.png" alt="Hidden Badge image">
                       {% else %}
                         <img class="sg-admin-badge" src="/{{ directory }}/images/hidden_100.png" alt="Hidden Badge image">
@@ -91,14 +91,14 @@
           </div>
         {% endfor %}
       </div>
-    {% if not isByteClub %}  
+    {% if not is_byteclub %}
     </div>
     {% include directory ~ "/templates/base/nodes/sidebars/summergame.html.twig" %}
     {% endif %}
   {% else %}
     <p><em>You don't have permission to view this player's badge list.</em></p>
   {% endif %}
-{% if not isByteClub %}
+{% if not is_byteclub %}
 </div>
-  
+
 {% endif %}
