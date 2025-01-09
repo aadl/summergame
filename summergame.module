@@ -103,7 +103,6 @@ function summergame_leaderboard_update() {
         // Switch for staff
         if ($staff_rid) {
           if ($staff) {
-            $lb_title .= 'Staff ';
             $staff_query = " AND {user__roles}.roles_target_id = '$staff_rid' ";
           }
           else {
@@ -115,27 +114,20 @@ function summergame_leaderboard_update() {
         if ($type != 'career') {
           $type_query = 'AND {sg_ledger}.game_term LIKE :game_term ';
           $args[':game_term'] = $type;
-          $lb_title .= $type;
         }
         else {
           $type_query = '';
-          $lb_title .= 'Career';
         }
-
-        $lb_title .= ' Leaderboard';
 
         // Determine range
         if ($range == 'day') {
           $range_query = 'AND {sg_ledger}.timestamp > ' . (time() - (60 * 60 * 24)) . ' ';
-          $lb_title .= ' for Today (Last 24 hours)';
         }
         else if ($range == 'week') {
           $range_query = 'AND {sg_ledger}.timestamp > ' . (time() - (60 * 60 * 24 * 7)) . ' ';
-          $lb_title .= ' for This Week (Last 7 Days)';
         }
         else {
           $range_query = '';
-          $lb_title .= ' for All Time';
         }
 
         $leaderboard = [];
