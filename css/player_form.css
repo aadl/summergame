@@ -1,0 +1,12 @@
+#summergame-player-form .summergame-player-edit-buttons {
+  margin-top: 1em;
+}
+#summergame-player-form .summergame-player-edit-buttons a {
+  margin: 0 10px;
+}
+#summergame-player-form #edit-admin {
+  float: right;
+}
+#summergame-player-form .form-item {
+  clear: right;
+}

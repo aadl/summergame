@@ -84,6 +84,9 @@ class SummerGamePlayerForm extends FormBase
     }
 
     $form = [];
+    $form['#attributes'] = ['class' => 'form-width-exception'];
+    $form['#attached']['library'][] = 'summergame/summergame-player-form-lib';
+
     if ($player['pid']) {
       $form['pid'] = [
         '#type' => 'value',
@@ -93,7 +96,7 @@ class SummerGamePlayerForm extends FormBase
         $game_term = $summergame_settings->get('summergame_current_game_term');
         $signup = $db->query("SELECT * FROM sg_ledger WHERE pid = " . $player['pid'] .
           " AND type = 'Signup' AND game_term = '$game_term'")->fetchObject();
-        if (!$signup->lid) {
+        if (!isset($signup->lid)) {
           $form['signup_eligible'] = [
             '#type' => 'value',
             '#value' => TRUE,
@@ -129,25 +132,21 @@ class SummerGamePlayerForm extends FormBase
     if ($player['pid']) {
       $form['buttons']['links'] = [
         '#markup' => '<a href="/' . $cancel_path . '">Cancel</a>' .
-          '&nbsp;&nbsp;&nbsp;&nbsp;' .
           '<a href="/summergame/player/' . $player['pid'] . '/delete">Delete Player</a>',
       ];
     }
 
     if ($player['pid'] && $user->hasPermission('administer summergame')) {
       $form['admin'] = [
-        '#prefix' => '<fieldset style="float:right"><legend>STAFF ONLY</legend>',
-        '#suffix' => '</fieldset>',
+        '#type' => 'details',
+        '#title' => 'STAFF ONLY',
       ];
-
       $form['admin']['merge_id'] = [
         '#type' => 'textfield',
         '#title' => t('Merge this player into Player ID'),
         '#size' => 8,
         '#maxlength' => 8,
         '#description' => t("Enter another Player ID number to merge this player infomation into that player record"),
-        '#prefix' => "<fieldset class=\"collapsible collapsed\"><legend>MERGE PLAYER</legend>",
-        '#suffix' => "</fieldset>",
       ];
     }
 
@@ -285,6 +284,7 @@ class SummerGamePlayerForm extends FormBase
       '#description' => t('Please let us know your upcoming grade if you\'re a student'),
     ];
     if ($user->hasPermission('administer users')) {
+      $search_link = '';
       if ($summergame_user_search_path = $summergame_settings->get('summergame_user_search_path')) {
         $search_link = ' (<a href="/' . $summergame_user_search_path . '">Search for user accounts if needed</a>)';
       }
@@ -332,7 +332,7 @@ class SummerGamePlayerForm extends FormBase
       $player_info = [
         'name' => $form_state->getValue('name'),
         'nickname' => trim($form_state->getValue('nickname')),
-        'gamecard' => str_replace(' ', '', strtoupper($form_state->getValue('gamecard'))),
+        'gamecard' => str_replace(' ', '', strtoupper($form_state->getValue('gamecard') ?? '')),
         'agegroup' => $form_state->getValue('agegroup'),
         'school' => $form_state->getValue('school'),
         'phone' => NULL, // default, handled below
@@ -407,7 +407,7 @@ class SummerGamePlayerForm extends FormBase
         }
     */
       }
-      if ($_GET['scatterlog'] == true) {
+      if (($_GET['scatterlog'] ?? '') == true) {
         \Drupal::messenger()->deleteAll();
         $form_state->setRedirect('summergame.scatterlog.connect');
       } else {
