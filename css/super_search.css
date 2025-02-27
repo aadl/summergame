@@ -1,0 +1,98 @@
+	.ss-container {
+		width: 100%;
+		max-width: 800px;
+		position: relative;
+		display: block;
+		margin: 50px auto;
+	}
+
+	.zoom-tray {
+		display: flex;
+		gap: 2px;
+
+	}
+
+	.action-tray {
+		display: flex;
+		gap: 2px;
+	}
+
+	.ss-frame {
+		height: 40px;
+		background-color: red;
+	}
+
+	.tray button {
+		background-color: #27272a;
+		padding: 12px 8px;
+		text-align: center;
+		cursor: pointer;
+		color: white;
+
+	}
+
+	.zoom-tray button {
+		padding: 14px 18px;
+
+	}
+
+	.tray {
+		width: 95%;
+		display: flex;
+		justify-content: space-between;
+		position: absolute;
+		left: 50%;
+		transform: translateX(-50%);
+		bottom: 12px;
+	}
+
+	canvas {
+		width: 100%;
+		margin: 0 auto;
+		display: block;
+		border: #27272a 4px groove;
+	}
+
+	.ss-categories {
+		margin: 50px auto;
+		max-width: 800px;
+	}
+
+	#ss-hints>li {
+		font-weight: bold;
+		font-size: 1.1rem;
+	}
+
+	#ss-hints>li>ul {
+		list-style-type: none;
+		margin-left: 40px;
+
+	}
+
+	#ss-hints ul li {
+		font-weight: normal;
+		font-size: 1rem;
+		list-style-position: outside
+	}
+
+	#ss-result {
+		position: absolute;
+		bottom: 20px;
+		color: white;
+		padding: 9px 6px;
+		background-color: #27272a;
+		left: 50%;
+		transform: translateX(-50%);
+		display: none;
+	}
+
+	.ss-categories li {
+		margin-top: 12px;
+	}
+
+	.ss-categories button {
+		background-color: #27272a;
+		color: white;
+		margin: 20px 0;
+		font-weight: normal
+	}

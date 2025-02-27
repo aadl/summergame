@@ -35,3 +35,10 @@ summergame-byteclub-lib:
   css:
     theme:
       css/byteclub.css: {}
+summergame-super-search:
+  version: 1.x
+  css: 
+    theme:
+      css/super_search.css: {}
+  js:
+      js/super_search.js: {}
