@@ -22,12 +22,19 @@ class SuperSearchController extends ControllerBase
 		$file_path = \Drupal::service('file_system')->realpath('private://super_search/' . $nid . '.json');
 		$puzzle_data = json_decode(file_get_contents($file_path), true);
 		$sets = [];
+		$session = \Drupal::requestStack()->getCurrentRequest()->getSession();
+		$solved = $session->get('ss-' . $nid, []);
+		$sIds = array_column($solved, 'ids');
+		foreach ($sIds as $s) {
+			if (!array_diff($ids, $s) && count($ids) === count($s)) {
+				return;
+			}
+		}
 		foreach ($puzzle_data['categories'] as $k => $a) {
 			$sets = array_column($a['set'], 'ids');
 			foreach ($sets as $n => $c) {
 				if (!array_diff($ids, $c) && count($ids) === count($c)) {
-					$session = \Drupal::requestStack()->getCurrentRequest()->getSession();
-					$solved = $session->get('ss-' . $nid, []);
+
 					$solved[] = ['ids' => $ids, 'color' => $a['color']];
 					$session->set('ss-' . $nid, $solved);
 					if (count($solved) === 36) {

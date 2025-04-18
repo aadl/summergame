@@ -221,15 +221,15 @@ function drawTriangle(tile) {
 	ctx.restore()
 }
 function drawText(tile) {
+	ctx.textAlign = 'center';
 	if (tile.selected == true) {
 		ctx.fillStyle = "#fff"
 	} else {
 		ctx.fillStyle = "#000"
 	}
 	ctx.font = "400 1.2em sans-serif";
-	const textOffsetX = tile.l == 'I' || tile.l == 'W' ? tile.l == 'I' ? tile.center.x - (canvas.width * .005) : tile.center.x - (canvas.width * .018) : tile.center.x - (canvas.width * .012);
-	const textOffsetY = tile.center.y + (canvas.height * 0.012);
-	ctx.fillText(tile.l, textOffsetX, textOffsetY);
+	const textOffsetY = tile.center.y + (canvas.height * 0.01);
+	ctx.fillText(tile.l, tile.center.x, textOffsetY);
 }
 function drawCorrect(set) {
 	bounds = identifyBounds(set.tiles).flat();
@@ -237,7 +237,7 @@ function drawCorrect(set) {
 		ctx.save();
 		ctx.fillStyle = set.color;
 		ctx.strokeStyle = set.color.replace(/[\d\.]+\)$/g, '.4)');
-		ctx.lineWidth = 3;
+		ctx.lineWidth = 5;
 		ctx.beginPath();
 		const centroid = bounds.reduce(
 			(acc, v) => {
@@ -284,7 +284,7 @@ function drawPuzzle() {
 async function drawPrompt(a) {
 	isSolved = true;
 	const prompt = document.createElement('template');
-	const svg = await fetch('/modules/custom/summergame/images/ss-sg2025-stamp.svg');
+	const svg = await fetch('/modules/custom/summergame/images/SG2025-WebGraphic-sm.svg');
 	const svgText = await svg.text();
 	const parser = new DOMParser();
 	const svgDoc = parser.parseFromString(svgText, "image/svg+xml");
@@ -297,19 +297,34 @@ async function drawPrompt(a) {
 		path.style.setProperty('--path-length', length);
 		path.style.setProperty('--stroke-color', '#301d2b');
 		path.style.setProperty('--fill-color', fill);
-		path.style.setProperty('--draw-duration', '0.6s');
-		if (i === 2) {
-			prompt.innerHTML = a;
-			const promptContent = prompt.content.cloneNode(true);
-			canvasContainer.appendChild(promptContent);
-			document.querySelector('.win-prompt > p').insertAdjacentElement('beforeBegin', svgElement);
-			tray.classList.add('win');
+		if (path.dataset.ssSkip != 1) {
+			path.style.setProperty('--draw-duration', '0.6s');
+			if (i === 2) {
+				prompt.innerHTML = a;
+				const promptContent = prompt.content.cloneNode(true);
+				canvasContainer.appendChild(promptContent);
+				document.querySelector('.win-prompt > p').insertAdjacentElement('beforeBegin', svgElement);
+				tray.classList.add('win');
+			}
+			setTimeout(() => {
+				path.classList.add('write');
+				path.style.visibility = 'visible';
+			}, i * 200);
+		} else {
+			setTimeout(() => {
+				const fill = path.dataset.ssColor;
+				path.style.setProperty('--fill-color', fill);
+				path.classList.add('write');
+				path.style.visibility = 'visible';
+			}, length * 200);
 		}
-		setTimeout(() => {
-			path.classList.add('write');
-			path.style.visibility = 'visible';
-		}, i * 200);
+
 	});
+	setTimeout(() => {
+		svgElement.classList.add('bulge')
+	}, 4000);
+
+
 }
 function applyTransforms() {
 	matrix = new DOMMatrix();
@@ -320,8 +335,8 @@ function applyTransforms() {
 	needsInversion = true;
 	drawPuzzle();
 	ctx.scale(dpr, dpr);
-	const bgX = (-transform.offsetX * 0.05) - (canvas.width / 25);
-	const bgY = (-transform.offsetY * 0.05) - (canvas.height / 25);
+	const bgX = (-transform.offsetX * 0.05) - (canvas.width * .03);
+	const bgY = (-transform.offsetY * 0.05) - (canvas.height * .03);
 	canvas.style.backgroundPosition = `${bgX}px ${bgY}px`;
 }
 
@@ -628,7 +643,6 @@ function handleHint(b) {
 		}
 	});
 }
-
 function handleGuess() {
 	const ids = selected.tiles.map((t) => { return t.id });
 	const body = JSON.stringify({ ids: ids });
