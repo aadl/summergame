@@ -702,7 +702,7 @@ function completeHint(i, h, w) {
 		} else {
 			Array.from(r).filter(l => { return l.querySelector('.cat-hint').textContent == h })[0].innerHTML = sp;
 		}
-		if (cat.querySelectorAll('li').length === 5) {
+		if (cat.querySelectorAll('li').length === 6) {
 			cat.parentNode.style.textDecoration = 'line-through'
 			b.style.backgroundColor = '#ccc';
 			b.disabled = true;
