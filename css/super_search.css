@@ -212,11 +212,13 @@ canvas {
 	from {
 		stroke: var(--stroke-color);
 		stroke-dashoffset: var(--path-length);
+		stroke-width: 30px;
 
 	}
 
 	to {
 		stroke-dashoffset: 0;
+		stroke-width: 3.6px;
 	}
 }
 

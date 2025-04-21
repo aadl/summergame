@@ -37,7 +37,7 @@ class SuperSearchController extends ControllerBase
 
 					$solved[] = ['ids' => $ids, 'color' => $a['color']];
 					$session->set('ss-' . $nid, $solved);
-					if (count($solved) > 1) {
+					if (count($solved) === 36) {
 						$answer = '<div class="win-prompt"><p>Solved! The remaining letters reveal...<br/> <span class="ss-answer"> ' . $puzzle_data['answer'] . '</span> </br> Redeem this game code for Summer Game points!</p></div>';
 					}
 					return new JsonResponse(['hint' => $puzzle_data['categories'][$k]['set'][$n]['hint'], 'color' => $a['color'], 'category' => $k, 'correct' => true, 'word' => $puzzle_data['categories'][$k]['set'][$n]['answer'], 'answer' => $answer ?? null]);

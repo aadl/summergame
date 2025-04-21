@@ -304,7 +304,7 @@ async function drawPrompt(a) {
 		const length = path.getTotalLength();
 		const fill = path.dataset.ssColor;
 		path.style.setProperty('--path-length', length);
-		path.style.setProperty('--stroke-color', '#fff');
+		path.style.setProperty('--stroke-color', fill);
 		path.style.setProperty('--fill-color', fill);
 		if (path.dataset.ssSkip != 1) {
 			path.style.setProperty('--draw-duration', '0.6s');
@@ -749,4 +749,8 @@ canvas.addEventListener("touchstart", startDrag);
 canvas.addEventListener("touchmove", dragTransform);
 canvas.addEventListener("touchend", endDrag);
 canvas.addEventListener("touchcancel", endDrag);
-
+window.addEventListener('pageshow', function (event) {
+	if (event.persisted) {
+		window.location.reload();
+	}
+});
