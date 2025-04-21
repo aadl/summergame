@@ -80,7 +80,6 @@ canvas {
 	background: no-repeat radial-gradient(rgba(0, 0, 0, .3) 0%, rgba(0, 0, 0, .6) 70%, rgba(0, 0, 0, .8) 90%), url("/modules/custom/summergame/images/SG2025-WebGraphic_1500px.jpg");
 	background-size: calc(100% + 100px) calc(100% + 100px);
 	background-position: center center;
-	font-size: 28px;
 }
 
 
@@ -158,8 +157,9 @@ canvas {
 	align-self: end;
 }
 
-.win-prompt span {
+.win-prompt .ss-answer {
 	font-size: 1.2em;
+	font-weight: bold;
 }
 
 .write {
@@ -170,12 +170,16 @@ canvas {
 	stroke-dashoffset: var(--path-length);
 	animation:
 		draw var(--draw-duration) ease forwards,
-		fill-in .8s ease forwards;
+		fill-in 1.2s ease forwards;
 	animation-delay: 0s, var(--draw-duration);
 }
 
 .bulge {
 	animation: bulge 0.5s ease-in-out;
+}
+
+.reveal {
+	animation: reveal 1.2s ease
 }
 
 .ss-ui-hint {
@@ -193,18 +197,6 @@ canvas {
 	text-align: center;
 }
 
-@keyframes draw {
-	from {
-		stroke: var(--stroke-color);
-		stroke-dashoffset: var(--path-length);
-
-	}
-
-	to {
-		stroke: var(--stroke-color);
-		stroke-dashoffset: 0;
-	}
-}
 
 @keyframes fill-in {
 	0% {
@@ -224,7 +216,6 @@ canvas {
 	}
 
 	to {
-		stroke: var(--stroke-color);
 		stroke-dashoffset: 0;
 	}
 }
@@ -247,6 +238,15 @@ canvas {
 	}
 }
 
+@keyframes reveal {
+	0% {
+		filter: blur(1.5rem);
+	}
+
+	100% {
+		filter: blur(0);
+	}
+}
 
 @media (max-width:750px) {
 	.zoom-tray {
@@ -276,7 +276,7 @@ canvas {
 		background: no-repeat radial-gradient(rgba(0, 0, 0, .3) 0%, rgba(0, 0, 0, .6) 70%, rgba(0, 0, 0, .8) 90%), url("/modules/custom/summergame/images/SG2025-WebGraphic_750px.jpg");
 		background-size: calc(100% + 60px) calc(100% + 60px);
 		background-position: center center;
-		font-size: 24px;
+
 	}
 
 	.win-prompt {
@@ -313,7 +313,7 @@ canvas {
 		background: no-repeat radial-gradient(rgba(0, 0, 0, .3) 0%, rgba(0, 0, 0, .6) 70%, rgba(0, 0, 0, .8) 90%), url("/modules/custom/summergame/images/SG2025-WebGraphic_750px.jpg");
 		background-size: calc(100% + 60px) calc(100% + 60px);
 		background-position: center center;
-		font-size: 28px;
+
 	}
 
 	.win-prompt {

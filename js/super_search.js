@@ -1,6 +1,14 @@
-const playerRedeem = document.getElementById('badge-progress');
-const ssHTML = '<div id="ss-container" class="ss-container"><canvas id="triangleCanvas"></canvas><div class="tray"><div class="action-tray"><button id="ss-guess">Guess</button><button id="ss-clear">Clear</button></div><div class="zoom-tray"><button id="ss-zoom-in">+</button><button id="ss-zoom-out">-</button></div></div><div id="ss-result"></div><div class="ss-ui-hint">Hint: once a tile is selected, you may tap/click and drag across to select multiple tiles. Clear the selection to reposition the puzzle.</div></div><div class="ss-categories"><h2>Categories & Hints</h2><p>Completed hints will appear with a strikethrough.</p><ol id="ss-hints"></ol></div>'
-playerRedeem.insertAdjacentHTML('beforeBegin', ssHTML);
+const badgeProgress = document.getElementById('badge-progress');
+const playerRedeem = document.getElementById('summergame-player-redeem-form');
+const redeem = document.getElementById('edit-code-text');
+if (redeem != null) {
+	redeem.removeAttribute('autofocus')
+}
+let ssHTML = '<div id="ss-container" class="ss-container"><canvas id="triangleCanvas"></canvas><div class="tray"><div class="action-tray"><button id="ss-guess">Guess</button><button id="ss-clear">Clear</button></div><div class="zoom-tray"><button id="ss-zoom-in">+</button><button id="ss-zoom-out">-</button></div></div><div id="ss-result"></div><div class="ss-ui-hint">Hint: once a tile is selected, you may tap/click and drag across to select multiple tiles. Clear the selection to reposition the puzzle.</div></div><div class="ss-categories"><h2>Categories & Hints</h2><p>Completed hints will appear with a strikethrough.</p><ol id="ss-hints"></ol></div>'
+if (playerRedeem === null) {
+	ssHTML = '<p>To redeem points for solving this puzzle, you must <a href="/user/login?destination=%2Fnode%2F' + window.drupalSettings.nid + '">sign in.</a></p>' + ssHTML;
+}
+badgeProgress.insertAdjacentHTML('beforeBegin', ssHTML);
 const canvas = document.getElementById('triangleCanvas');
 const canvasContainer = document.getElementById('ss-container');
 const ctx = canvas.getContext('2d');
@@ -77,6 +85,7 @@ function sizeCanvas() {
 	canvas.height = width * dpr;
 	centerX = (canvas.width / 2) * transform.zoom;
 	centerY = (canvas.height / 2) * transform.zoom;
+	canvas.style.fontSize = canvas.width * .02 + 'px'
 	triangleSide = parseInt(((canvas.width * transform.zoom / 12)))
 	triangleHeight = Math.sqrt(3) / 2 * triangleSide;
 	ctx.scale(dpr, dpr);
@@ -227,7 +236,7 @@ function drawText(tile) {
 	} else {
 		ctx.fillStyle = "#000"
 	}
-	ctx.font = "400 1.2em sans-serif";
+	ctx.font = "600 1.5em sans-serif";
 	const textOffsetY = tile.center.y + (canvas.height * 0.01);
 	ctx.fillText(tile.l, tile.center.x, textOffsetY);
 }
@@ -295,7 +304,7 @@ async function drawPrompt(a) {
 		const length = path.getTotalLength();
 		const fill = path.dataset.ssColor;
 		path.style.setProperty('--path-length', length);
-		path.style.setProperty('--stroke-color', '#301d2b');
+		path.style.setProperty('--stroke-color', '#fff');
 		path.style.setProperty('--fill-color', fill);
 		if (path.dataset.ssSkip != 1) {
 			path.style.setProperty('--draw-duration', '0.6s');
@@ -304,6 +313,7 @@ async function drawPrompt(a) {
 				const promptContent = prompt.content.cloneNode(true);
 				canvasContainer.appendChild(promptContent);
 				document.querySelector('.win-prompt > p').insertAdjacentElement('beforeBegin', svgElement);
+				document.querySelector('.ss-answer').classList.add('reveal');
 				tray.classList.add('win');
 			}
 			setTimeout(() => {
@@ -311,9 +321,8 @@ async function drawPrompt(a) {
 				path.style.visibility = 'visible';
 			}, i * 200);
 		} else {
+			path.style.setProperty('--draw-duration', '0.2s');
 			setTimeout(() => {
-				const fill = path.dataset.ssColor;
-				path.style.setProperty('--fill-color', fill);
 				path.classList.add('write');
 				path.style.visibility = 'visible';
 			}, length * 200);
@@ -322,7 +331,7 @@ async function drawPrompt(a) {
 	});
 	setTimeout(() => {
 		svgElement.classList.add('bulge')
-	}, 4000);
+	}, 3900);
 
 
 }
@@ -508,15 +517,14 @@ function dragTransform(e) {
 		const pos = e.type.startsWith("touch") ? getTouchV(e) : getMouseV(e);
 		const rect = canvas.getBoundingClientRect();
 		let newX = (pos.x - rect.left) * (canvas.width / rect.width);
-		let newY = (pos.y - rect.top) * (canvas.height / rect.height)
-		transform.offsetX = (newX - lastX);
-		transform.offsetY = (newY - lastY);
+		let newY = (pos.y - rect.top) * (canvas.height / rect.height);
+		transform.offsetX = Math.min(Math.max(newX - lastX, -canvas.width / 2), canvas.width / 2);
+		transform.offsetY = Math.min(Math.max(newY - lastY, -canvas.width / 2), canvas.width / 2);
 		applyTransforms()
 	} else if (isDragging) {
 		isMulti = true;
 		handleSelection(e);
 	}
-
 }
 
 function endDrag(event) {

@@ -357,8 +357,6 @@ summergame.super_search.get_puzzle:
   defaults:
     _controller: '\Drupal\summergame\Controller\SuperSearchController:get_puzzle'
     _title: 'Super Search Puzzle Retrieval'
-  requirements:
-    _permission: 'access summergame'
 summergame.super_search.guess:
   path: '/summergame/super_search/{nid}/guess'
   defaults:
@@ -366,7 +364,6 @@ summergame.super_search.guess:
     _title: 'Super Search Puzzle Guess'
   requirements:
     _method: 'POST'
-    _permission: 'access summergame'
   options:
     no_cache: 'TRUE'
 summergame.super_search.hint:
@@ -376,6 +373,5 @@ summergame.super_search.hint:
     _title: 'Super Search Puzzle Hint'
   requirements:
     _method: 'POST'
-    _permission: 'access summergame'
   options:
     no_cache: 'TRUE'

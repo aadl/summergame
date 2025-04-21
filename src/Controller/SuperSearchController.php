@@ -27,7 +27,7 @@ class SuperSearchController extends ControllerBase
 		$sIds = array_column($solved, 'ids');
 		foreach ($sIds as $s) {
 			if (!array_diff($ids, $s) && count($ids) === count($s)) {
-				return;
+				return new JsonResponse(['correct' => false]);
 			}
 		}
 		foreach ($puzzle_data['categories'] as $k => $a) {
@@ -37,8 +37,8 @@ class SuperSearchController extends ControllerBase
 
 					$solved[] = ['ids' => $ids, 'color' => $a['color']];
 					$session->set('ss-' . $nid, $solved);
-					if (count($solved) === 36) {
-						$answer = '<div class="win-prompt"><p>Solved! The remaining letters reveal...<br/> <span style="font-weight:bold"> ' . $puzzle_data['answer'] . '</span> </br> Redeem this game code for Summer Game points!</p></div>';
+					if (count($solved) > 1) {
+						$answer = '<div class="win-prompt"><p>Solved! The remaining letters reveal...<br/> <span class="ss-answer"> ' . $puzzle_data['answer'] . '</span> </br> Redeem this game code for Summer Game points!</p></div>';
 					}
 					return new JsonResponse(['hint' => $puzzle_data['categories'][$k]['set'][$n]['hint'], 'color' => $a['color'], 'category' => $k, 'correct' => true, 'word' => $puzzle_data['categories'][$k]['set'][$n]['answer'], 'answer' => $answer ?? null]);
 				}
@@ -79,7 +79,7 @@ class SuperSearchController extends ControllerBase
 			}
 		}
 		if (count($completedHints) === 36) {
-			$answer = '<div class="win-prompt"><p>Solved! The remaining letters reveal...<br/> <span style="font-weight:bold"> ' . $puzzle_data['answer'] . '</span> </br> Redeem this game code for Summer Game points!</p></div>';
+			$answer = '<div class="win-prompt"><p>Solved! The remaining letters reveal...<br/> <span class="ss-answer"> ' . $puzzle_data['answer'] . '</span> </br> Redeem this game code for Summer Game points!</p></div>';
 		}
 		return new JsonResponse(['categories' => $categories, 'letters' => $puzzle_data['letters'], 'progress' => $solved, 'answer' => $answer ?? null, 'completedHints' => $completedHints]);
 	}
