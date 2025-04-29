@@ -13,7 +13,7 @@
       {% endif %}
       {# Player Score #}
       {% for game_term, player_game_points in points %}
-        {% if player_game_points.total %}
+        {% if player_game_points.total or player_game_points.balance %}
           <div class="scorecard">
             {% if loop.index0 != 1 %}
               <div class="facets-toggle">

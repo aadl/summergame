@@ -259,6 +259,7 @@ function summergame_theme() {
         'player' => NULL,
         'player_access' => NULL,
         'other_players' => NULL,
+        'quick_transfer' => NULL,
         'points' => NULL,
         'balances' => NULL,
         'pointsomatic_weekly_totals' => NULL,

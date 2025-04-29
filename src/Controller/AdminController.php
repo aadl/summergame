@@ -95,7 +95,7 @@ class AdminController extends ControllerBase {
                  ->execute();
     $badges = Node::loadMultiple($badge_ids);
     foreach ($badges as $badge) {
-      $formula = $badge->get('field_badge_formula')->value;
+      $formula = $badge->get('field_badge_formula')->value ?? '';
       if (!$sg_admin) {
         $formula = preg_replace('/\B\w/', '*', $formula);
       }

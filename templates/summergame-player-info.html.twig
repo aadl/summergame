@@ -24,7 +24,7 @@
       <table class="account-summary not-fixed-table">
         <tr><th>Game</th><th>Points</th></tr>
         {% for game_term, player_game_points in points %}
-          {% if player_game_points.total %}
+          {% if player_game_points.total or player_game_points.balance %}
             <tr><td><a href="#{{ game_term }}">{{ game_term }}</a></td><td>{{ player_game_points.total }}</td></tr>
           {% endif %}
         {% endfor %}
@@ -111,7 +111,7 @@
     <div id="player-other-players">
       <h2>Extra Players</h2>
       {% if other_players %}
-        <table class="account-summary not-fixed-table">
+        <table>
           <tr>
             <th>Player</th>
             <th>Set Active</th>
@@ -131,6 +131,9 @@
               <td><a class="button" href="/summergame/player/{{ other_player.pid }}/setactive">Set Active</a></td>
             </tr>
           {% endfor %}
+          {% if quick_transfer %}
+            <tr><td colspan="2">{{ quick_transfer }}</td></tr>
+          {% endif %}
           </tbody>
         </table>
       {% endif %}

@@ -72,6 +72,7 @@ class PlayerController extends ControllerBase {
       }
 
       $other_players = array();
+      $quick_transfer = '';
       if ($player_access && $player['uid']) {
         $all_players = summergame_player_load_all($player['uid']);
 
@@ -80,6 +81,10 @@ class PlayerController extends ControllerBase {
             if ($extra_player['pid'] != $player['pid']) {
               $other_players[] = $extra_player;
             }
+          }
+
+          if ($user->hasPermission('administer summergame')) {
+            $quick_transfer = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerQuickTransferForm', $player, $other_players);
           }
         }
       }
@@ -151,7 +156,7 @@ class PlayerController extends ControllerBase {
       }
 
       // Check for cell phone attachment code
-      if (preg_match('/^[\d]{6}$/', $player['phone'])) {
+      if (preg_match('/^[\d]{6}$/', $player['phone'] ?? '')) {
         $char = chr(($player['pid'] % 26) + 65);
         $player['phone'] = 'TEXT ' . $char . $player['phone'] . ' to 734-327-4200 to connect your phone';
       }
@@ -208,6 +213,11 @@ class PlayerController extends ControllerBase {
 
       // Prepare Scorecards
       $render[] = [
+        '#attached' => [
+          'library' => [
+            'summergame/summergame-lib'
+          ]
+        ],
         '#cache' => [
           'max-age' => 0, // Don't cache, always get fresh data
         ],
@@ -217,6 +227,7 @@ class PlayerController extends ControllerBase {
         '#player' => $player,
         '#player_access' => $player_access,
         '#other_players' => $other_players,
+        '#quick_transfer' => $quick_transfer,
         '#points' => summergame_get_player_points($player['pid']),
         '#balances' => $balances,
         '#pointsomatic_weekly_totals' => $pointsomatic_weekly_totals,
@@ -572,6 +583,19 @@ class PlayerController extends ControllerBase {
       $pager =\Drupal::service('pager.manager')->createPager($total, $per_page);
 
       while ($row = $result->fetchAssoc()) {
+        $row['classes'] = [];
+
+        // Check if row is access restricted
+        if (strpos($row['metadata'], 'access:player') !== FALSE) {
+          if ($player_access) {
+            $row['classes'][] = 'access_player';
+          }
+          else {
+            // skip it
+            continue;
+          }
+        }
+
         // Change bnum: code to a link to the bib record
         if (preg_match('/bnum:([\w-]+)/', $row['metadata'], $matches)) {
           if (preg_match('/^\d{7}$/', $matches[1])) {
@@ -616,6 +640,7 @@ class PlayerController extends ControllerBase {
         }
 
         $table_row = [
+          'classes' => $row['classes'],
           'date' => date('F j, Y, g:i a', $row['timestamp']),
           'type' => $row['type'],
           'description' => ($player['show_titles'] || $player_access ? $row['description'] : ''),
@@ -641,6 +666,11 @@ class PlayerController extends ControllerBase {
     }
 
     return [
+      '#attached' => [
+        'library' => [
+          'summergame/summergame-lib'
+        ]
+      ],
       '#cache' => [
         'max-age' => 0, // Don't cache, always get fresh data
       ],
