@@ -300,44 +300,8 @@ class AdminController extends ControllerBase {
 
     return $render;
   }
-/*
-  public function badges() {
-    drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
-    $sg_admin = user_access('administer summergame');
-    $admin_users = user_access('administer users');
-    $content .= '<div id="summergame-admin-page">';
-    $content .= '<h1>Summer Game Badges</h1>';
 
-    // Badges
-    if ($sg_admin) {
-      $content .= '<ul class="create-new-code"><li class="button green">' . l("Create New Badge", 'summergame/admin/badge') . '</li></ul>';
-    }
-    $content .= '<h2 class="title">Badges</h2>';
-    $sg_image_path = base_path() . file_directory_path() . '/sg_images/';
-    $rows = array();
-    $res = db_query("SELECT * FROM sg_badges ORDER BY bid DESC");
-    while ($badge = db_fetch_array($res)) {
-      if (!$sg_admin) {
-        $badge['formula'] = preg_replace('/\B\w/', '*', $badge['formula']);
-      }
-      $rows[] = array(
-        'Badge ID' => ($sg_admin ? l($badge['bid'], 'summergame/admin/badge/' . $badge['bid']) : $badge['bid']),
-        'Image' => '<img src="' . $sg_image_path . $badge['image'] . '_100.png">',
-        'Title' => '<strong>' . $badge['title'] . '</strong>',
-        'Level' => $badge['level'],
-        'Description' => $badge['description'],
-        'Formula' => strlen($badge['formula']) > 25 ? substr($badge['formula'], 0, 25) . '...' : $badge['formula'],
-      );
-    }
-    $content .= theme('table', array_keys($rows[0]), $rows);
-
-    $content .= '</div>'; // #summergame-admin-page
-
-    return $content;
-  }
-*/
   public function players($search_term = '') {
-
     if ($search_term == 'new') {
       return \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerForm');
     }

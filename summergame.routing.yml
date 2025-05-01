@@ -1,3 +1,4 @@
+# Summer Game Admin ############################################################
 summergame.admin_form:
   path: '/admin/config/summergame'
   defaults:
@@ -28,13 +29,6 @@ summergame.admin.gamecodes:
     search_term: ''
   requirements:
     _permission: 'manage summergame'
-# summergame.admin.badges:
-#   path: '/summergame/admin/badges'
-#   defaults:
-#     _controller: '\Drupal\summergame\Controller\AdminController::badges'
-#     _title: 'Administer Badges'
-#   requirements:
-#     _permission: 'manage summergame'
 summergame.admin.gamecode:
   path: '/summergame/admin/gamecode/{code_id}'
   defaults:
@@ -57,13 +51,6 @@ summergame.admin.gamecode.batch:
     _form: '\Drupal\summergame\Form\SummerGameGameCodeBatchForm'
   requirements:
     _permission: 'administer summergame'
-# summergame.admin.badge:
-#   path: '/summergame/admin/badge'
-#   defaults:
-#     _title: 'Edit Summer Game Badge'
-#     _form: '\Drupal\summergame\Form\SummerGameBadgeForm'
-#   requirements:
-#     _permission: 'administer summergame'
 summergame.admin.players:
   path: '/summergame/admin/players/{search_term}'
   defaults:
@@ -133,6 +120,7 @@ summergame.admin.badgestats:
     game_term: ''
   requirements:
     _permission: 'administer summergame'
+# Summer Game Player ###########################################################
 summergame.player:
   path: '/summergame/player/{pid}'
   defaults:
@@ -162,13 +150,6 @@ summergame.player.gamecode:
     _title: 'Redeem a Summer Game Code'
   requirements:
     _permission: 'access content'
-# summergame.player.friends:
-#   path: '/summergame/player/friends'
-#   defaults:
-#     _controller: '\Drupal\summergame\Controller\PlayerController::friends'
-#     _title: 'Summer Game Player Friends'
-#   requirements:
-#     _permission: 'access summergame'
 summergame.player.consume:
   path: '/summergame/player/{pid}/consume'
   defaults:
@@ -204,13 +185,6 @@ summergame.player.gcpc:
     _title: 'Summer Game Player Generate Cell Phone Code'
   requirements:
     _permission: 'access summergame'
-# summergame.player.gfc:
-#   path: '/summergame/player/gfc'
-#   defaults:
-#     _controller: '\Drupal\summergame\Controller\PlayerController::gfc'
-#     _title: 'Summer Game Player Generate Friend Code'
-#   requirements:
-#     _permission: 'access summergame'
 summergame.player.ledger:
   path: '/summergame/player/{pid}/ledger'
   defaults:
@@ -232,6 +206,14 @@ summergame.player.delete:
     _form: '\Drupal\summergame\Form\SummerGameDeletePlayerForm'
   requirements:
     _permission: 'access summergame'
+summergame.player.recentbadges:
+  path: '/summergame/recent-badges'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\PlayerController::getRecentBadges'
+    _title: 'Summer Game Recent Badges'
+  requirements:
+    _permission: 'access summergame'
+# Summer Game Default ##########################################################
 summergame.leaderboard:
   path: '/summergame/leaderboard'
   defaults:
@@ -263,14 +245,6 @@ summergame.homecodes_redirect:
     game_term: ''
   requirements:
     _permission: 'access summergame'
-#summergame.homecodes.markerdata:
-#  path: '/summergame/homecodes/markerdata/{game_term}'
-#  defaults:
-#    _controller: '\Drupal\summergame\Controller\DefaultController::homecodes_markerdata'
-#    _title: 'Summer Game Home Codes Marker Data'
-#    game_term: ''
-#  requirements:
-#    _permission: 'access content'
 summergame.homecodes.report:
   path: '/summergame/homecodes/report/{code_id}'
   defaults:
@@ -295,13 +269,6 @@ summergame.badgelist:
     game_term: ''
   requirements:
     _permission: 'access content'
-# summergame.badge:
-#   path: '/summergame/badge'
-#   defaults:
-#     _controller: '\Drupal\summergame\Controller\DefaultController::badge'
-#     _title: 'Summer Game Badge Detail'
-#   requirements:
-#     _permission: 'access summergame'
 summergame.pdf:
   path: '/summergame/pdf/{type}/{code_id}'
   defaults:
@@ -310,6 +277,7 @@ summergame.pdf:
     code_id: 0
   requirements:
     _permission: 'access summergame'
+# Summer Game Trivia ###########################################################
 summergame.admin.trivia:
   path: '/summergame/admin/trivia'
   defaults:
@@ -331,6 +299,7 @@ summergame.trivia.update:
     _title: 'Summer Game Trivia Update'
   requirements:
     _permission: 'access summergame'
+# Summer Game Scatterlog Connect ###############################################
 summergame.scatterlog.connect:
   path: '/summergame/scatterlog/connect'
   defaults:
@@ -343,12 +312,5 @@ summergame.scatterlog.connect_process:
   defaults:
     _controller: '\Drupal\summergame\Controller\ConnectionController:connect'
     _title: 'Summer Game Account Connection'
-  requirements:
-    _permission: 'access summergame'
-summergame.recent.badges:
-  path: '/summergame/recent-badges'
-  defaults:
-    _controller: '\Drupal\summergame\Controller\PlayerController::getRecentBadges'
-    _title: 'Summer Game Recent Badges'
   requirements:
     _permission: 'access summergame'
