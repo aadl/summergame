@@ -50,7 +50,7 @@ class SummerGameAdminAAPS extends ConfigFormBase
 
      $form['coordinate_data_area'] = [
         '#type' => 'markup',
-        '#markup' => '<h1>AAPS School Codes Game Configuration.</h1><p><b>How to use this page:<br></b> Add the school URL to the "Image URL" text input.  The image will load in and you can then click and drag to define the click box for to get that schools code.  The coordinate information will output in the "Box location data" text field which can be copied into the configuration csv below.</p> <p><b>Uploading images:<br></b>Go to <b>"/admin/content/media"</b> > <b>+ Add Media</b> > <b>Image</b>  to uplaod an image.<br><br><b>Get Image URL:</b><br> Go to "/admin/content/media" and click the media name.  on the resulting oage, right click and select "copy image link"</p><br><hr><div class="coordinate-data-area aadl-box-locator"></div>',
+        '#markup' => '<h1>AAPS School Codes Game Configuration.</h1><p><b>How to use this page:<br></b> Add the school URL to the "Image URL" text input.  The image will load in and you can then click and drag to define the click box for that schools code.  The coordinate information will output in the "Box location data" text field which can be copied into the configuration csv below.</p> <p><b>Uploading images:<br></b>Go to <b>"/admin/content/media"</b> > <b>+ Add Media</b> > <b>Image</b>  to upload an image.<br><br><b>Get Image URL:</b><br> Go to "/admin/content/media" and click the media name.  on the resulting page, right click and select "copy image link"</p><br><hr><div class="coordinate-data-area aadl-box-locator"></div>',
      ];
 
      $form['data'] = [
