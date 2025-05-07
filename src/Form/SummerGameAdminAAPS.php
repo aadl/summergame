@@ -8,7 +8,7 @@ use Drupal\Core\Form\FormStateInterface;
 class SummerGameAdminAAPS extends ConfigFormBase
 {
 
-  const SETTINGS = 'sumergame.aapssettings';
+  const SETTINGS = 'summergame.aapssettings';
 
   /**
    * {@inheritdoc}
