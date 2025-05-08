@@ -110,7 +110,7 @@
             ctx.drawImage(_this.IMG, 0, 0, c.width, c.height);
              
             ctx.beginPath();
-            ctx.lineWidth = "3";
+            ctx.lineWidth = "1";
             ctx.strokeStyle = "red";
 
             /*

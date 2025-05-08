@@ -4,7 +4,7 @@
 
   var schoolsLayerGroup = new L.layerGroup();
 
-  var myMap = L.map('aaps-map', {
+  var schoolMap = L.map('aaps-map', {
       center: [42.2781734, -83.74570792114082],
       zoom: 12,
       layers: [schoolsLayerGroup]
@@ -21,7 +21,7 @@
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-  }).addTo(myMap);
+  }).addTo(schoolMap);
 
   for(let i = 0 ; i < drupalSettings.data.length;i++){
 
@@ -29,5 +29,7 @@
     L.marker([drupalSettings.data[i].latitude, drupalSettings.data[i].longitude], {icon: bIcon}).bindPopup(`<b><a href="/summergame/aaps/school/${drupalSettings.data[i].school_image}">${drupalSettings.data[i].label}</a></b>`, {autoClose: false}).addTo(schoolsLayerGroup).openPopup();
 
   }
+
+  schoolMap.panTo([42.2781734, -83.74570792114082]);
 
 })(jQuery, Drupal, drupalSettings);
