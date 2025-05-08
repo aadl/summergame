@@ -18,7 +18,7 @@ class AAPSController extends ControllerBase {
 
   public function map() {
     
-    $aaps_map_settings = \Drupal::config('sumergame.aapssettings');
+    $aaps_map_settings = \Drupal::config('summergame.aapssettings');
     $data_raw = $aaps_map_settings->get('data');
 
     //parse
@@ -60,7 +60,7 @@ class AAPSController extends ControllerBase {
 
 
 
-    $aaps_map_settings = \Drupal::config('sumergame.aapssettings');
+    $aaps_map_settings = \Drupal::config('summergame.aapssettings');
     $data_raw = $aaps_map_settings->get('data');
   
     //parse
@@ -116,7 +116,7 @@ class AAPSController extends ControllerBase {
    public function code($line_number_hash) {
 
 
-    $aaps_map_settings = \Drupal::config('sumergame.aapssettings');
+    $aaps_map_settings = \Drupal::config('summergame.aapssettings');
     $data_raw = $aaps_map_settings->get('data');
   
     //parse
