@@ -35,7 +35,7 @@ class ConnectionController extends PlayerController
       '#theme' => 'summergame_player_external_redeem',
       '#uid' => $uid,
       '#players' => $players,
-      '#type' => $_GET['type']
+      '#type' => $_GET['type'] ?? null
     ];
   }
   public function connect($uid)
