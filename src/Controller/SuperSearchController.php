@@ -64,7 +64,7 @@ class SuperSearchController extends ControllerBase
 				'message' => 'No puzzle',
 			], 404);
 		}
-		$salt = "superSaltySearchSauce";
+		$salt = \Drupal::config('summergame.settings')->get('summergame_supersearch_salt');
 		$sk = substr(base64_encode($salt . date('Ymd')), 0, 16);
 		$puzzle_data = json_decode(file_get_contents($file_path), true);
 		$completedHints = [];
