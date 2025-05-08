@@ -26,7 +26,7 @@
   for(let i = 0 ; i < drupalSettings.data.length;i++){
 
     var bIcon = blueIcon;
-    L.marker([drupalSettings.data[i].latitude, drupalSettings.data[i].longitude], {icon: bIcon}).bindPopup(`<b><a href="/summergame/aaps/school/${drupalSettings.data[i].school_image}">${drupalSettings.data[i].label}</a></b>`, {autoClose: false}).addTo(schoolsLayerGroup).openPopup();
+    L.marker([drupalSettings.data[i].latitude, drupalSettings.data[i].longitude], {icon: bIcon}).bindPopup(`<b><a href="/summergame/aaps/school/${drupalSettings.data[i].school_image}">${drupalSettings.data[i].label}</a></b>`).addTo(schoolsLayerGroup);
 
   }
 

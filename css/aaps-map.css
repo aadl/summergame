@@ -1,3 +1,6 @@
 .aaps-map{
   height: 600px;
 }
+.leaflet-popup-content a {
+  color: #000;
+}
