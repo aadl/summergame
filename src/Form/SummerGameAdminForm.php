@@ -266,7 +266,13 @@ class SummerGameAdminForm extends ConfigFormBase
         '#default_value' => $summergame_settings->get('summergame_scatterlog_url'),
         '#description' => 'URL for scatter log',
       ];
-
+    $form['summergame_supersearch_salt'] =
+      [
+        '#type' => 'textfield',
+        '#title' => 'Super Search Salt',
+        '#default_value' => $summergame_settings->get('summergame_supersearch_salt'),
+        '#description' => 'Salt for supersearch answer encoding',
+      ];
     return parent::buildForm($form, $form_state);
   }
 }

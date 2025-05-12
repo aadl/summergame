@@ -17,9 +17,10 @@ class ConnectionController extends PlayerController
 {
   public function show()
   {
+    $type = preg_match('/^[a-z]*$/', ($_GET['type'] ?? '0')) ? $_GET['type'] : null;
     $user = \Drupal::currentUser();
     if (!$user->isAuthenticated()) {
-      return new RedirectResponse('/user/login?destination=/summergame/scatterlog/connect' . $_GET['type'] == 'apply' ? '?type=apply' : '');
+      return new RedirectResponse('/user/login?destination=/summergame/scatterlog/connect' . $type != null ? '?type=' . $type : '');
     }
     $uid = $user->id();
     $db = \Drupal::database();
@@ -35,13 +36,13 @@ class ConnectionController extends PlayerController
       '#theme' => 'summergame_player_external_redeem',
       '#uid' => $uid,
       '#players' => $players,
-      '#type' => $_GET['type']
+      '#type' => $type
     ];
   }
   public function connect($uid)
   {
     $scatterlogKey = \Drupal::config('summergame.settings')->get('summergame_scatterlog_key');
-    $pid = $_GET['apply'];
-    return new TrustedRedirectResponse(\Drupal::config('summergame.settings')->get('summergame_scatterlog_url') . '/connect?uid=' . $uid . '&key=' . $scatterlogKey . '&apply=' . $pid);
+    $pid = ctype_digit($_GET['apply'] ?? '') ? $_GET['apply'] : '';
+    return new TrustedRedirectResponse(\Drupal::config('summergame.settings')->get('summergame_scatterlog_url') . '/connect?uid=' . $uid . '&key=' . $scatterlogKey . ($pid != ''  ? '&apply=' . $pid : ''));
   }
 }
