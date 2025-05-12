@@ -329,6 +329,7 @@ class BadgeRenderer {
     }
     $variables['#cache']['max-age'] = 0;
     $variables['game_display_name'] = \Drupal::config('summergame.settings')->get('game_display_name');
+    $variables['badge_help_text'] = \Drupal::config('summergame.settings')->get('badge_help_text');
 
     return $variables;
   }

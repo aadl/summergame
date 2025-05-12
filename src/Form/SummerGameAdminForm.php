@@ -216,6 +216,12 @@ class SummerGameAdminForm extends ConfigFormBase
       '#default_value' => $summergame_settings->get('game_display_name'),
       '#description' => 'The name to be displayed throughout the SummerGame UI',
     ];
+    $form['badge_help_text'] = [
+      '#type' => 'textarea',
+      '#title' => 'Badge Help Text',
+      '#default_value' => $summergame_settings->get('badge_help_text'),
+      '#description' => 'Message to be displayed above the comment form on the badge page',
+    ];
     $form['summergame_homecode_geocode_url'] = [
       '#type' => 'textfield',
       '#title' => 'Home Code Geocode URL',
