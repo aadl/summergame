@@ -222,3 +222,4 @@ ALTER TABLE `sg_game_codes` ADD `sequence_total` tinyint unsigned NOT NULL DEFAU
 
 ALTER TABLE `sg_players` CHANGE `friend_code` `league_code` varchar(32) COLLATE 'latin1_swedish_ci' NULL AFTER `grade`;
 CREATE TABLE `sg_players_leagues` (`pid` int unsigned NOT NULL, `lid` int unsigned NOT NULL);
+UPDATE `sg_ledger` SET `type` = 'Staff Adjustment' WHERE `type` = 'Geekly Intervention';

@@ -66,11 +66,10 @@ class SummerGamePlayerQuickTransferForm extends FormBase {
     $game_term = \Drupal::config('summergame.settings')->get('summergame_current_game_term');
     $metadata = 'access:player leaderboard:no'; // restrict ledger display to those with player access
 
-
-    summergame_player_points($from_pid, -$points, 'Staff Intervention',
+    summergame_player_points($from_pid, -$points, 'Staff Adjustment',
                              "Transfer to Player #$to_pid" . ($description ? ', ' . $description : ''),
                              $metadata . ' delete:no', $game_term);
-    summergame_player_points($to_pid, $points, 'Staff Intervention',
+    summergame_player_points($to_pid, $points, 'Staff Adjustment',
                              "Transfer from Player #$from_pid" . ($description ? ', ' . $description : ''),
                              $metadata, $game_term);
     \Drupal::messenger()->addMessage("Transferred $points $game_term points from $from_player_link to $player_link");

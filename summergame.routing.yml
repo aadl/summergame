@@ -70,7 +70,7 @@ summergame.admin.players.merge:
 summergame.admin.intervention:
   path: '/summergame/admin/intervention'
   defaults:
-    _title: 'Geekly Intervention'
+    _title: 'Staff Intervention'
     _form: '\Drupal\summergame\Form\SummerGameInterventionForm'
   requirements:
     _permission: 'administer summergame'

@@ -96,10 +96,10 @@ class SummerGameInterventionForm extends FormBase {
         if ($from_player = summergame_player_load(['pid' => $from_pid])) {
           // Tranfer points from from_player to player
           $from_player_link = '<a href="/summergame/player/' . $from_pid . '">Player #' . $from_pid . '</a>';
-          summergame_player_points($from_pid, -$points, 'Staff Intervention',
+          summergame_player_points($from_pid, -$points, 'Staff Adjustment',
                                    "Transfer to Player #$to_pid" . ($description ? ', ' . $description : ''),
                                    $metadata . ' delete:no', $game_term);
-          summergame_player_points($to_pid, $points, 'Staff Intervention',
+          summergame_player_points($to_pid, $points, 'Staff Adjustment',
                                    "Transfer from Player #$from_pid" . ($description ? ', ' . $description : ''),
                                    $metadata, $game_term);
           \Drupal::messenger()->addMessage("Transferred $points $game_term points from $from_player_link to $player_link");
@@ -110,7 +110,7 @@ class SummerGameInterventionForm extends FormBase {
       }
       else {
         // Award points to the player
-        summergame_player_points($to_pid, $points, 'Staff Intervention',
+        summergame_player_points($to_pid, $points, 'Staff Adjustment',
                                  "Points awarded" . ($description ? ', ' . $description : ''),
                                  $metadata, $game_term);
         \Drupal::messenger()->addMessage("Awarded $points $game_term points to $player_link");
