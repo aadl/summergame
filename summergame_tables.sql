@@ -214,3 +214,11 @@ ALTER TABLE `sg_game_codes` ADD UNIQUE `text_game_term` (`text`, `game_term`);
 ALTER TABLE `sg_game_codes` ADD `search_phrase` varchar(255) NOT NULL;
 ALTER TABLE `sg_game_codes` ADD `sequence_num` tinyint unsigned NOT NULL DEFAULT '0';
 ALTER TABLE `sg_game_codes` ADD `sequence_total` tinyint unsigned NOT NULL DEFAULT '0';
+
+-- ---------------------------------------------------------
+--
+-- Leagues Table Updates for 2025
+--
+
+ALTER TABLE `sg_players` CHANGE `friend_code` `league_code` varchar(32) COLLATE 'latin1_swedish_ci' NULL AFTER `grade`;
+CREATE TABLE `sg_players_leagues` (`pid` int unsigned NOT NULL, `lid` int unsigned NOT NULL);

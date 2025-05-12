@@ -12,6 +12,8 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Drupal\summergame\Helper\BadgeRenderer;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Drupal\Component\Serialization\Json;
+use Drupal\Core\Messenger\Messenger;
+
 //use Drupal\Core\Database\Database;
 //use Drupal\Core\Url;
 
@@ -394,47 +396,6 @@ class PlayerController extends ControllerBase {
     return new RedirectResponse('/summergame/player');
   }
 
-  public function gfc() {
-    if ($player = summergame_player_load(['pid' => $pid])) {
-      // Check to see if player already has a code
-      if ($player['friend_code']) {
-        // Check if anyone has redeemed it already
-        $res = $db->query("SELECT COUNT(*) AS fcount FROM sg_ledger WHERE pid = :pid AND metadata LIKE '%fc_follower:%'", [':pid' => $pid]);
-        $fcount = $res->fetch();
-        if ($fcount->fcount) {
-          $followers = $fcount->fcount . ' follower' . ($fcount->fcount == 1 ? '' : 's');
-          \Drupal::messenger()->addError("Cannot regenerate Friend Code once it has been redeemed ($followers)");
-          return new RedirectResponse('summergame/player/' . $player['pid']);
-        }
-      }
-
-      // Generate a new referral code
-      $nums = '34679';
-      $num_max_idx = strlen($nums) - 1;
-      $lines = file(\Drupal::service('extension.list.module')->getPath('summergame') . '/upgoer5words.txt');
-
-      $code = '';
-      while ($code == '') {
-        $word = str_replace("'", '', trim($lines[array_rand($lines)]));
-        if (strlen($word) > 3) {
-          $code = strtoupper($word);
-          for ($i = 0; $i < 3; $i++) {
-            $code .= $nums[mt_rand(0, $num_max_idx)];
-          }
-          $collision = $db->query("SELECT pid FROM sg_players WHERE friend_code = :code", [':code' => $code])->fetch();
-          if ($collision->pid) {
-            $code = '';
-          }
-        }
-      }
-      $player['friend_code'] = $code;
-      summergame_player_save($player);
-      \Drupal::messenger()->addMessage("Your play.aadl.org Friend Code is $code. Earn bonus points when a friend enters that code as a Game Code.");
-      return new RedirectResponse('summergame/player/' . $player['pid']);
-    }
-    return new RedirectResponse('summergame/player');
-  }
-
   public function ledger($pid) {
     $summergame_settings = \Drupal::config('summergame.settings');
     $pid = intval($pid);
@@ -576,8 +537,57 @@ class PlayerController extends ControllerBase {
     ];
   }
 
-  public function getRecentBadges() {
+  public function leagues($league_id = 0) {
+    $output = [];
+    if ($player = summergame_get_active_player()) {
+/*
+      // Check if player has created a league
+      if ($player['league_code']) {
+        $league_code = $player['league_code'];
+        if ($league_id < 1) {
+          $league_id = $player['pid']; // Default to player ID
+        }
+      }
+      else {
+        // No league code for player
+        $league_code = 'GENERATE LEAGUE CODE';
+      }
+ */
+      $league_code = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGameLeagueCodeForm', $player['pid']);
 
+      // Display Join Form
+      $join_form = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGameLeagueJoinForm', $player['pid']);
+
+      // Get League list for Player
+      $player_leagues = summergame_player_leagues($player['pid']);
+
+      // Get League Leaderboard
+      $league_leaderboard = summergame_league_leaderboard($league_id);
+    }
+    else {
+      \Drupal::messenger()->addError("You must have an active player connected to your account to access leagues");
+      return new RedirectResponse('summergame/leaderboard');
+    }
+
+    return [
+      '#theme' => 'summergame_leagues_page',
+      '#attached' => [
+        'library' => [
+          'summergame/summergame-lib'
+        ]
+      ],
+      '#cache' => [
+        'max-age' => 0, // Don't cache, always get fresh data
+      ],
+      '#player' => $player,
+      '#league_code' => $league_code,
+      '#player_leagues' => $player_leagues,
+      '#league_leaderboard' => $league_leaderboard,
+      '#join_form' => $join_form,
+    ];
+  }
+
+  public function getRecentBadges() {
     $session = \Drupal::request()->getSession();
     $recently_viewed_badges = $session->get('recently_viewed_badges');
     $resp = json_decode("{}");

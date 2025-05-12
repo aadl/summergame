@@ -158,12 +158,156 @@ function summergame_leaderboard_update() {
   $redis->set("summergame:leaderboard:timestamp", time());
 }
 
+function summergame_leagues_leaderboard_update() {
+  // Find all players with league codes
+  $db = \Drupal::database();
+  $redis = new Client(\Drupal::config('summergame.settings')->get('summergame_redis_conn'));
+
+  $league_ids = $db->select('sg_players', 'sp')
+                   ->fields('sp', ['pid'])
+                   ->condition('league_code', '', '!=')
+                   ->execute()
+                   ->fetchCol();
+$league_ids = [1];
+  foreach ($league_ids as $league_id) {
+    // Build the league leaderboard
+    $leaderboard = [];
+    $league_pids = $db->select('sg_players_leagues', 'spl')
+                      ->fields('spl', ['pid'])
+                      ->condition('lid', $league_id)
+                      ->execute()
+                      ->fetchCol();
+    $league_pids = array_map('intval', $league_pids);
+    $league_pids[] = $league_id; // Include the league owner
+    $res = $db->query('SELECT pid, SUM(points) AS lb_total ' .
+                      'FROM {sg_ledger} ' .
+                      'WHERE pid IN (' . implode(',', $league_pids) .') ' .
+                      "AND game_term = 'SummerGame2024' " .
+                      "AND metadata NOT LIKE '%leaderboard:no%' " .
+                      'GROUP BY pid ' .
+                      'ORDER BY lb_total DESC');
+
+    while ($row = $res->fetchAssoc()) {
+      $lb_player = summergame_player_load($row['pid']);
+
+      if ($lb_player['show_leaderboard']) {
+        $player_name = $lb_player['nickname'] ? $lb_player['nickname'] : $lb_player['name'];
+      }
+      else {
+        $player_name = 'Player #' . $lb_player['pid'];
+      }
+
+      $leaderboard[] = [
+        'pid' => $lb_player['pid'],
+        'show_myscore' => $lb_player['show_myscore'],
+        'player' => $player_name,
+        'score' => $row['lb_total'],
+      ];
+    }
+
+    // Save the league leaderboard to Redis
+    $redis->set("summergame:leaderboard:league:$league_id", json_encode($leaderboard));
+  }
+}
+
 function summergame_get_leaderboard($type = '', $range = 'day', $staff = 0) {
   $redis = new Client(\Drupal::config('summergame.settings')->get('summergame_redis_conn'));
   return [
     'timestamp' => $redis->get('summergame:leaderboard:timestamp'),
     'rows' => json_decode($redis->get("summergame:leaderboard:$staff:$range:$type"), TRUE),
   ];
+}
+
+function summergame_generate_league_code($pid) {
+  if ($player = summergame_player_load(['pid' => $pid])) {
+    // Check to see if player already has a code
+    if ($player['league_code']) {
+      \Drupal::messenger()->addError("You already have a league code: " . $player['league_code']);
+      return $player['league_code'];
+    }
+
+    // Generate a new referral code
+    $db = \Drupal::database();
+    $nums = '34679';
+    $num_max_idx = strlen($nums) - 1;
+    $lines = file(\Drupal::service('extension.list.module')->getPath('summergame') . '/upgoer5words.txt');
+
+    $code = '';
+    while ($code == '') {
+      $word = str_replace("'", '', trim($lines[array_rand($lines)]));
+      if (strlen($word) > 3) {
+        $code = strtoupper($word);
+        for ($i = 0; $i < 3; $i++) {
+          $code .= $nums[mt_rand(0, $num_max_idx)];
+        }
+        $collision = $db->query("SELECT pid FROM sg_players WHERE league_code = :code", [':code' => $code])->fetch();
+        if ($collision->pid) {
+          $code = '';
+        }
+      }
+    }
+    $player['league_code'] = $code;
+    summergame_player_save($player);
+    \Drupal::messenger()->addMessage("Your League Code is $code. Other players can enter it on the Leagues page to join your league.");
+    return $code;
+  }
+  else {
+    \Drupal::messenger()->addError("Player not found.");
+    return;
+  }
+}
+
+function summergame_player_join_league($pid, $league_code) {
+  $db = \Drupal::database();
+
+  $league_owner = summergame_player_load(['league_code' => $league_code]);
+
+  if (!$league_owner) {
+    \Drupal::messenger()->addError(t('League code %code not found.', ['%code' => $league_code]));
+    return;
+  }
+
+  $db->insert('sg_players_leagues')
+     ->fields(['pid' => $pid, 'lid' => $league_owner['pid']])
+     ->execute();
+
+  $owner_name = $league_owner['nickname'] ? $league_owner['nickname'] : $league_owner['name'];
+  \Drupal::messenger()->addStatus(t("You have joined $owner_name's league", ['%owner_name' => $owner_name]));
+}
+
+function summergame_league_leaderboard($league_id) {
+  $redis = new Client(\Drupal::config('summergame.settings')->get('summergame_redis_conn'));
+  return [
+    'timestamp' => $redis->get('summergame:leaderboard:timestamp'),
+    'rows' => json_decode($redis->get("summergame:leaderboard:league:$league_id") ?? '', TRUE),
+  ];
+}
+
+function summergame_player_leagues($player_id) {
+  $db = \Drupal::database();
+  $leagues = [];
+
+  foreach ($db->select('sg_players_leagues', 'spl')->fields('spl')
+              ->condition('pid', $player_id)->execute()->fetchAll() as $league) {
+    $league_owner = summergame_player_load($league->lid);
+    $leagues[] = [
+      'lid' => $league->lid,
+      'name' => $league_owner['nickname'] ? $league_owner['nickname'] : $league_owner['name'],
+    ];
+  }
+
+  return $leagues;
+}
+
+function summergame_delete_league($league_id) {
+  $db = \Drupal::database();
+
+  // Remove players from the league
+  $db->delete('sg_players_leagues')->condition('lid', $league_id)->execute();
+  // Remove the league code from the player
+  $db->update('sg_players')->fields(['league_code' => ''])->condition('pid', $league_id)->execute();
+
+  \Drupal::messenger()->addStatus(t('League code deleted.'));
 }
 
 /*
@@ -317,6 +461,15 @@ function summergame_theme() {
         'players' => NULL,
         'uid' => NULL,
         'type' => NULL,
+      ]
+    ],
+    'summergame_leagues_page' => [
+      'variables' => [
+        'player' => NULL,
+        'league_code' => NULL,
+        'player_leagues' => NULL,
+        'league_leaderboard' => NULL,
+        'join_form' => NULL,
       ]
     ]
   ];

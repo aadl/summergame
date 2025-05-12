@@ -213,6 +213,14 @@ summergame.player.recentbadges:
     _title: 'Summer Game Recent Badges'
   requirements:
     _permission: 'access summergame'
+summergame.player.leagues:
+  path: '/summergame/player/leagues/{league_id}'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\PlayerController::leagues'
+    _title: 'Summer Game Leagues'
+    league_id: ''
+  requirements:
+    _permission: 'access summergame'
 # Summer Game Default ##########################################################
 summergame.leaderboard:
   path: '/summergame/leaderboard'
