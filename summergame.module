@@ -648,7 +648,6 @@ function summergame_twilio_respond($incoming) {
     // check if it's a game code OR friend code
     $text = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $incoming['text']));
     $gc = $db->query("SELECT * FROM sg_game_codes WHERE text = :text", [':text' => $text])->fetchObject();
-    // $fc_player = summergame_player_load(array('friend_code' => $text));
     if ($gc->code_id) { // } || $fc_player['pid']) {
       $game_code_text = TRUE;
       if (!$player['pid']) {
@@ -790,10 +789,17 @@ ALTER TABLE `sg_ledger_part` DROP PRIMARY KEY, ADD PRIMARY KEY(`lid`, `game_term
 ALTER TABLE `sg_ledger`
 PARTITION BY LIST COLUMNS (game_term)
 PARTITIONS 3 (
-  PARTITION p0 VALUES IN ('SummerGame2024'),
-  PARTITION p1 VALUES IN ('SummerGame2011', 'SummerGame2012', 'SummerGame2013', 'SummerGame2014', 'SummerGame2015', 'SummerGame2016', 'SummerGame2017', 'SummerGame2018', 'SummerGame2019', 'SummerGame2020', 'SummerGame2021', 'SummerGame2022', 'SummerGame2023','SummerGameClassic'),
-  PARTITION p2 VALUES IN ('BookPrizeToken', 'DownloadOfTheDay', 'HallOfFame', 'MLEADershipGame', 'Points-O-Matic', 'StreetsQuest', 'TreasureQuest', 'WorldHistoryQuest')
+  PARTITION p0 VALUES IN ('SummerGame2025'),
+  PARTITION p1 VALUES IN ('SummerGame2011', 'SummerGame2012', 'SummerGame2013', 'SummerGame2014', 'SummerGame2015', 'SummerGame2016', 'SummerGame2017', 'SummerGame2018', 'SummerGame2019', 'SummerGame2020', 'SummerGame2021', 'SummerGame2022', 'SummerGame2023', 'SummerGame2024', 'SummerGameClassic'),
+  PARTITION p2 VALUES IN ('BookPrizeToken', 'ByteClub', 'DownloadOfTheDay', 'HallOfFame', 'MLEADershipGame', 'Points-O-Matic', 'StreetsQuest', 'TreasureQuest', 'WorldHistoryQuest')
 )
+
+ALTER TABLE `sg_ledger`
+PARTITION BY RANGE COLUMNS (`game_term`)
+(PARTITION `other_less` VALUES LESS THAN ('SummerGame') ENGINE = InnoDB,
+PARTITION `sg_old` VALUES LESS THAN ('SummerGame2025') ENGINE = InnoDB,
+PARTITION `sg_new` VALUES LESS THAN ('SummerGame9999') ENGINE = InnoDB,
+PARTITION `other_more` VALUES LESS THAN MAXVALUE ENGINE = InnoDB);
   // Do Or Diag
   else if (variable_get('summergame_dod_enabled', FALSE)) {
     $text = strtoupper($incoming['text']);
@@ -1242,6 +1248,9 @@ function summergame_get_homecode($uid, $game_term = '') {
  */
 function summergame_player_save($player) {
   $db = \Drupal::database();
+
+  // remove badge ids
+  unset($player['bids']);
 
   if ($pid = $player['pid']) {
     // Update existing player record

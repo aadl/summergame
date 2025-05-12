@@ -382,30 +382,6 @@ class SummerGamePlayerForm extends FormBase
           );
           \Drupal::messenger()->addMessage("Earned $points Summer Game points for signing up!");
         }
-        /*
-        // Check for referral bonus
-        if ($form_state->getValue('referred_by']) {
-          // Check for referral player
-          $referring_player = summergame_player_load(array('friend_code' => $form_state->getValue('referred_by']));
-          if ($referring_player['pid']) {
-            // Make sure no one has already gotten points for this player
-            $existing_bonus = db_fetch_object(db_query("SELECT * FROM sg_ledger WHERE metadata LIKE '%referred:%s%'", $player['pid']));
-            if ($existing_bonus->points) {
-              \Drupal::messenger()->addMessage('Sorry, you entered a Referral Code, but your player has already been awarded points for a referral.');
-            }
-            else {
-              summergame_player_points($player['pid'], 500, 'Referral',
-                                       'Referred by Player #' . $referring_player['pid'], 'referred_by:' . $referring_player['pid']);
-              summergame_player_points($referring_player['pid'], 500, 'Referral',
-                                       'Referral Bonus for Player #' . $player['pid'], 'referred:' . $player['pid']);
-              \Drupal::messenger()->addMessage('You were referred by Player #' . $referring_player['pid'] . ' and you each earned a 500 point bonus!');
-            }
-          }
-          else {
-            \Drupal::messenger()->addMessage('Sorry, you entered a referral code, but no player with that code exists');
-          }
-        }
-    */
       }
       if (($_GET['scatterlog'] ?? '') == true) {
         \Drupal::messenger()->deleteAll();
