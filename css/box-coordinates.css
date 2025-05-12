@@ -1,0 +1,28 @@
+.summergame-admin-aaps{
+  width:100%;
+}
+
+    .aadl-box-locator{
+      width:100%;
+      max-width:600px;
+    }
+  .aadl-box-locator .img-url{
+      margin-bottom:1em;
+      width:100%;
+    display:flex;
+  }
+    .aadl-box-locator .img-url input{
+      width:100%;
+    }
+  
+
+  .aadl-box-locator .coordinate-container{
+      margin-top:1em;
+    width:100%;
+    display:flex;
+
+  }
+
+  .aadl-box-locator .coordinate-container input{
+     width:100%;
+    }

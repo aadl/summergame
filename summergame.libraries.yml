@@ -42,3 +42,31 @@ summergame-super-search:
       css/super_search.css: {}
   js:
       js/super_search.js: {}
+summergame-aaps-admin-map-lib:
+  version: 1.x
+  js:
+    js/box-coordinates.js: {}
+  css:
+    theme:
+      css/box-coordinates.css: {}
+summergame-aaps-map-lib:
+  version: 1.x
+  js:
+    https://unpkg.com/leaflet@1.6.0/dist/leaflet.js: { type: external, minified: true }
+    js/aaps-map.js: {}
+  css:
+    theme:
+      https://unpkg.com/leaflet@1.6.0/dist/leaflet.css: { type: external }
+      css/aaps-map.css: {}
+summergame-aaps-school-lib:
+  version: 1.x
+  js:
+    js/aaps-school.js: {}
+  css:
+    theme:
+      css/aaps-school.css: {}
+summergame-aaps-code-lib:
+  version: 1.x
+  css:
+    theme:
+      css/aaps-code.css: {}
