@@ -70,7 +70,7 @@
 			this._offsetY = v;
 		},
 	};
-	let isInteractable = true;
+	let isInteractable = false;
 	let isDragging = false;
 	let isClick = false;
 	let isMulti = false;
@@ -90,7 +90,9 @@
 		canvas.style.fontSize = canvas.width * 0.02 + "px";
 		triangleSide = parseInt((canvas.width * transform.zoom) / 12);
 		triangleHeight = (Math.sqrt(3) / 2) * triangleSide;
-		ctx.scale(dpr, dpr);
+		if (isInteractable) {
+			applyTransforms()
+		}
 	}
 	function getTriangleCenter(vertices) {
 		const center = {
@@ -242,10 +244,10 @@
 			ctx.save();
 			if (contrastMode) {
 				ctx.fillStyle = 'rgba(0,0,0,0.9)';
-				ctx.strokeStyle = 'rgba(255,255,255,.9)';
+				ctx.strokeStyle = set.color.replace(/[\d\.]+\)$/g, "1)");
 			} else {
 				ctx.fillStyle = set.color;
-				ctx.strokeStyle = set.color.replace(/[\d\.]+\)$/g, ".6)");
+				ctx.strokeStyle = set.color.replace(/[\d\.]+\)$/g, ".8)");
 			}
 
 			const centroid = bounds.reduce(
@@ -263,7 +265,7 @@
 				const angleB = Math.atan2(b.y - centroid.y, b.x - centroid.x);
 				return angleA - angleB;
 			});
-			ctx.lineWidth = 8;
+			ctx.lineWidth = canvas.offsetWidth / 100;
 			ctx.beginPath();
 			if (!lined) {
 				for (let i = 0; i < sorted.length; i++)
@@ -340,8 +342,7 @@
 					ans.classList.add("reveal");
 					ans.addEventListener("click", function () {
 						if (redeem != null) {
-							redeem.style.cursor = 'pointer';
-							redeem.value = ans.textContent;
+							redeem.value = ans.textContent.trim();
 							redeem.style.scrollMarginTop = "40px";
 							redeem.scrollIntoView({ behavior: "smooth", block: "start" });
 						}
@@ -373,8 +374,8 @@
 		ctx.setTransform(matrix);
 		needsInversion = true;
 		drawPuzzle();
-		const bgX = (-transform.offsetX * 0.05 - canvas.offsetWidth * 0.06);
-		const bgY = (-transform.offsetY * 0.05 - canvas.offsetWidth * 0.06);
+		const bgX = (-transform.offsetX * 0.05 - canvas.offsetWidth * 0.07);
+		const bgY = (-transform.offsetY * 0.05 - canvas.offsetWidth * 0.07);
 		canvas.style.backgroundPosition = `${bgX}px ${bgY}px`;
 		ctx.scale(dpr, dpr);
 		ctx.restore();
@@ -496,7 +497,7 @@
 	}
 	function insetBounds(vertices) {
 		const insetPoints = [];
-		const offset = 5;
+		const offset = canvas.offsetWidth / 200;
 		for (let i = 0; i < vertices.length; i++) {
 			const prev = vertices[(i - 1 + vertices.length) % vertices.length];
 			const curr = vertices[i];
@@ -693,6 +694,7 @@
 			});
 			EA = data.ea;
 			SK = data.sk;
+			isInteractable = true;
 			applyTransforms();
 			if (data.answer != null) drawPrompt(data.answer);
 			const hintBtns = document.querySelectorAll(`[id^='ss-hint-']`);

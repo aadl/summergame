@@ -84,7 +84,7 @@ canvas {
 	display: block;
 	border: #27272a 4px groove;
 	background: no-repeat radial-gradient(rgba(0, 0, 0, .3) 0%, rgba(0, 0, 0, .6) 70%, rgba(0, 0, 0, .8) 90%), url("/modules/custom/summergame/images/SG2025-WebGraphic_1500px.jpg");
-	background-size: 112% 112%;
+	background-size: 115% 115%;
 }
 
 #ss-contrast {
@@ -95,6 +95,7 @@ canvas {
 	color: white;
 	margin: 6px 0;
 	font-weight: normal;
+	z-index: 1;
 }
 
 .ss-categories {
@@ -132,6 +133,8 @@ canvas {
 	left: 50%;
 	transform: translateX(-50%);
 	display: none;
+	text-align: center;
+	white-space: nowrap
 }
 
 .ss-categories li {
@@ -198,6 +201,7 @@ canvas {
 
 .reveal {
 	animation: reveal 1.2s ease;
+	cursor: pointer;
 }
 
 .correct {
@@ -205,6 +209,7 @@ canvas {
 }
 
 .ss-ui-hint {
+	z-index: 2;
 	visibility: hidden;
 	color: #fff;
 	position: absolute;
@@ -346,7 +351,8 @@ canvas {
 
 	canvas {
 		background: no-repeat radial-gradient(rgba(0, 0, 0, .3) 0%, rgba(0, 0, 0, .6) 70%, rgba(0, 0, 0, .8) 90%), url("/modules/custom/summergame/images/SG2025-WebGraphic_750px.jpg");
-		background-size: 112% 112%;
+		background-size: 115% 115%;
+
 	}
 
 	.win-prompt {
@@ -381,7 +387,7 @@ canvas {
 @media (max-width:450px) {
 	canvas {
 		background: no-repeat radial-gradient(rgba(0, 0, 0, .3) 0%, rgba(0, 0, 0, .6) 70%, rgba(0, 0, 0, .8) 90%), url("/modules/custom/summergame/images/SG2025-WebGraphic_750px.jpg");
-		background-size: 112% 112%;
+		background-size: 115% 115%;
 	}
 
 	.win-prompt {
