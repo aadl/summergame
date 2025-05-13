@@ -322,3 +322,64 @@ summergame.scatterlog.connect_process:
     _title: 'Summer Game Account Connection'
   requirements:
     _permission: 'access summergame'
+summergame.recent.badges:
+  path: '/summergame/recent-badges'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\PlayerController::getRecentBadges'
+    _title: 'Summer Game Recent Badges'
+  requirements:
+    _permission: 'access summergame'
+summergame.super_search.get_puzzle:
+  path: '/summergame/super_search/{nid}/get'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\SuperSearchController:get_puzzle'
+    _title: 'Super Search Puzzle Retrieval'
+summergame.super_search.guess:
+  path: '/summergame/super_search/{nid}/guess'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\SuperSearchController:guess'
+    _title: 'Super Search Puzzle Guess'
+  requirements:
+    _method: 'POST'
+  options:
+    no_cache: 'TRUE'
+summergame.super_search.hint:
+  path: '/summergame/super_search/{nid}/hint/{i}'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\SuperSearchController:hint'
+    _title: 'Super Search Puzzle Hint'
+  requirements:
+    _method: 'POST'
+  options:
+    no_cache: 'TRUE'
+
+summergame.aaps_config:
+  path: '/summergame/staff/aaps'
+  defaults:
+    _title: 'Summer Game Settings'
+    _form: '\Drupal\summergame\Form\SummerGameAdminAAPS'
+  requirements:
+    _permission: 'access administration pages'
+summergame.aaps.map:
+  path: '/schoolcodes'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\AAPSController:map'
+    _title: 'AAPS Summer Game Map'
+  requirements:
+    _permission: 'access summergame'
+summergame.aaps.school:
+  path: '/summergame/aaps/school/{line_number}'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\AAPSController:school'
+    _title: 'AAPS Summer Game School'
+    line_number: null
+  requirements:
+    _permission: 'access summergame'
+summergame.aaps.code:
+  path: '/summergame/aaps/code/{line_number_hash}'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\AAPSController:code'
+    _title: 'AAPS Summer Game School'
+    line_number_hash: null
+  requirements:
+    _permission: 'access summergame'

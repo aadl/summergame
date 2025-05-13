@@ -1,0 +1,403 @@
+.ss-container {
+	--s: 4px;
+	--x: 5px;
+	--y: 4px;
+	width: 100%;
+	max-width: 800px;
+	position: relative;
+	display: block;
+	margin: 50px auto;
+	border-radius: 12px;
+	transform: translate(0);
+	transform-style: preserve-3d;
+	touch-action: manipulation;
+}
+
+.ss-loader {
+	border: 6px solid #e4e4e7;
+	border-top: 6px solid #1e3a8a;
+	border-radius: 50%;
+	width: 50px;
+	height: 50px;
+	margin: 40px auto;
+	animation: spin 2s linear infinite;
+}
+
+.zoom-tray {
+	display: flex;
+	gap: 2px;
+	max-height: 60px;
+}
+
+.action-tray {
+	display: flex;
+	gap: 2px;
+	max-height: 60px;
+}
+
+.ss-frame {
+	height: 40px;
+	background-color: red;
+}
+
+.tray button {
+	background-color: #fff;
+	border: 2px solid black;
+	padding: 12px 8px;
+	font-weight: bold;
+	font-size: large;
+	text-align: center;
+	cursor: pointer;
+	color: black;
+	pointer-events: auto;
+}
+
+.zoom-tray button {
+	padding: 14px 18px;
+}
+
+.tray {
+	background: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgb(0, 0, 0));
+	width: 100%;
+	display: flex;
+	justify-content: space-between;
+	position: absolute;
+	left: 50%;
+	transform: translateX(-50%);
+	padding: 24px 12px 12px;
+	bottom: 0px;
+	pointer-events: none;
+	touch-action: none;
+}
+
+.tray.win {
+	height: 100%;
+}
+
+.tray.win button {
+	display: none;
+}
+
+canvas {
+	width: 100%;
+	margin: 0 auto;
+	display: block;
+	border: #27272a 4px groove;
+	background: no-repeat radial-gradient(rgba(0, 0, 0, .3) 0%, rgba(0, 0, 0, .6) 70%, rgba(0, 0, 0, .8) 90%), url("/modules/custom/summergame/images/SG2025-WebGraphic_1500px.jpg");
+	background-size: 115% 115%;
+}
+
+#ss-contrast {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	background-color: #27272a;
+	color: white;
+	margin: 6px 0;
+	font-weight: normal;
+	z-index: 1;
+}
+
+.ss-categories {
+	margin: 50px 20px;
+	max-width: 800px;
+}
+
+#ss-hints>li {
+	font-weight: bold;
+	font-size: 1.1rem;
+	list-style-type: none;
+}
+
+#ss-hints>li>ul {
+	list-style-type: none;
+	margin-left: 40px;
+	margin-top: 25px;
+}
+
+#ss-hints ul li {
+	font-weight: normal;
+	font-size: 1rem;
+	list-style-position: outside
+}
+
+#ss-result {
+	font-weight: 600;
+	font-size: 1.1em;
+	position: absolute;
+	bottom: 20px;
+	color: black;
+	padding: 9px 6px;
+	border: 2px solid black;
+	background-color: #fff;
+	left: 50%;
+	transform: translateX(-50%);
+	display: none;
+	text-align: center;
+	white-space: nowrap
+}
+
+.ss-categories li {
+	margin-top: 12px;
+}
+
+.ss-categories button {
+	background-color: #27272a;
+	color: white;
+	margin: 6px 0;
+	font-weight: normal;
+}
+
+.win-prompt {
+	position: absolute;
+	display: flex;
+	bottom: 80px;
+	left: 50%;
+	transform: translateX(-50%);
+	border: 3px solid white;
+	color: white;
+	text-align: center;
+	padding: 8px 12px;
+	height: 40%;
+	max-height: 150px;
+	width: 80%;
+	background-color: #301d2b;
+	justify-content: center;
+}
+
+.win-prompt svg {
+	max-width: 200px;
+	position: absolute;
+	top: -50px;
+	left: -10%;
+}
+
+.win-prompt p {
+	align-self: end;
+}
+
+.win-prompt .ss-answer {
+	display: block;
+	margin: 6px auto;
+	font-size: 1.2em;
+	font-weight: bold;
+	border: 1px solid white;
+	background-color: #301d2b;
+}
+
+.write {
+	stroke: var(--stroke-color);
+	fill: transparent;
+	stroke-width: 2;
+	stroke-dasharray: var(--path-length);
+	stroke-dashoffset: var(--path-length);
+	animation: draw var(--draw-duration) ease forwards, fill-in 1.2s ease forwards;
+	animation-delay: 0s, var(--draw-duration);
+}
+
+.bulge {
+	animation: bulge 0.5s ease-in-out;
+}
+
+.reveal {
+	animation: reveal 1.2s ease;
+	cursor: pointer;
+}
+
+.correct {
+	animation: correct 3s ease-in-out
+}
+
+.ss-ui-hint {
+	z-index: 2;
+	visibility: hidden;
+	color: #fff;
+	position: absolute;
+	top: 0px;
+	left: 50%;
+	padding: 8px 0px;
+	transform: translateX(-50%);
+	background: linear-gradient(to top, rgba(0, 0, 0, 0), rgb(0, 0, 0));
+	pointer-events: none;
+	touch-action: none;
+	width: 100%;
+	text-align: center;
+}
+
+@keyframes spin {
+	from {
+		transform: rotate(0deg);
+	}
+
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+@keyframes fill-in {
+	0% {
+		fill: transparent;
+	}
+
+	100% {
+		fill: var(--fill-color);
+	}
+}
+
+@keyframes draw {
+	from {
+		stroke: var(--stroke-color);
+		stroke-dashoffset: var(--path-length);
+		stroke-width: 30px;
+	}
+
+	to {
+		stroke-dashoffset: 0;
+		stroke-width: 3.6px;
+	}
+}
+
+@keyframes bulge {
+	0% {
+		transform: scale(1);
+	}
+
+	25% {
+		transform: scale(.8);
+	}
+
+	75% {
+		transform: scale(1.3);
+	}
+
+	100% {
+		transform: scale(1);
+	}
+}
+
+@keyframes reveal {
+	0% {
+		filter: blur(1.5rem);
+	}
+
+	100% {
+		filter: blur(0);
+	}
+}
+
+@keyframes correct {
+	0% {
+		box-shadow: 0 0 20px 8px rgba(243, 192, 82);
+	}
+
+	15% {
+		box-shadow: 0 0 20px 8px rgba(229, 147, 182);
+	}
+
+	30% {
+		box-shadow: 0 0 20px 8px rgba(229, 147, 182);
+	}
+
+	45% {
+		box-shadow: 0 0 20px 8px rgba(79, 176, 221);
+	}
+
+	60% {
+		box-shadow: 0 0 20px 8px rgba(221, 85, 86)
+	}
+
+	75% {
+		box-shadow: 0 0 20px 8px rgba(195, 175, 207);
+	}
+
+	90% {
+		box-shadow: 0 0 20px 8px rgba(73, 163, 92);
+	}
+
+	100% {
+		box-shadow: none;
+	}
+}
+
+@media(max-width:1024px) {
+	.win-prompt svg {
+		max-width: 150px;
+		position: absolute;
+		top: -60px;
+		left: -10%;
+	}
+}
+
+@media (max-width:750px) {
+	.zoom-tray {
+		max-height: 40px;
+	}
+
+	.action-tray {
+		max-height: 40px;
+	}
+
+	.tray {
+		padding: 12px 6px px;
+	}
+
+	.tray button {
+		padding: 6px 4px;
+	}
+
+	.zoom-tray button {
+		padding: 7px 9px;
+	}
+
+	canvas {
+		background: no-repeat radial-gradient(rgba(0, 0, 0, .3) 0%, rgba(0, 0, 0, .6) 70%, rgba(0, 0, 0, .8) 90%), url("/modules/custom/summergame/images/SG2025-WebGraphic_750px.jpg");
+		background-size: 115% 115%;
+
+	}
+
+	.win-prompt {
+		max-height: 130px;
+		bottom: 20px;
+	}
+
+	.win-prompt svg {
+		max-width: 120px;
+		position: absolute;
+		top: -30px;
+		left: -10%;
+	}
+
+	.ss-ui-hint {
+		visibility: hidden;
+		color: #fff;
+		position: absolute;
+		top: 100%;
+		left: 50%;
+		padding: 4px 0px;
+		transform: translateX(-50%);
+		background: #27272a;
+		pointer-events: none;
+		touch-action: none;
+		width: 100%;
+		text-align: center;
+		font-size: .8em;
+	}
+}
+
+@media (max-width:450px) {
+	canvas {
+		background: no-repeat radial-gradient(rgba(0, 0, 0, .3) 0%, rgba(0, 0, 0, .6) 70%, rgba(0, 0, 0, .8) 90%), url("/modules/custom/summergame/images/SG2025-WebGraphic_750px.jpg");
+		background-size: 115% 115%;
+	}
+
+	.win-prompt {
+		max-height: 150px;
+		width: 90%
+	}
+
+	.win-prompt svg {
+		max-width: 100px;
+		position: absolute;
+		left: -4%;
+	}
+}

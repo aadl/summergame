@@ -91,6 +91,12 @@ class SummerGameAdminForm extends ConfigFormBase
       '#maxlength' => 32,
       '#description' => t("Default Game Term to apply to earned points (e.g. SummerGame2011)"),
     ];
+    $form['summergame_suppress_current_leaderboard'] = [
+      '#type' => 'checkbox',
+      '#title' => t('Suppress Current Leaderboard'),
+      '#default_value' => $summergame_settings->get('summergame_suppress_current_leaderboard'),
+      '#description' => t('Suppress current game term leaderboard?'),
+    ];
     $form['summergame_badgelist_game_term'] = [
       '#type' => 'textfield',
       '#title' => t("Badge List Game Term"),
@@ -266,7 +272,13 @@ class SummerGameAdminForm extends ConfigFormBase
         '#default_value' => $summergame_settings->get('summergame_scatterlog_url'),
         '#description' => 'URL for scatter log',
       ];
-
+    $form['summergame_supersearch_salt'] =
+      [
+        '#type' => 'textfield',
+        '#title' => 'Super Search Salt',
+        '#default_value' => $summergame_settings->get('summergame_supersearch_salt'),
+        '#description' => 'Salt for supersearch answer encoding',
+      ];
     return parent::buildForm($form, $form_state);
   }
 }
