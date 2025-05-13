@@ -162,6 +162,12 @@
             element.homecode += '<br>[ <a href="/summergame/homecodes/report/' + element.code_id + '">Can\'t find it?</a> ]';
           }
 
+          // Add admin text to homecode text
+          if (element.text) {
+            element.homecode += '<p class="homecode-admin">Code: <a href="/summergame/user/' +
+                                element.creator_uid + '/homecode">' + element.text + '</a></p>';
+          }
+
           // Determine layer group
           if (element.layerGroup == 'A') {
             var aIcon = (reported ? greyIcon : redIcon);

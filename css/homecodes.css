@@ -44,3 +44,8 @@
 .leaflet-control-layers-overlays label:nth-child(n+4):nth-child(-n+8) {
   margin-left: 20px;
 }
+.homecode-admin {
+  border: 1px solid #FF0000;
+  margin: 4px 0px !important;
+  padding: 3px;
+}

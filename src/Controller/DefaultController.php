@@ -303,6 +303,7 @@ We don't have all the details yet, but we'll reuse the signs for the 2023 game, 
 
     if ($summergame_points_enabled) {
       $db = \Drupal::database();
+      $sg_admin = \Drupal::currentUser()->hasPermission('administer summergame');
       if (empty($game_term)) {
         $game_term = \Drupal::config('summergame.settings')->get('summergame_current_game_term');
       }
@@ -335,6 +336,12 @@ We don't have all the details yet, but we'll reuse the signs for the 2023 game, 
           $geocode_data->code_id = $game_code->code_id;
           $geocode_data->created = $game_code->created;
           $geocode_data->num_redemptions = $game_code->num_redemptions;
+
+          // Add admin data
+          if ($sg_admin) {
+            $geocode_data->text = $game_code->text;
+            $geocode_data->creator_uid = $game_code->creator_uid;
+          }
 
           // Determine layerGroup depending on age
           $ts_diff = time() - $game_code->created;

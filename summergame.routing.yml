@@ -269,6 +269,8 @@ summergame.map.data:
     game_term: ''
   requirements:
     _permission: 'access content'
+  options:
+    no_cache: TRUE
 summergame.badgelist:
   path: '/summergame/badgelist/{game_term}'
   defaults:
