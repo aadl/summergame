@@ -389,7 +389,7 @@ summergame.aaps.map:
     _controller: '\Drupal\summergame\Controller\AAPSController:map'
     _title: 'AAPS Summer Game Map'
   requirements:
-    _permission: 'access summergame'
+    _permission: 'access content'
 summergame.aaps.school:
   path: '/summergame/aaps/school/{line_number}'
   defaults:
@@ -397,7 +397,7 @@ summergame.aaps.school:
     _title: 'AAPS Summer Game School'
     line_number: null
   requirements:
-    _permission: 'access summergame'
+    _permission: 'access content'
 summergame.aaps.code:
   path: '/summergame/aaps/code/{line_number_hash}'
   defaults:
@@ -405,4 +405,4 @@ summergame.aaps.code:
     _title: 'AAPS Summer Game School'
     line_number_hash: null
   requirements:
-    _permission: 'access summergame'
+    _permission: 'access content'
