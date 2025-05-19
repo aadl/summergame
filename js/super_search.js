@@ -3,15 +3,20 @@
 	const playerRedeem = document.getElementById("summergame-player-redeem-form");
 	const redeem = document.getElementById("edit-code-text");
 	if (redeem != null) redeem.removeAttribute("autofocus");
-
 	badgeProgress.insertAdjacentHTML("beforeBegin", "<div class='ss-loader'></div>");
 	let ssHTML =
 		'<div id="ss-container" class="ss-container"><canvas id="triangleCanvas"></canvas><div class="tray"><div class="action-tray"><button id="ss-clear">Clear</button></div><div class="zoom-tray"><button id="ss-zoom-in">+</button><button id="ss-zoom-out">-</button></div></div><div id="ss-result"></div><div class="ss-ui-hint">Hint: once a tile is selected, you may tap/click and drag across to select multiple eligible tiles. Clear the selection to reposition the puzzle.</div><button id="ss-contrast">Enable Contrast Mode</button></div><div class="ss-categories"><h2>Categories & Hints</h2><p>Completed hints will appear with a strikethrough.</p><ol id="ss-hints"></ol></div>';
 	if (playerRedeem === null) {
+		let solution;
+		if (badgeProgress.getElementsByTagName('h3').length === 0) {
+			solution = '<a style="font-weight:bold" href="/user/login?destination=%2Fnode%2F' +
+				window.drupalSettings.nid +
+				'">Log in</a>'
+		} else {
+			solution = '<a style="font-weight:bold" href="/summergame/player">Create a player</a>'
+		}
 		ssHTML =
-			'<p>Imagine a word-search, but you\'ve got to figure out the words, too! Meet the SUPER SEARCH!</p><p>Find the 36 hidden words (forwards, backwards, or diagonally) that fall under SIX categories (listed under the puzzle grid). Tap/click the grid\'s letters to highlight the answers as you find them—letters can be used in multiple words. All words have at least 3-letters, are not plural (unless a title is plural), and do not use abbreviations. No words are contained entirely within other words.</p> When you are finished, there will be 8 letters that aren\'t used in any words, which, when written in order, will give you your final code.</p><p><a style="font-weight:bold" href="/user/login?destination=%2Fnode%2F' +
-			window.drupalSettings.nid +
-			'">Log in</a> to redeem points for the code, <strong>learn more</strong> about solving these puzzles, or to <strong>download a printer friendly version</strong>!</p>' +
+			'<p>Imagine a word-search, but you\'ve got to figure out the words, too! Meet the SUPER SEARCH!</p><p>Find the 36 hidden words (forwards, backwards, or diagonally) that fall under SIX categories (listed under the puzzle grid). Tap/click the grid\'s letters to highlight the answers as you find them—letters can be used in multiple words. All words have at least 3-letters, are not plural (unless a title is plural), and do not use abbreviations. No words are contained entirely within other words.</p> When you are finished, there will be 8 letters that aren\'t used in any words, which, when written in order, will give you your final code.</p><p>' + solution + ' to redeem points for the code, <strong>learn more</strong> about solving these puzzles, or to <strong>download a printer friendly version</strong>!</p>' +
 			ssHTML;
 	}
 	badgeProgress.insertAdjacentHTML("beforeBegin", ssHTML);
@@ -76,13 +81,9 @@
 	let isMulti = false;
 	let lastX, lastY, dt;
 	const t = 6;
-	const batchSize = 1;
-	let currentIndex = 0;
-	let pathObjects;
+	let width = canvas.offsetWidth;
 	sizeCanvas();
 	function sizeCanvas() {
-		const width = canvas.offsetWidth;
-		canvas.style.height = `${width}px`;
 		canvas.width = width * dpr;
 		canvas.height = width * dpr;
 		centerX = (canvas.width / 2) * transform.zoom;
@@ -126,12 +127,6 @@
 				}
 			}
 		}
-	}
-	function findTopLeft(vertices) {
-		return vertices.reduce((topLeft, vertex) => {
-			if (vertex.x + vertex.y < topLeft.x + topLeft.y) return vertex;
-			return topLeft;
-		}, vertices[0]);
 	}
 	function sortHexPoints(points) {
 		const center = {
@@ -249,7 +244,6 @@
 				ctx.fillStyle = set.color;
 				ctx.strokeStyle = set.color.replace(/[\d\.]+\)$/g, ".8)");
 			}
-
 			const centroid = bounds.reduce(
 				(acc, v) => {
 					acc.x += v.x;
