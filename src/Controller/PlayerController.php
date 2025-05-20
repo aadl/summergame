@@ -546,6 +546,7 @@ class PlayerController extends ControllerBase {
 
   public function leagues($league_id = 0) {
     $output = [];
+
     if ($player = summergame_get_active_player()) {
 /*
       // Check if player has created a league
@@ -569,7 +570,7 @@ class PlayerController extends ControllerBase {
       $player_leagues = summergame_player_leagues($player['pid']);
 
       // Get League Leaderboard
-      $league_leaderboard = summergame_league_leaderboard($league_id);
+      $league_leaderboard = summergame_league_leaderboard((int)$league_id);
     }
     else {
       \Drupal::messenger()->addError("You must have an active player connected to your account to access leagues");
@@ -587,6 +588,7 @@ class PlayerController extends ControllerBase {
         'max-age' => 0, // Don't cache, always get fresh data
       ],
       '#player' => $player,
+      '#league_id'=>(int)$league_id,
       '#league_code' => $league_code,
       '#player_leagues' => $player_leagues,
       '#league_leaderboard' => $league_leaderboard,

@@ -46,3 +46,31 @@
  .container-inline input[type="text"] {
    width: unset;
  }
+
+.leagues .manage-leagues {
+ display: flex;
+  align-items: start;
+  justify-content: start;
+  margin-bottom: 1em;
+  gap:1em;
+  flex-direction: column;
+  background:#f5f6f9;
+  padding:1em;
+  margin-top: 1em;
+}
+
+.leagues .generate-league-wrapper #summergame-league-code-form {
+  width:100%;
+}
+
+.leagues .join-league-wrapper {
+  padding-bottom:1em;
+  border-bottom: 1px solid #cacaca;
+}
+
+.league-leaderboard {
+  margin-bottom: 3em;
+  padding-bottom:1em;
+  border-bottom:1px solid #999;
+
+}

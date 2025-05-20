@@ -170,7 +170,7 @@ function summergame_leagues_leaderboard_update() {
                    ->condition('league_code', '', '!=')
                    ->execute()
                    ->fetchCol();
-$league_ids = [1];
+//$league_ids = [1];
   foreach ($league_ids as $league_id) {
     // Build the league leaderboard
     $leaderboard = [];
@@ -472,6 +472,7 @@ function summergame_theme() {
         'league_code' => NULL,
         'player_leagues' => NULL,
         'league_leaderboard' => NULL,
+        'league_id' => NULL,
         'join_form' => NULL,
       ]
     ]

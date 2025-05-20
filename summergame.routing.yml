@@ -218,7 +218,7 @@ summergame.player.leagues:
   defaults:
     _controller: '\Drupal\summergame\Controller\PlayerController::leagues'
     _title: 'Summer Game Leagues'
-    league_id: ''
+    league_id: 0
   requirements:
     _permission: 'access summergame'
 # Summer Game Default ##########################################################
