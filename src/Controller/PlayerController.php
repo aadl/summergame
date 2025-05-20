@@ -547,53 +547,59 @@ class PlayerController extends ControllerBase {
   public function leagues($league_id = 0) {
     $output = [];
 
-    if ($player = summergame_get_active_player()) {
-/*
-      // Check if player has created a league
-      if ($player['league_code']) {
-        $league_code = $player['league_code'];
-        if ($league_id < 1) {
-          $league_id = $player['pid']; // Default to player ID
+    if (\Drupal::config('summergame.settings')->get('summergame_leagues_enabled')) {
+      if ($player = summergame_get_active_player()) {
+  /*
+        // Check if player has created a league
+        if ($player['league_code']) {
+          $league_code = $player['league_code'];
+          if ($league_id < 1) {
+            $league_id = $player['pid']; // Default to player ID
+          }
         }
+        else {
+          // No league code for player
+          $league_code = 'GENERATE LEAGUE CODE';
+        }
+  */
+        $league_code = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGameLeagueCodeForm', $player['pid']);
+
+        // Display Join Form
+        $join_form = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGameLeagueJoinForm', $player['pid']);
+
+        // Get League list for Player
+        $player_leagues = summergame_player_leagues($player['pid']);
+
+        // Get League Leaderboard
+        $league_leaderboard = summergame_league_leaderboard((int)$league_id);
       }
       else {
-        // No league code for player
-        $league_code = 'GENERATE LEAGUE CODE';
+        \Drupal::messenger()->addError("You must have an active player connected to your account to access leagues");
+        return new RedirectResponse('summergame/leaderboard');
       }
- */
-      $league_code = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGameLeagueCodeForm', $player['pid']);
 
-      // Display Join Form
-      $join_form = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGameLeagueJoinForm', $player['pid']);
-
-      // Get League list for Player
-      $player_leagues = summergame_player_leagues($player['pid']);
-
-      // Get League Leaderboard
-      $league_leaderboard = summergame_league_leaderboard((int)$league_id);
+      return [
+        '#theme' => 'summergame_leagues_page',
+        '#attached' => [
+          'library' => [
+            'summergame/summergame-lib'
+          ]
+        ],
+        '#cache' => [
+          'max-age' => 0, // Don't cache, always get fresh data
+        ],
+        '#player' => $player,
+        '#league_id'=>(int)$league_id,
+        '#league_code' => $league_code,
+        '#player_leagues' => $player_leagues,
+        '#league_leaderboard' => $league_leaderboard,
+        '#join_form' => $join_form,
+      ];
     }
     else {
-      \Drupal::messenger()->addError("You must have an active player connected to your account to access leagues");
-      return new RedirectResponse('summergame/leaderboard');
+      \Drupal::messenger()->addError("Leagues are not currently enabled");
+      return new RedirectResponse('/summergame/player');
     }
-
-    return [
-      '#theme' => 'summergame_leagues_page',
-      '#attached' => [
-        'library' => [
-          'summergame/summergame-lib'
-        ]
-      ],
-      '#cache' => [
-        'max-age' => 0, // Don't cache, always get fresh data
-      ],
-      '#player' => $player,
-      '#league_id'=>(int)$league_id,
-      '#league_code' => $league_code,
-      '#player_leagues' => $player_leagues,
-      '#league_leaderboard' => $league_leaderboard,
-      '#join_form' => $join_form,
-    ];
   }
 
   public function getRecentBadges() {

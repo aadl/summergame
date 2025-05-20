@@ -71,6 +71,12 @@ class SummerGameAdminForm extends ConfigFormBase
       '#default_value' => $summergame_settings->get('summergame_homecode_form_enabled'),
       '#description' => t('Turn on the Home Code creation form?'),
     ];
+    $form['summergame_leagues_enabled'] = [
+      '#type' => 'checkbox',
+      '#title' => t('Summergame Leagues Enabled'),
+      '#default_value' => $summergame_settings->get('summergame_leagues_enabled'),
+      '#description' => t('Turn on League pages for players?'),
+    ];
     $form['summergame_lego_enabled'] = [
       '#type' => 'checkbox',
       '#title' => t('Summergame Lego Contest Voting Enabled'),
