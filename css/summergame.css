@@ -25,3 +25,24 @@
 #summergame-player-quick-transfer-form {
   width: 100%;
 }
+
+.container-inline {
+  text-align: center;
+}
+.container-inline div,
+ .container-inline label {
+   display: inline-block;
+ }
+ .container-inline .form-item > * {
+   margin: 0 0.5em 0 0;
+ }
+ /* Details contents always need to be rendered as block. */
+ .container-inline .details-wrapper {
+   display: block;
+ }
+ .container-inline .hidden {
+   display: none;
+ }
+ .container-inline input[type="text"] {
+   width: unset;
+ }

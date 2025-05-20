@@ -1,31 +1,36 @@
 {% apply spaceless %}
 <h1 class="t-center ruled-heading large-heading"><span>Game Ledger</span></h1>
 <div>
-  <a href="/summergame/player">Return to My Players!</a>
+  <a href="/summergame/player">≪ Return to My Players!</a>
+  {{ filter_form }}
   {{ pager }}
-  <table class="not-fixed-table">
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Points</th>
-        <th>Remove?</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for row in ledger %}
-        <tr {{ attributes.addClass(row.classes) }}>
-          <td>{{ row.date }}</td>
-          <td>{{ row.type }}</td>
-          <td>{{ row.description|raw }}</td>
-          <td>{{ row.points }}</td>
-          <td>{{ row.remove|raw }}</td>
+  {% if ledger %}
+    <table class="not-fixed-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Points</th>
+          <th>Remove?</th>
         </tr>
-        {% do attributes.removeClass(row.classes) %}
-      {% endfor %}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {% for row in ledger %}
+          <tr {{ attributes.addClass(row.classes) }}>
+            <td>{{ row.date }}</td>
+            <td>{{ row.type }}</td>
+            <td>{{ row.description|raw }}</td>
+            <td>{{ row.points }}</td>
+            <td>{{ row.remove|raw }}</td>
+          </tr>
+          {% do attributes.removeClass(row.classes) %}
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No matching entries found</p>
+  {% endif %}
   {{ pager }}
 </div>
 {% endapply %}

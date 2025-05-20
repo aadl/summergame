@@ -398,11 +398,8 @@ class PlayerController extends ControllerBase {
 
   public function ledger($pid) {
     $summergame_settings = \Drupal::config('summergame.settings');
-    $pid = intval($pid);
-
-    if ($pid) {
-      $player = summergame_player_load(array('pid' => $pid));
-    }
+    $ledger = NULL;
+    $player = summergame_player_load(['pid' => $pid]);
 
     if ($player) {
       $player_access = summergame_player_access($player['pid']);
@@ -412,29 +409,30 @@ class PlayerController extends ControllerBase {
         return $this->redirect('<front>');
       }
 
-      // build the pager
-      $pager_manager = \Drupal::service('pager.manager');
-      $page = \Drupal::service('pager.parameters')->findPage();
-      $per_page = 100;
-      $offset = $per_page * $page;
+      // Process GET parameters
+      $filter_search = $_GET['filter_search'] ?? FALSE;
+      $filter_type = $_GET['filter_type'] ?? FALSE;
+      $game_term = $_GET['term'] ?? FALSE;
 
       $db = \Drupal::database();
-      if (isset($_GET['term'])) {
-        $total = $db->query("SELECT COUNT(lid) as total FROM sg_ledger WHERE pid = :pid AND game_term = :term",
-        [':pid' => $pid, ':term' => $_GET['term']])->fetch();
-        $total = $total->total;
-        $result = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND game_term = :term ORDER BY timestamp DESC LIMIT $offset, $per_page",
-        [':pid' => $pid, ':term' => $_GET['term']]);
-      } else {
-        $total = $db->query("SELECT COUNT(lid) as total FROM sg_ledger WHERE pid = :pid",
-          [':pid' => $pid])->fetch();
-        $total = $total->total;
-        $result = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid ORDER BY timestamp DESC LIMIT $offset, $per_page",
-          [':pid' => $pid]);
+      $query = $db->select('sg_ledger', 'l')
+        ->extend('Drupal\Core\Database\Query\PagerSelectExtender')
+        ->fields('l')
+        ->condition('pid', $pid);
+      if ($game_term) {
+        $query->condition('game_term', $game_term);
       }
+      if ($filter_type) {
+        $query->condition('type', $filter_type);
+      }
+      if ($filter_search) {
+        $query->condition('description', '%' . $db->escapeLike($filter_search) . '%', 'LIKE');
+      }
+      $query->orderBy('timestamp', 'DESC');
+      $query->limit(100);
+      $result = $query->execute();
 
-      $pager =\Drupal::service('pager.manager')->createPager($total, $per_page);
-
+      $score_table = [];
       while ($row = $result->fetchAssoc()) {
         $row['classes'] = [];
 
@@ -512,9 +510,17 @@ class PlayerController extends ControllerBase {
 
       if (count($score_table)) {
         $ledger = $score_table;
-      }
-      else {
-        $ledger = NULL;
+        // Get distinct ledger types
+        $ledger_types = $db->select('sg_ledger', 'l')
+          ->fields('l', ['type'])
+          ->condition('pid', $pid)
+          ->condition('game_term', $game_term)
+          ->distinct()
+          ->orderBy('type')
+          ->execute()
+          ->fetchCol();
+        $ledger_types = array_combine($ledger_types, $ledger_types);
+        $filter_form = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerLedgerFilterForm', $pid, $ledger_types);
       }
     }
 
@@ -528,6 +534,7 @@ class PlayerController extends ControllerBase {
         'max-age' => 0, // Don't cache, always get fresh data
       ],
       '#theme' => 'summergame_player_ledger',
+      '#filter_form' => $filter_form ?? '',
       '#ledger' => $ledger,
       '#pager' => [
         '#type' => 'pager',
