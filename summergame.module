@@ -2,12 +2,14 @@
 
 use Drupal\user\Entity\User;
 use Drupal\file\Entity\File;
+use Elasticsearch\ClientBuilder;
 use PHPOnCouch\CouchClient;
 use Predis\Client;
 use Drupal\node\Entity\Node;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Link;
+use Sabre\VObject\Cli;
 
 function summergame_is_byteclub_page() {
   $path = strtolower(\Drupal::request()->getRequestUri());
@@ -421,6 +423,7 @@ function summergame_theme() {
     ],
     'summergame_player_ledger' => [
       'variables' => [
+        'filter_form' => NULL,
         'ledger' => NULL,
         'pager' => NULL,
         'game_display_name' => NULL,
@@ -542,6 +545,99 @@ function summergame_get_game_term_homes() {
     $game_term_homes[trim($pattern)] = trim($path);
   }
   return $game_term_homes;
+}
+
+/**
+ * UTILITY: Index game codes for a specific game term
+ */
+function summergame_index_gamecodes($game_term, $code_id = 0, $dev = FALSE) {
+  $db = \Drupal::database();
+  $hosts = [
+    \Drupal::config('arborelastic.settings')->get('arborelastic_host') . ':' .
+    \Drupal::config('arborelastic.settings')->get('arborelastic_port')
+  ];
+  $es_client = ClientBuilder::create()->setHosts($hosts)->build();
+  $es_index = 'game_codes_' . strtolower($game_term);
+  if ($dev) {
+    $es_index .= '_dev'; // Development index
+  }
+
+  $result = NULL;
+  if ($code_id) {
+    // Index a specific game code
+    $row = $db->select('sg_game_codes', 'sg')
+              ->fields('sg', ['code_id', 'text'])
+              ->condition('code_id', $code_id)
+              ->execute()
+              ->fetchObject();
+    $result = $es_client->index([
+      'index' => $es_index,
+      'id' => $row->code_id,
+      'body' => [
+        'text' => $row->text,
+      ],
+    ]);
+  }
+  else {
+    // Index all game codes for this game term
+    $result = [];
+    $res = $db->query('SELECT code_id, text FROM sg_game_codes WHERE game_term = :game_term', [':game_term' => $game_term]);
+    foreach ($res as $row) {
+      // index game code text in elasticsearch
+      $result[] = $es_client->index([
+        'index' => $es_index,
+        'id' => $row->code_id,
+        'body' => [
+          'text' => $row->text,
+        ],
+      ]);
+    }
+  }
+
+  return $result;
+}
+
+function summergame_gamecode_close_match($text, $game_term = NULL, $dev = FALSE) {
+  $game_term = $game_term ?? \Drupal::config('summergame.settings')->get('summergame_current_game_term');
+  $hosts = [
+    \Drupal::config('arborelastic.settings')->get('arborelastic_host') . ':' .
+    \Drupal::config('arborelastic.settings')->get('arborelastic_port')
+  ];
+  $es_client = ClientBuilder::create()->setHosts($hosts)->build();
+  $es_index = 'game_codes_' . strtolower($game_term);
+  if ($dev) {
+    $es_index .= '_dev'; // Development index
+  }
+
+  $params = [
+    'index' => $es_index,
+    'body' => [
+      'query' => [
+        'match' => [
+          'text' => [
+            'query' => $text,
+            'fuzziness' => 'AUTO',
+          ],
+        ],
+      ],
+    ],
+  ];
+
+  try {
+    $response = $es_client->search($params);
+    if ($response['hits']['total']['value'] > 0) {
+      foreach ($response['hits']['hits'] as $hit) {
+        if ($hit['_source']['text'] != $text) {
+         return ['code_id' => $hit['_id'], 'text' => $hit['_source']['text']];
+        }
+      }
+    }
+  }
+  catch (\Exception $e) {
+    \Drupal::messenger()->addError(t('Error searching for game code: @message', ['@message' => $e->getMessage()]));
+  }
+
+  return FALSE;
 }
 
 /**
@@ -1000,7 +1096,7 @@ function summergame_player_load($player_info = []) {
     $player = $result->fetchAssoc();
   }
 
-  if ($player['pid']) {
+  if (isset($player['pid'])) {
     // Load badge ids
     $result2 = $db->query('SELECT * FROM {sg_players_badges} WHERE pid = ' . $player['pid']);
     while ($badge = $result2->fetchObject()) {
