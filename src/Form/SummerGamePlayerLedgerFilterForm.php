@@ -30,11 +30,6 @@ class SummerGamePlayerLedgerFilterForm extends FormBase {
 
     $all_option = [0 => 'All'];
     $ledger_types = $all_option + $ledger_types;
-/*
-    $comment_status = $all_option + $comment_status;
-    $comment_refer = $all_option + $comment_refer;
-*/
-//    $defaults = \Drupal::service('user.data')->get('patron_comments', \Drupal::currentUser()->id(), 'admin_filter');
 
     $form['pid'] = [
       '#type' => 'value',
@@ -46,27 +41,6 @@ class SummerGamePlayerLedgerFilterForm extends FormBase {
       '#default_value' => $_GET['filter_type'] ?? '',
       '#options' => $ledger_types,
     ];
-/*
-    $form['filter_status'] = [
-      '#type' => 'select',
-      '#title' => "Status",
-      '#default_value' => $defaults['filter_status'] ?? '',
-      '#options' => $comment_status,
-    ];
-    $form['filter_refer'] = [
-      '#type' => 'select',
-      '#title' => "Refer",
-      '#default_value' => $defaults['filter_refer'] ?? '',
-      '#options' => $comment_refer,
-    ];
-
-    $form['filter_number'] = [
-      '#type' => 'textfield',
-      '#title' => "ID",
-      '#default_value' => $defaults['filter_number'] ?? '',
-      '#size' => "6",
-    ];
-*/
     $form['filter_search'] = [
       '#type' => 'textfield',
       '#title' => "Search",
@@ -89,11 +63,6 @@ class SummerGamePlayerLedgerFilterForm extends FormBase {
     // Grab filter data from form
     $filter_values = [
       'filter_type' => $form_state->getValue('filter_type'),
-/*
-      'filter_status' => $form_state->getValue('filter_status'),
-      'filter_refer' => $form_state->getValue('filter_refer'),
-      'filter_number' => $form_state->getValue('filter_number'),
-*/
       'filter_search' => $form_state->getValue('filter_search'),
     ];
     // Add game_term to filter values
