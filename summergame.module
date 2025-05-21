@@ -170,7 +170,7 @@ function summergame_leagues_leaderboard_update() {
                    ->condition('league_code', '', '!=')
                    ->execute()
                    ->fetchCol();
-//$league_ids = [1];
+
   foreach ($league_ids as $league_id) {
     // Build the league leaderboard
     $leaderboard = [];
@@ -180,7 +180,7 @@ function summergame_leagues_leaderboard_update() {
                       ->execute()
                       ->fetchCol();
     $league_pids = array_map('intval', $league_pids);
-    $league_pids[] = $league_id; // Include the league owner
+
     $res = $db->query('SELECT pid, SUM(points) AS lb_total ' .
                       'FROM {sg_ledger} ' .
                       'WHERE pid IN (' . implode(',', $league_pids) .') ' .
@@ -251,6 +251,12 @@ function summergame_generate_league_code($pid) {
     $player['league_code'] = $code;
     summergame_player_save($player);
     \Drupal::messenger()->addMessage("Your League Code is $code. Other players can enter it on the Leagues page to join your league.");
+
+    // Every player is automatically in their own league
+    $db->insert('sg_players_leagues')
+     ->fields(['pid' => $pid, 'lid' => $pid])
+     ->execute();
+
     return $code;
   }
   else {
