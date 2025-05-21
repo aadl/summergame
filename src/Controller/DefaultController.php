@@ -26,8 +26,10 @@ class DefaultController extends ControllerBase {
   public function leaderboard() {
     $db = \Drupal::database();
     $cutoff = strtotime('today');
-    $total = $db->query("SELECT SUM(points) FROM sg_ledger WHERE timestamp > :cutoff AND points > 0", [':cutoff' => $cutoff])->fetchField();
-    $player_count = (int) $db->query("SELECT COUNT(DISTINCT pid) FROM sg_ledger WHERE timestamp > :cutoff", [':cutoff' => $cutoff])->fetchField();
+    $total = $db->query("SELECT SUM(points) FROM sg_ledger WHERE timestamp > :cutoff " .
+                        "AND metadata NOT LIKE '%leaderboard:no%' AND points > 0", [':cutoff' => $cutoff])->fetchField();
+    $player_count = (int) $db->query("SELECT COUNT(DISTINCT pid) FROM sg_ledger WHERE timestamp > :cutoff " .
+                                     "AND metadata NOT LIKE '%leaderboard:no%'", [':cutoff' => $cutoff])->fetchField();
 
     $current_game_term = \Drupal::config('summergame.settings')->get('summergame_current_game_term');
     $type = $_GET['type'] ?? $current_game_term;
