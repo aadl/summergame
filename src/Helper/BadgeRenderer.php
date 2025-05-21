@@ -13,7 +13,7 @@ class BadgeRenderer {
    * @return array
    */
   static function abstractSGBadgeRender($variables) {
-    $variables['is_byteclub'] = \summergame_is_byteclub_page();
+    $variables['isByteClub'] = \summergame_is_byteclub_page();
 
     $badge_level = $variables['node']->field_badge_level->value;
     switch ($badge_level) {
