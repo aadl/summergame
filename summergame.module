@@ -616,32 +616,35 @@ function summergame_gamecode_close_match($text, $game_term = NULL, $dev = FALSE)
     $es_index .= '_dev'; // Development index
   }
 
-  $params = [
-    'index' => $es_index,
-    'body' => [
-      'query' => [
-        'match' => [
-          'text' => [
-            'query' => $text,
-            'fuzziness' => 'AUTO',
+  // Don't search if the index doesn't exist
+  if ($es_client->indices()->exists(['index' => $es_index])) {
+    $params = [
+      'index' => $es_index,
+      'body' => [
+        'query' => [
+          'match' => [
+            'text' => [
+              'query' => $text,
+              'fuzziness' => 'AUTO',
+            ],
           ],
         ],
       ],
-    ],
-  ];
+    ];
 
-  try {
-    $response = $es_client->search($params);
-    if ($response['hits']['total']['value'] > 0) {
-      foreach ($response['hits']['hits'] as $hit) {
-        if ($hit['_source']['text'] != $text) {
-         return ['code_id' => $hit['_id'], 'text' => $hit['_source']['text']];
+    try {
+      $response = $es_client->search($params);
+      if ($response['hits']['total']['value'] > 0) {
+        foreach ($response['hits']['hits'] as $hit) {
+          if ($hit['_source']['text'] != $text) {
+          return ['code_id' => $hit['_id'], 'text' => $hit['_source']['text']];
+          }
         }
       }
     }
-  }
-  catch (\Exception $e) {
-    \Drupal::messenger()->addError(t('Error searching for game code: @message', ['@message' => $e->getMessage()]));
+    catch (\Exception $e) {
+      \Drupal::messenger()->addError(t('Error searching for game code: @message', ['@message' => $e->getMessage()]));
+    }
   }
 
   return FALSE;
