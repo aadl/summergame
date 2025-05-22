@@ -259,7 +259,7 @@
 				const angleB = Math.atan2(b.y - centroid.y, b.x - centroid.x);
 				return angleA - angleB;
 			});
-			ctx.lineWidth = canvas.offsetWidth / 100;
+			ctx.lineWidth = 6 * dpr;
 			ctx.beginPath();
 			if (!lined) {
 				for (let i = 0; i < sorted.length; i++)
@@ -491,7 +491,7 @@
 	}
 	function insetBounds(vertices) {
 		const insetPoints = [];
-		const offset = canvas.offsetWidth / 200;
+		const offset = 3 * dpr;
 		for (let i = 0; i < vertices.length; i++) {
 			const prev = vertices[(i - 1 + vertices.length) % vertices.length];
 			const curr = vertices[i];
@@ -790,7 +790,7 @@
 		const sp =
 			'<span style="font-weight:bold">' +
 			w +
-			':  </span><span class="cat-hint" style="text-decoration:line-through;">' +
+			':  </span><span class="cat-hint complete">' +
 			h +
 			"</span>";
 		if (r.length > 0) {
@@ -802,7 +802,7 @@
 				Array.from(r).filter((l) => {
 					return l.querySelector(".cat-hint").textContent == h;
 				})[0].innerHTML = sp;
-			if (cat.querySelectorAll("li").length === 6) {
+			if (cat.querySelectorAll(".complete").length === 6) {
 				cat.parentNode.style.textDecoration = "line-through";
 				b.style.backgroundColor = "#ccc";
 				b.disabled = true;
