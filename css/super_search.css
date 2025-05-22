@@ -109,6 +109,10 @@ canvas {
 	list-style-type: none;
 }
 
+.cat-hint.complete {
+	text-decoration: line-through;
+}
+
 #ss-hints>li>ul {
 	list-style-type: none;
 	margin-top: 25px;
