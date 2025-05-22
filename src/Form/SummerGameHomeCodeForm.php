@@ -65,10 +65,11 @@ class SummerGameHomeCodeForm extends FormBase {
             '<p>It has been redeemed ' . $homecode->num_redemptions . ' time' . ($homecode->num_redemptions == 1 ? '' : 's') . '!</p>' .
             "<p>$location_message</p>"
           ];
+          $homecode_player = summergame_player_load(['uid' => $homecode->creator_uid]);
           $form['cancel'] = [
             '#type' => 'link',
             '#title' => 'Return to Player Page',
-            '#url' => Url::fromRoute('summergame.player'),
+            '#url' => Url::fromRoute('summergame.player', ['pid' => $homecode_player['pid']]),
             '#suffix' => '</div>'
           ];
         }

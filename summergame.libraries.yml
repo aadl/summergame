@@ -23,6 +23,13 @@ summergame-homecode-form-lib:
   js:
     https://unpkg.com/leaflet@1.6.0/dist/leaflet.js: { type: external, minified: true }
     js/homecode_form.js: {}
+summergame-player-form-lib:
+  version: 1.x
+  css:
+    theme:
+      css/player_form.css: {}
+  js:
+    js/player_form.js: {}
 summergame-badgelist-lib:
   version: 1.x
   css:

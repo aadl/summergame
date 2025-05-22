@@ -13,3 +13,64 @@
   padding: 0.5em;
   text-align: center;
 }
+.access_player {
+  background: repeating-linear-gradient(
+    45deg,
+    #fff9f9,
+    #fff9f9 10px,
+    #00000000 10px,
+    #00000000 20px
+  );
+}
+#summergame-player-quick-transfer-form {
+  width: 100%;
+}
+
+.container-inline {
+  text-align: center;
+}
+.container-inline div,
+ .container-inline label {
+   display: inline-block;
+ }
+ .container-inline .form-item > * {
+   margin: 0 0.5em 0 0;
+ }
+ /* Details contents always need to be rendered as block. */
+ .container-inline .details-wrapper {
+   display: block;
+ }
+ .container-inline .hidden {
+   display: none;
+ }
+ .container-inline input[type="text"] {
+   width: unset;
+ }
+
+.leagues .manage-leagues {
+ display: flex;
+  align-items: start;
+  justify-content: start;
+  margin-bottom: 1em;
+  gap:1em;
+  flex-direction: column;
+  background:#f5f6f9;
+  padding:1em;
+  margin-top: 1em;
+}
+
+.leagues .generate-league-wrapper #summergame-league-code-form {
+  width:100%;
+}
+
+.leagues .join-league-wrapper {
+  padding-bottom:1em;
+  border-bottom: 1px solid #cacaca;
+}
+
+.league-leaderboard {
+  margin-bottom: 3em;
+  padding-bottom:1em;
+  border-bottom:1px solid #999;
+
+}

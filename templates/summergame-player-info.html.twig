@@ -24,7 +24,7 @@
       <table class="account-summary not-fixed-table">
         <tr><th>Game</th><th>Points</th></tr>
         {% for game_term, player_game_points in points %}
-          {% if player_game_points.total %}
+          {% if player_game_points.total or player_game_points.balance %}
             <tr><td><a href="#{{ game_term }}">{{ game_term }}</a></td><td>{{ player_game_points.total }}</td></tr>
           {% endif %}
         {% endfor %}
@@ -67,9 +67,11 @@
               {% endif %}
             </td>
           </tr>
+
           {% for row in progress %}
-            <tr><td>{{ row.type }}</td><td>{{ row.total }} / {{ row.limit }}</td></tr>
+            <tr><td>{{ row.type }}</td><td>{{ row.total }} / {{ row.limit.limit }}</td></tr>
           {% endfor %}
+
         </table>
         {% if (summergame_shop_message_threshold > 0) and (attribute(points, summergame_current_game_term).total > summergame_shop_message_threshold) %}
           <p>{{ summergame_shop_message|raw }}</p>
@@ -111,7 +113,7 @@
     <div id="player-other-players">
       <h2>Extra Players</h2>
       {% if other_players %}
-        <table class="account-summary not-fixed-table">
+        <table>
           <tr>
             <th>Player</th>
             <th>Set Active</th>
@@ -131,111 +133,14 @@
               <td><a class="button" href="/summergame/player/{{ other_player.pid }}/setactive">Set Active</a></td>
             </tr>
           {% endfor %}
+          {% if quick_transfer %}
+            <tr><td colspan="2">{{ quick_transfer }}</td></tr>
+          {% endif %}
           </tbody>
         </table>
       {% endif %}
       <a href="/summergame/player/extra">Sign up an extra player</a>
     </div>
   </div>
-
-{#
-// Following, Followers, Friends
-$following = array();
-$following_pids = array();
-$followers = array();
-$friends = array();
-
-$res = db_query("SELECT * FROM sg_ledger WHERE pid = %d AND metadata LIKE '%%fc_player:%%'", $player['pid']);
-while ($row = db_fetch_object($res)) {
-  // grab player ID
-  preg_match('/fc_player:([\d]+)/', $row->metadata, $matches);
-  $following_player = summergame_player_load($matches[1]);
-  if ($following_player['show_leaderboard']) {
-    $player_name = $following_player['nickname'] ? $following_player['nickname'] : $following_player['name'];
-  }
-  else {
-    $player_name = 'Player #' . $following_player['pid'];
-  }
-  if ($following_player['show_myscore'] || user_access('administer summergame')) {
-    $player_name = l($player_name, 'summergame/player/' . $following_player['pid']);
-  }
-  $following[] = array(
-    'count' => ++$following_counter,
-    'player' => $player_name,
-  );
-  $following_pids[] = $matches[1];
-}
-$res = db_query("SELECT * FROM sg_ledger WHERE metadata LIKE 'fc_player:%d'", $player['pid']);
-while ($row = db_fetch_object($res)) {
-  $follower_player = summergame_player_load($row->pid);
-  if ($follower_player['show_leaderboard']) {
-    $player_name = $follower_player['nickname'] ? $follower_player['nickname'] : $follower_player['name'];
-  }
-  else {
-    $player_name = 'Player #' . $follower_player['pid'];
-  }
-  if ($follower_player['show_myscore'] || user_access('administer summergame')) {
-    $player_name = l($player_name, 'summergame/player/' . $follower_player['pid']);
-  }
-  $followers[] = array(
-    'count' => ++$follower_counter,
-    'player' => $player_name,
-  );
-  if (in_array($row->pid, $following_pids)) {
-    $friends[] = array(
-      'count' => ++$friend_counter,
-      'player' => $player_name,
-    );
-  }
-}
-
-$content .= '<div id="friend-code">';
-$content .= '<div id="friend-title"><h2>FRIEND CODE: ' . $player['friend_code'] . '</h2>';
-if (count($followers) == 0) {
-  if ($player['friend_code']) {
-    $action = 'I WANT A DIFFERENT';
-    $hint = 'Get a new random Friend Code. You can\'t change it once you give it out.';
-  }
-  else {
-    $action = 'GENERATE';
-    $hint = "Create a random Friend Code for yourself. You can try again if you don't like it.";
-  }
-  $options = array('html' => TRUE, 'attributes' => array('class' => 'hint--bottom',
-                                                         'data-hint' => $hint,
-                                                         ));
-  $content .= '[ ' . l($action . ' CODE', 'summergame/player/gfc/' . $player['pid'], $options) . ' ]';
-}
-$content .= '</div>';
-$content .= "<p>You now can have a code of your own! If another player enters your Friend Code, they'll start following you, and " .
-            "you'll EACH earn 100 points. If you enter the Friend Code of any of your followers, you'll become Friends and each earn an additional " .
-            "50 point bonus.</p>";
-$display_limit = 5;
-
-$following_header = '<span class="hint--bottom" data-hint="You have entered these players\' Friend Codes">Following: ' .
-                    count($following) . '</span>';
-$content .= theme('table',
-                  array(array('data' => $following_header, 'colspan' => 2)),
-                  array_slice($following, 0, $display_limit));
-$followers_header = '<span class="hint--bottom" data-hint="These Players have entered your Friend Code">Followers: ' .
-                    count($followers) . '</span>';
-$content .= theme('table',
-                  array(array('data' => $followers_header, 'colspan' => 2)),
-                  array_slice($followers, 0, $display_limit));
-$friends_header = '<span class="hint--left" data-hint="You and these Players have entered each others\' Friend Codes">Friends: ' .
-                  count($friends) . '</span>';
-$content .= theme('table',
-                  array(array('data' => $friends_header, 'colspan' => 2)),
-                  array_slice($friends, 0, $display_limit));
-
-if ($following_counter > $display_limit ||
-    $follower_counter > $display_limit ||
-    $friend_counter > $display_limit) {
-  $friend_page_link = l('See full list of Friends', 'summergame/player/friends/' . $player['pid']);
-  $content .= "<p style=\"clear: left\">(Limiting display to $display_limit players. $friend_page_link.)</p>";
-}
-
-$content .= '</div>'; // $friend-code
-#}
-
 </div>
 {% endapply %}

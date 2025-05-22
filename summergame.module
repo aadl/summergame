@@ -2,82 +2,71 @@
 
 use Drupal\user\Entity\User;
 use Drupal\file\Entity\File;
+use Elasticsearch\ClientBuilder;
 use PHPOnCouch\CouchClient;
 use Predis\Client;
 use Drupal\node\Entity\Node;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Link;
+use Sabre\VObject\Cli;
 
-function isByteClubPage(){
+function summergame_is_byteclub_page() {
+  $path = strtolower(\Drupal::request()->getRequestUri());
 
-  //badgelist page
-  $path = \Drupal::request()->getRequestUri();
-  if (strpos($path, '/summergame/badgelist/byteclub') !== FALSE) {
-    return true;
+  // badgelist page
+  if (strpos($path, '/summergame/badgelist/byteclub') === 0) {
+    return TRUE;
   }
 
-  //taxonomy page and all other byteclub pages
-  if (strpos($path, '/byteclub') !== FALSE) {
-    return true;
+  // taxonomy page and all other byteclub pages
+  if (strpos($path, '/byteclub') === 0) {
+    return TRUE;
   }
 
-  //badge pages
+  // badge pages
   $node = \Drupal::request()->attributes->get('node');
   if ($node) {
     if (method_exists($node, 'getType')) {
       if ($node->getType() == "sg_badge") {
         if ($node->field_badge_game_term->value == "ByteClub") {
-          return true;
+          return TRUE;
         }
       }
     }
   }
 
-
-  return false;
-
+  return FALSE;
 }
 
 function summergame_preprocess_html(&$variables) {
-  if(isByteClubPage()){
-
+  if (summergame_is_byteclub_page()) {
     $variables['attributes']['class'][] = 'byte-club-skin';
-
-
     $module_path = \Drupal::service('module_handler')->getModule('summergame')->getpath();
     $renderArray = [
       '#type'     => 'inline_template',
       '#template' => \file_get_contents($module_path."/templates/byteclub-header.html.twig"),
       '#context'  => [
-        'sg_active_player'=>summergame_get_active_player()
+        'sg_active_player' => summergame_get_active_player(),
       ],
     ];
 
     $bc_header = (string) \Drupal::service('renderer')->renderPlain($renderArray);
-
 
     if (isset($variables['page']['content']['aadl_content']['#prefix'])) {
       $bc_header = $bc_header . $variables['page']['content']['aadl_content']['#prefix'];
     }
 
     $variables['page']['content']['aadl_content']['#prefix'] = $bc_header;
-
   }
-
 }
 
 function summergame_node_view_alter(array &$build) {
   // @see \Drupal\Tests\embed\Functional\EmbedPreviewTest::testPreview
-  if (isByteClubPage()) {
+  if (summergame_is_byteclub_page()) {
     $build['#attached']['library'][] = 'summergame/summergame-byteclub-lib';
   }
 }
-
-
-
-
-
-
 
 function summergame_leaderboard_update() {
   $summergame_settings = \Drupal::config('summergame.settings');
@@ -103,7 +92,6 @@ function summergame_leaderboard_update() {
         // Switch for staff
         if ($staff_rid) {
           if ($staff) {
-            $lb_title .= 'Staff ';
             $staff_query = " AND {user__roles}.roles_target_id = '$staff_rid' ";
           }
           else {
@@ -115,27 +103,20 @@ function summergame_leaderboard_update() {
         if ($type != 'career') {
           $type_query = 'AND {sg_ledger}.game_term LIKE :game_term ';
           $args[':game_term'] = $type;
-          $lb_title .= $type;
         }
         else {
           $type_query = '';
-          $lb_title .= 'Career';
         }
-
-        $lb_title .= ' Leaderboard';
 
         // Determine range
         if ($range == 'day') {
           $range_query = 'AND {sg_ledger}.timestamp > ' . (time() - (60 * 60 * 24)) . ' ';
-          $lb_title .= ' for Today (Last 24 hours)';
         }
         else if ($range == 'week') {
           $range_query = 'AND {sg_ledger}.timestamp > ' . (time() - (60 * 60 * 24 * 7)) . ' ';
-          $lb_title .= ' for This Week (Last 7 Days)';
         }
         else {
           $range_query = '';
-          $lb_title .= ' for All Time';
         }
 
         $leaderboard = [];
@@ -179,12 +160,162 @@ function summergame_leaderboard_update() {
   $redis->set("summergame:leaderboard:timestamp", time());
 }
 
+function summergame_leagues_leaderboard_update() {
+  // Find all players with league codes
+  $db = \Drupal::database();
+  $redis = new Client(\Drupal::config('summergame.settings')->get('summergame_redis_conn'));
+
+  $league_ids = $db->select('sg_players', 'sp')
+                   ->fields('sp', ['pid'])
+                   ->condition('league_code', '', '!=')
+                   ->execute()
+                   ->fetchCol();
+
+  foreach ($league_ids as $league_id) {
+    // Build the league leaderboard
+    $leaderboard = [];
+    $league_pids = $db->select('sg_players_leagues', 'spl')
+                      ->fields('spl', ['pid'])
+                      ->condition('lid', $league_id)
+                      ->execute()
+                      ->fetchCol();
+    $league_pids = array_map('intval', $league_pids);
+
+    $res = $db->query('SELECT pid, SUM(points) AS lb_total ' .
+                      'FROM {sg_ledger} ' .
+                      'WHERE pid IN (' . implode(',', $league_pids) .') ' .
+                      "AND game_term = 'SummerGame2024' " .
+                      "AND metadata NOT LIKE '%leaderboard:no%' " .
+                      'GROUP BY pid ' .
+                      'ORDER BY lb_total DESC');
+
+    while ($row = $res->fetchAssoc()) {
+      $lb_player = summergame_player_load($row['pid']);
+
+      if ($lb_player['show_leaderboard']) {
+        $player_name = $lb_player['nickname'] ? $lb_player['nickname'] : $lb_player['name'];
+      }
+      else {
+        $player_name = 'Player #' . $lb_player['pid'];
+      }
+
+      $leaderboard[] = [
+        'pid' => $lb_player['pid'],
+        'show_myscore' => $lb_player['show_myscore'],
+        'player' => $player_name,
+        'score' => $row['lb_total'],
+      ];
+    }
+
+    // Save the league leaderboard to Redis
+    $redis->set("summergame:leaderboard:league:$league_id", json_encode($leaderboard));
+  }
+}
+
 function summergame_get_leaderboard($type = '', $range = 'day', $staff = 0) {
   $redis = new Client(\Drupal::config('summergame.settings')->get('summergame_redis_conn'));
   return [
     'timestamp' => $redis->get('summergame:leaderboard:timestamp'),
     'rows' => json_decode($redis->get("summergame:leaderboard:$staff:$range:$type"), TRUE),
   ];
+}
+
+function summergame_generate_league_code($pid) {
+  if ($player = summergame_player_load(['pid' => $pid])) {
+    // Check to see if player already has a code
+    if ($player['league_code']) {
+      \Drupal::messenger()->addError("You already have a league code: " . $player['league_code']);
+      return $player['league_code'];
+    }
+
+    // Generate a new referral code
+    $db = \Drupal::database();
+    $nums = '34679';
+    $num_max_idx = strlen($nums) - 1;
+    $lines = file(\Drupal::service('extension.list.module')->getPath('summergame') . '/upgoer5words.txt');
+
+    $code = '';
+    while ($code == '') {
+      $word = str_replace("'", '', trim($lines[array_rand($lines)]));
+      if (strlen($word) > 3) {
+        $code = strtoupper($word);
+        for ($i = 0; $i < 3; $i++) {
+          $code .= $nums[mt_rand(0, $num_max_idx)];
+        }
+        $collision = $db->query("SELECT pid FROM sg_players WHERE league_code = :code", [':code' => $code])->fetch();
+        if ($collision->pid) {
+          $code = '';
+        }
+      }
+    }
+    $player['league_code'] = $code;
+    summergame_player_save($player);
+    \Drupal::messenger()->addMessage("Your League Code is $code. Other players can enter it on the Leagues page to join your league.");
+
+    // Every player is automatically in their own league
+    $db->insert('sg_players_leagues')
+     ->fields(['pid' => $pid, 'lid' => $pid])
+     ->execute();
+
+    return $code;
+  }
+  else {
+    \Drupal::messenger()->addError("Player not found.");
+    return;
+  }
+}
+
+function summergame_player_join_league($pid, $league_code) {
+  $db = \Drupal::database();
+
+  $league_owner = summergame_player_load(['league_code' => $league_code]);
+
+  if (!$league_owner) {
+    \Drupal::messenger()->addError(t('League code %code not found.', ['%code' => $league_code]));
+    return;
+  }
+
+  $db->insert('sg_players_leagues')
+     ->fields(['pid' => $pid, 'lid' => $league_owner['pid']])
+     ->execute();
+
+  $owner_name = $league_owner['nickname'] ? $league_owner['nickname'] : $league_owner['name'];
+  \Drupal::messenger()->addStatus(t("You have joined $owner_name's league", ['%owner_name' => $owner_name]));
+}
+
+function summergame_league_leaderboard($league_id) {
+  $redis = new Client(\Drupal::config('summergame.settings')->get('summergame_redis_conn'));
+  return [
+    'timestamp' => $redis->get('summergame:leaderboard:timestamp'),
+    'rows' => json_decode($redis->get("summergame:leaderboard:league:$league_id") ?? '', TRUE),
+  ];
+}
+
+function summergame_player_leagues($player_id) {
+  $db = \Drupal::database();
+  $leagues = [];
+
+  foreach ($db->select('sg_players_leagues', 'spl')->fields('spl')
+              ->condition('pid', $player_id)->execute()->fetchAll() as $league) {
+    $league_owner = summergame_player_load($league->lid);
+    $leagues[] = [
+      'lid' => $league->lid,
+      'name' => $league_owner['nickname'] ? $league_owner['nickname'] : $league_owner['name'],
+    ];
+  }
+
+  return $leagues;
+}
+
+function summergame_delete_league($league_id) {
+  $db = \Drupal::database();
+
+  // Remove players from the league
+  $db->delete('sg_players_leagues')->condition('lid', $league_id)->execute();
+  // Remove the league code from the player
+  $db->update('sg_players')->fields(['league_code' => ''])->condition('pid', $league_id)->execute();
+
+  \Drupal::messenger()->addStatus(t('League code deleted.'));
 }
 
 /*
@@ -280,6 +411,7 @@ function summergame_theme() {
         'player' => NULL,
         'player_access' => NULL,
         'other_players' => NULL,
+        'quick_transfer' => NULL,
         'points' => NULL,
         'balances' => NULL,
         'pointsomatic_weekly_totals' => NULL,
@@ -297,6 +429,7 @@ function summergame_theme() {
     ],
     'summergame_player_ledger' => [
       'variables' => [
+        'filter_form' => NULL,
         'ledger' => NULL,
         'pager' => NULL,
         'game_display_name' => NULL,
@@ -316,7 +449,7 @@ function summergame_theme() {
         'game_term' => NULL,
         'list_tags' => NULL,
         'badge_list' => NULL,
-        'isByteClub' => NULL,
+        'is_byteclub' => NULL,
       ]
     ],
     'summergame_leaderboard_page' => [
@@ -337,6 +470,16 @@ function summergame_theme() {
         'players' => NULL,
         'uid' => NULL,
         'type' => NULL,
+      ]
+    ],
+    'summergame_leagues_page' => [
+      'variables' => [
+        'player' => NULL,
+        'league_code' => NULL,
+        'player_leagues' => NULL,
+        'league_leaderboard' => NULL,
+        'league_id' => NULL,
+        'join_form' => NULL,
       ]
     ]
   ];
@@ -409,6 +552,102 @@ function summergame_get_game_term_homes() {
     $game_term_homes[trim($pattern)] = trim($path);
   }
   return $game_term_homes;
+}
+
+/**
+ * UTILITY: Index game codes for a specific game term
+ */
+function summergame_index_gamecodes($game_term, $code_id = 0, $dev = FALSE) {
+  $db = \Drupal::database();
+  $hosts = [
+    \Drupal::config('arborelastic.settings')->get('arborelastic_host') . ':' .
+    \Drupal::config('arborelastic.settings')->get('arborelastic_port')
+  ];
+  $es_client = ClientBuilder::create()->setHosts($hosts)->build();
+  $es_index = 'game_codes_' . strtolower($game_term);
+  if ($dev) {
+    $es_index .= '_dev'; // Development index
+  }
+
+  $result = NULL;
+  if ($code_id) {
+    // Index a specific game code
+    $row = $db->select('sg_game_codes', 'sg')
+              ->fields('sg', ['code_id', 'text'])
+              ->condition('code_id', $code_id)
+              ->execute()
+              ->fetchObject();
+    $result = $es_client->index([
+      'index' => $es_index,
+      'id' => $row->code_id,
+      'body' => [
+        'text' => $row->text,
+      ],
+    ]);
+  }
+  else {
+    // Index all game codes for this game term
+    $result = [];
+    $res = $db->query('SELECT code_id, text FROM sg_game_codes WHERE game_term = :game_term', [':game_term' => $game_term]);
+    foreach ($res as $row) {
+      // index game code text in elasticsearch
+      $result[] = $es_client->index([
+        'index' => $es_index,
+        'id' => $row->code_id,
+        'body' => [
+          'text' => $row->text,
+        ],
+      ]);
+    }
+  }
+
+  return $result;
+}
+
+function summergame_gamecode_close_match($text, $game_term = NULL, $dev = FALSE) {
+  $game_term = $game_term ?? \Drupal::config('summergame.settings')->get('summergame_current_game_term');
+  $hosts = [
+    \Drupal::config('arborelastic.settings')->get('arborelastic_host') . ':' .
+    \Drupal::config('arborelastic.settings')->get('arborelastic_port')
+  ];
+  $es_client = ClientBuilder::create()->setHosts($hosts)->build();
+  $es_index = 'game_codes_' . strtolower($game_term);
+  if ($dev) {
+    $es_index .= '_dev'; // Development index
+  }
+
+  // Don't search if the index doesn't exist
+  if ($es_client->indices()->exists(['index' => $es_index])) {
+    $params = [
+      'index' => $es_index,
+      'body' => [
+        'query' => [
+          'match' => [
+            'text' => [
+              'query' => $text,
+              'fuzziness' => 'AUTO',
+            ],
+          ],
+        ],
+      ],
+    ];
+
+    try {
+      $response = $es_client->search($params);
+      if ($response['hits']['total']['value'] > 0) {
+        foreach ($response['hits']['hits'] as $hit) {
+          if ($hit['_source']['text'] != $text) {
+          return ['code_id' => $hit['_id'], 'text' => $hit['_source']['text']];
+          }
+        }
+      }
+    }
+    catch (\Exception $e) {
+      \Drupal::messenger()->addError(t('Error searching for game code: @message', ['@message' => $e->getMessage()]));
+    }
+  }
+
+  return FALSE;
 }
 
 /**
@@ -515,7 +754,6 @@ function summergame_twilio_respond($incoming) {
     // check if it's a game code OR friend code
     $text = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $incoming['text']));
     $gc = $db->query("SELECT * FROM sg_game_codes WHERE text = :text", [':text' => $text])->fetchObject();
-    // $fc_player = summergame_player_load(array('friend_code' => $text));
     if ($gc->code_id) { // } || $fc_player['pid']) {
       $game_code_text = TRUE;
       if (!$player['pid']) {
@@ -657,10 +895,17 @@ ALTER TABLE `sg_ledger_part` DROP PRIMARY KEY, ADD PRIMARY KEY(`lid`, `game_term
 ALTER TABLE `sg_ledger`
 PARTITION BY LIST COLUMNS (game_term)
 PARTITIONS 3 (
-  PARTITION p0 VALUES IN ('SummerGame2024'),
-  PARTITION p1 VALUES IN ('SummerGame2011', 'SummerGame2012', 'SummerGame2013', 'SummerGame2014', 'SummerGame2015', 'SummerGame2016', 'SummerGame2017', 'SummerGame2018', 'SummerGame2019', 'SummerGame2020', 'SummerGame2021', 'SummerGame2022', 'SummerGame2023','SummerGameClassic'),
-  PARTITION p2 VALUES IN ('BookPrizeToken', 'DownloadOfTheDay', 'HallOfFame', 'MLEADershipGame', 'Points-O-Matic', 'StreetsQuest', 'TreasureQuest', 'WorldHistoryQuest')
+  PARTITION p0 VALUES IN ('SummerGame2025'),
+  PARTITION p1 VALUES IN ('SummerGame2011', 'SummerGame2012', 'SummerGame2013', 'SummerGame2014', 'SummerGame2015', 'SummerGame2016', 'SummerGame2017', 'SummerGame2018', 'SummerGame2019', 'SummerGame2020', 'SummerGame2021', 'SummerGame2022', 'SummerGame2023', 'SummerGame2024', 'SummerGameClassic'),
+  PARTITION p2 VALUES IN ('BookPrizeToken', 'ByteClub', 'DownloadOfTheDay', 'HallOfFame', 'MLEADershipGame', 'Points-O-Matic', 'StreetsQuest', 'TreasureQuest', 'WorldHistoryQuest')
 )
+
+ALTER TABLE `sg_ledger`
+PARTITION BY RANGE COLUMNS (`game_term`)
+(PARTITION `other_less` VALUES LESS THAN ('SummerGame') ENGINE = InnoDB,
+PARTITION `sg_old` VALUES LESS THAN ('SummerGame2025') ENGINE = InnoDB,
+PARTITION `sg_new` VALUES LESS THAN ('SummerGame9999') ENGINE = InnoDB,
+PARTITION `other_more` VALUES LESS THAN MAXVALUE ENGINE = InnoDB);
   // Do Or Diag
   else if (variable_get('summergame_dod_enabled', FALSE)) {
     $text = strtoupper($incoming['text']);
@@ -753,13 +998,13 @@ function summergame_dod_response($text, $pid) {
   $response = '';
   $db = \Drupal::database();
 
-  // Grab DoD Data from Couch
-  $libphp_path = variable_get('summergame_libphp_path', '');
-  include_once($libphp_path . 'contrib/PHP-on-Couch/lib/couch.php');
-  include_once($libphp_path . 'contrib/PHP-on-Couch/lib/couchClient.php');
-  include_once($libphp_path . 'contrib/PHP-on-Couch/lib/couchDocument.php');
-  $couch = new couchClient('COUCHDB_DSN_STRING', 'doordiag');
+  // Set a new connector to the CouchDB server
+  $summergame_settings = \Drupal::config('summergame.settings');
+  $dsn = $summergame_settings->get('summergame_couch_dsn');
+  $db = $summergame_settings->get('summergame_couch_db');
+  $couch = new CouchClient($dsn, $db);
 
+  // Grab DoD Data from Couch
   $track_lookup = array();
   try {
     $tracks = $couch->getDoc('tracks');
@@ -861,7 +1106,7 @@ function summergame_player_load($player_info = []) {
     $player = $result->fetchAssoc();
   }
 
-  if ($player['pid']) {
+  if (isset($player['pid'])) {
     // Load badge ids
     $result2 = $db->query('SELECT * FROM {sg_players_badges} WHERE pid = ' . $player['pid']);
     while ($badge = $result2->fetchObject()) {
@@ -1110,6 +1355,9 @@ function summergame_get_homecode($uid, $game_term = '') {
 function summergame_player_save($player) {
   $db = \Drupal::database();
 
+  // remove badge ids
+  unset($player['bids']);
+
   if ($pid = $player['pid']) {
     // Update existing player record
     unset($player['pid']);
@@ -1275,6 +1523,7 @@ function summergame_get_ledger_count($pid, $filter = '') {
     }
   }
 
+  $db = \Drupal::database();
   $result = $db->query('SELECT COUNT(*) AS ledger_count FROM sg_ledger WHERE ' .
                      implode(' AND ', $query), $params);
   $count = $result->fetch();
@@ -1369,14 +1618,16 @@ function summergame_player_points($pid, $points, $type, $description = '', $meta
 }
 
 function summergame_other_players_message() {
-  // Check for other players if awarding points to logged in user
-  global $user;
   $message = '';
-  if ($user->other_players) {
+
+  // Check for other players if awarding points to logged in user
+  $player = summergame_get_active_player();
+  if (isset($player['other_players'])) {
     $other_links = array();
-    foreach ($user->other_players as $other_player) {
-      $other_links[] = l(($other_player['nickname'] ? $other_player['nickname'] : $other_player['name']),
-                         'summergame/player/' . $other_player['pid'] . '/setactive');
+    foreach ($player['other_players'] as $other_player) {
+      $other_links[] = Link::createFromRoute($other_player['nickname'] ? $other_player['nickname'] : $other_player['name'],
+                                             'summergame.player.setactive',
+                                             ['pid' => $other_player['pid']])->toString();
     }
     $message .= ' (Make another player active?: ' .
                 implode(' OR ', $other_links) . ')';
@@ -1854,54 +2105,6 @@ function summergame_players_merge($pid1, $pid2) {
   $db->query("UPDATE sg_ledger SET pid = :pid1 WHERE pid = :pid2", [':pid1' => $pid1, ':pid2' => $pid2]);
   $db->query("UPDATE sg_players_badges SET pid = :pid1 WHERE pid = :pid2", [':pid1' => $pid1, ':pid2' => $pid2]);
   $db->query("DELETE FROM sg_players WHERE pid = :pid", [':pid' => $pid2]);
-}
-
-function summergame_badgeifier_form(&$form_state) {
-  $form = array(
-    'title' => array('#value' => '<h1>Player Badgeifier</h1>'),
-  );
-
-  $form['pid'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Player ID'),
-    '#size' => 10,
-    '#maxlength' => 10,
-    '#description' => t('Player ID of the player to receive the Badge'),
-  );
-  $form['badge_id'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Badge ID'),
-    '#size' => 10,
-    '#maxlength' => 10,
-    '#description' => t('ID of the Badge to award to the player'),
-  );
-  $form['submit'] = array(
-    '#type' => 'submit',
-    '#value' => t('Badgeify'),
-  );
-
-  return $form;
-}
-
-function summergame_badgeifier_form_submit($form, &$form_state) {
-  $pid = $form_state['values']['pid'];
-  $badge_id = $form_state['values']['badge_id'];
-
-  if ($player = summergame_player_load(array('pid' => $pid))) {
-    $player_link = l('Player #' . $pid, 'summergame/player/' . $pid);
-    // Award badge to the player
-    if (summergame_player_award_badge($pid, $badge_id)) {
-      \Drupal::messenger()->addMessage("Awarded Badge #$badge_id to $player_link");
-    }
-    else {
-      \Drupal::messenger()->addError("Badge #$badge_id NOT awarded to $player_link. Already awarded?");
-    }
-  }
-  else {
-    \Drupal::messenger()->addError("No player with ID #$pid could be found");
-  }
-
-  drupal_goto('summergame/admin');
 }
 
 /**

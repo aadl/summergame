@@ -71,6 +71,12 @@ class SummerGameAdminForm extends ConfigFormBase
       '#default_value' => $summergame_settings->get('summergame_homecode_form_enabled'),
       '#description' => t('Turn on the Home Code creation form?'),
     ];
+    $form['summergame_leagues_enabled'] = [
+      '#type' => 'checkbox',
+      '#title' => t('Summergame Leagues Enabled'),
+      '#default_value' => $summergame_settings->get('summergame_leagues_enabled'),
+      '#description' => t('Turn on League pages for players?'),
+    ];
     $form['summergame_lego_enabled'] = [
       '#type' => 'checkbox',
       '#title' => t('Summergame Lego Contest Voting Enabled'),
@@ -221,6 +227,12 @@ class SummerGameAdminForm extends ConfigFormBase
       '#title' => 'Game Display Name',
       '#default_value' => $summergame_settings->get('game_display_name'),
       '#description' => 'The name to be displayed throughout the SummerGame UI',
+    ];
+    $form['badge_help_text'] = [
+      '#type' => 'textarea',
+      '#title' => 'Badge Help Text',
+      '#default_value' => $summergame_settings->get('badge_help_text'),
+      '#description' => 'Message to be displayed above the comment form on the badge page',
     ];
     $form['summergame_homecode_geocode_url'] = [
       '#type' => 'textfield',

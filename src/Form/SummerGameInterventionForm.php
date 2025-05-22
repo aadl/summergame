@@ -61,6 +61,11 @@ class SummerGameInterventionForm extends FormBase {
       '#maxlength' => 10,
       '#description' => t('Player ID of the player giving points in a transfer (optional)'),
     ];
+    $form['leaderboard'] = [
+      '#type' => 'checkbox',
+      '#title' => 'Leaderboard',
+      '#description' => t("Include these points in the Leaderboard? Keep off for points transfers or for manual payments for orders/auctions"),
+    ];
     $form['submit'] = [
       '#type' => 'submit',
       '#value' => t('POINTS MAKE'),
@@ -79,19 +84,25 @@ class SummerGameInterventionForm extends FormBase {
     $description = $form_state->getValue('description');
     $from_pid = $form_state->getValue('from_pid');
 
+    $metadata = 'access:player'; // restrict ledger display to those with player access
+
+    if (!$form_state->getValue('leaderboard')) {
+      $metadata .= ' leaderboard:no';
+    }
+
     if ($player = summergame_player_load(['pid' => $to_pid])) {
       $player_link = '<a href="/summergame/player/' . $to_pid . '">Player #' . $to_pid . '</a>';
       if ($from_pid) {
         if ($from_player = summergame_player_load(['pid' => $from_pid])) {
           // Tranfer points from from_player to player
           $from_player_link = '<a href="/summergame/player/' . $from_pid . '">Player #' . $from_pid . '</a>';
-          summergame_player_points($from_pid, -$points, 'Geekly Intervention',
+          summergame_player_points($from_pid, -$points, 'Staff Adjustment',
                                    "Transfer to Player #$to_pid" . ($description ? ', ' . $description : ''),
-                                   'delete:no', $game_term);
-          summergame_player_points($to_pid, $points, 'Geekly Intervention',
+                                   $metadata . ' delete:no', $game_term);
+          summergame_player_points($to_pid, $points, 'Staff Adjustment',
                                    "Transfer from Player #$from_pid" . ($description ? ', ' . $description : ''),
-                                   '', $game_term);
-          \Drupal::messenger()->addMessage(['#markup' => "Transferred $points $game_term points from $from_player_link to $player_link"]);
+                                   $metadata, $game_term);
+          \Drupal::messenger()->addMessage("Transferred $points $game_term points from $from_player_link to $player_link");
         }
         else {
           \Drupal::messenger()->addError("No player with ID #$from_pid could be found");
@@ -99,10 +110,10 @@ class SummerGameInterventionForm extends FormBase {
       }
       else {
         // Award points to the player
-        summergame_player_points($to_pid, $points, 'Geekly Intervention',
+        summergame_player_points($to_pid, $points, 'Staff Adjustment',
                                  "Points awarded" . ($description ? ', ' . $description : ''),
-                                 '', $game_term);
-        \Drupal::messenger()->addMessage(['#markup' => "Awarded $points $game_term points to $player_link"]);
+                                 $metadata, $game_term);
+        \Drupal::messenger()->addMessage("Awarded $points $game_term points to $player_link");
       }
     }
     else {

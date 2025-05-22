@@ -34,7 +34,7 @@ class SummerGameGameCodeForm extends FormBase {
     if ($code_id) {
       $game_code = $db->query("SELECT * FROM sg_game_codes WHERE code_id = $code_id")->fetchAssoc();
     }
-    if ($game_code['code_id']) {
+    if ($game_code['code_id'] ?? FALSE) {
       $form['code_id'] = [
         '#type' => 'value',
         '#value' => $game_code['code_id'],
@@ -72,7 +72,7 @@ class SummerGameGameCodeForm extends FormBase {
     $form['text'] = [
       '#type' => 'textfield',
       '#title' => t('Code Text'),
-      '#default_value' => $game_code['text'],
+      '#default_value' => $game_code['text'] ?? '',
       '#size' => 32,
       '#maxlength' => 255,
       '#description' => t('Keyword text for this game code (e.g. APPLESAUCE)'),
@@ -81,20 +81,20 @@ class SummerGameGameCodeForm extends FormBase {
     $form['description'] = [
       '#type' => 'textarea',
       '#title' => t('Description'),
-      '#default_value' => $game_code['description'],
+      '#default_value' => $game_code['description'] ?? '',
       '#description' => t('Description of the game code award (e.g. Attended Apple Peeling Event)'),
       '#required' => TRUE,
     ];
     $form['clue'] = [
       '#type' => 'textarea',
       '#title' => t('Clue'),
-      '#default_value' => $game_code['clue'],
+      '#default_value' => $game_code['clue'] ?? '',
       '#description' => t('Clue leading to THIS game code. Will be revealed when Clue Trigger code is entered'),
     ];
     $form['clue_trigger'] = [
       '#type' => 'textfield',
       '#title' => t('Clue Trigger'),
-      '#default_value' => $game_code['clue_trigger'],
+      '#default_value' => $game_code['clue_trigger'] ?? '',
       '#size' => 32,
       '#maxlength' => 255,
       '#description' => t("Game code text to trigger this clue (e.g. APPLES) <strong>Don't use for badges unless needed</strong>"),
@@ -102,13 +102,13 @@ class SummerGameGameCodeForm extends FormBase {
     $form['hint'] = [
       '#type' => 'textarea',
       '#title' => t('Hint'),
-      '#default_value' => $game_code['hint'],
+      '#default_value' => $game_code['hint'] ?? '',
       '#description' => t('Does this code need a hint to figuring it out? Enter a hint here to help figure it out. (e.g. This code is a kind of food made by Mott\'s)'),
     ];
     $form['points'] = [
       '#type' => 'textfield',
       '#title' => t('Points'),
-      '#default_value' => $game_code['points'],
+      '#default_value' => $game_code['points'] ?? 0,
       '#size' => 16,
       '#maxlength' => 8,
       '#description' => t('Points to be awarded for the game code (e.g. 100)'),
@@ -117,13 +117,13 @@ class SummerGameGameCodeForm extends FormBase {
     $form['diminishing'] = [
       '#type' => 'checkbox',
       '#title' => t('Diminishing?'),
-      '#default_value' => $game_code['diminishing'],
+      '#default_value' => $game_code['diminishing'] ?? 0,
       '#description' => 'Each successive redemption of the game code will be worth 1 less than the previous redemption',
     ];
     $form['max_redemptions'] = [
       '#type' => 'select',
       '#title' => t('Max Redemptions'),
-      '#default_value' => $game_code['max_redemptions'],
+      '#default_value' => $game_code['max_redemptions'] ?? 0,
       '#options' => [
         '0' => t('Unlimited'),
         '1' => t('Single User'),
@@ -141,7 +141,7 @@ class SummerGameGameCodeForm extends FormBase {
     $form['sequence_num'] = [
       '#type' => 'textfield',
       '#title' => t('Sequence Number'),
-      '#default_value' => $game_code['sequence_num'],
+      '#default_value' => $game_code['sequence_num'] ?? '',
       '#size' => 8,
       '#maxlength' => 3,
       '#description' => t('Number of this code if part of a sequence (will be displayed on messages and signs)'),
@@ -149,7 +149,7 @@ class SummerGameGameCodeForm extends FormBase {
     $form['sequence_total'] = [
       '#type' => 'textfield',
       '#title' => t('Sequence Total'),
-      '#default_value' => $game_code['sequence_total'],
+      '#default_value' => $game_code['sequence_total'] ?? '',
       '#size' => 8,
       '#maxlength' => 3,
       '#description' => t('Total number of codes if this code is part of a sequence (will be displayed on messages and signs)'),
@@ -157,7 +157,7 @@ class SummerGameGameCodeForm extends FormBase {
     $form['valid_start'] = [
       '#type' => 'textfield',
       '#title' => t('Code Start Time Limit'),
-      '#default_value' => date('Y-m-d H:i:s', ($game_code['valid_start'] ? $game_code['valid_start'] : time())),
+      '#default_value' => date('Y-m-d H:i:s', ($game_code['valid_start'] ?? time())),
       '#size' => 32,
       '#maxlength' => 32,
       '#description' => t('Date/Time for when the code becomes active (e.g. "2012-07-01 9:00 AM")'),
@@ -166,7 +166,7 @@ class SummerGameGameCodeForm extends FormBase {
     $form['valid_end'] = [
       '#type' => 'textfield',
       '#title' => t('Code End Time Limit'),
-      '#default_value' => $game_code['valid_end'] ? date('Y-m-d H:i:s', $game_code['valid_end']) : \Drupal::config('summergame.settings')->get('summergame_gamecode_default_end'),
+      '#default_value' => isset($game_code['valid_end']) ? date('Y-m-d H:i:s', $game_code['valid_end']) : \Drupal::config('summergame.settings')->get('summergame_gamecode_default_end'),
       '#size' => 32,
       '#maxlength' => 32,
       '#description' => t('Date/Time for when the code stops being active (e.g. "2013-08-31 12:00 AM")'),
@@ -175,7 +175,7 @@ class SummerGameGameCodeForm extends FormBase {
     $form['game_term'] = [
       '#type' => 'textfield',
       '#title' => t('Game Term'),
-      '#default_value' => $game_code['game_term'] ? $game_code['game_term'] : \Drupal::config('summergame.settings')->get('summergame_current_game_term'),
+      '#default_value' => $game_code['game_term'] ?? \Drupal::config('summergame.settings')->get('summergame_current_game_term'),
       '#size' => 32,
       '#maxlength' => 32,
       '#description' => t('Points will be awarded under this Game Term'),
@@ -184,10 +184,10 @@ class SummerGameGameCodeForm extends FormBase {
     $form['everlasting'] = [
       '#type' => 'checkbox',
       '#title' => t('Everlasting?'),
-      '#default_value' => $game_code['everlasting'],
+      '#default_value' => $game_code['everlasting'] ?? 0,
       '#description' => 'Should this code be active in following seasons of the Game? (e.g. a code for a collection badge)',
     ];
-    if (!$game_code['code_id']) {
+    if (!isset($game_code['code_id'])) {
       $form['tag_bib_confirm'] = [
         '#type' => 'radios',
         '#title' => t('Is this code for a catalog item?'),
@@ -198,7 +198,7 @@ class SummerGameGameCodeForm extends FormBase {
     $form['search_phrase'] = [
       '#type' => 'textfield',
       '#title' => t('Search Phrase'),
-      '#default_value' => $game_code['search_phrase'],
+      '#default_value' => $game_code['search_phrase'] ?? '',
       '#size' => 32,
       '#maxlength' => 255,
       '#description' => t('Catalog search phrase intended to find this code. Will be checked for duplicate phrases.'),
@@ -214,7 +214,7 @@ class SummerGameGameCodeForm extends FormBase {
     $form['link'] = [
       '#type' => 'textfield',
       '#title' => t('Link Code'),
-      '#default_value' => $game_code['link'],
+      '#default_value' => $game_code['link'] ?? '',
       '#size' => 32,
       '#maxlength' => 255,
       '#description' => t($link_description),
@@ -235,14 +235,14 @@ class SummerGameGameCodeForm extends FormBase {
       '#url' => Url::fromRoute('summergame.admin'),
     ];
 
-    if ($game_code['code_id']) {
-    $form['inline']['delete'] = [
-      '#type' => 'link',
-      '#title' => $this->t('DELETE'),
-      '#url' => Url::fromRoute('summergame.admin.gamecode.delete', ['code_id' => $game_code['code_id']]),
-      '#suffix' => '</div>'
-    ];
-  }
+    if (isset($game_code['code_id'])) {
+      $form['inline']['delete'] = [
+        '#type' => 'link',
+        '#title' => $this->t('DELETE'),
+        '#url' => Url::fromRoute('summergame.admin.gamecode.delete', ['code_id' => $game_code['code_id']]),
+        '#suffix' => '</div>'
+      ];
+    }
 
     return $form;
   }
@@ -265,6 +265,12 @@ class SummerGameGameCodeForm extends FormBase {
       if (isset($code->code_id)) {
         $form_state->setErrorByName('text', 'Code text is already in use for this game term. Please select another code.');
       }
+    }
+
+    // Check is code text is close to another code
+    if ($match = summergame_gamecode_close_match($text, $game_term)) {
+      // Display warning message
+      \Drupal::messenger()->addWarning('WARNING: Code text is similar to existing code ' . $match['text'] . '. Consider altering the code text.');
     }
 
     // Check if search phrase is unique
@@ -339,7 +345,7 @@ class SummerGameGameCodeForm extends FormBase {
     if ($code_id = $form_state->getValue('code_id')) {
       // Update existing code
       $db->update('sg_game_codes')->fields($fields)->condition('code_id', $code_id)->execute();
-      $messenger->addMessage('Game Code ' . $values['text'] . ' Updated');
+      $messenger->addMessage('Game Code ' . $fields['text'] . ' Updated');
     }
     else {
       $fields['creator_uid'] = \Drupal::currentUser()->id();

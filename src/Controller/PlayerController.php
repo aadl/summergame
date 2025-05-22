@@ -12,6 +12,8 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Drupal\summergame\Helper\BadgeRenderer;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Drupal\Component\Serialization\Json;
+use Drupal\Core\Messenger\Messenger;
+
 //use Drupal\Core\Database\Database;
 //use Drupal\Core\Url;
 
@@ -72,6 +74,7 @@ class PlayerController extends ControllerBase {
       }
 
       $other_players = array();
+      $quick_transfer = '';
       if ($player_access && $player['uid']) {
         $all_players = summergame_player_load_all($player['uid']);
 
@@ -80,6 +83,10 @@ class PlayerController extends ControllerBase {
             if ($extra_player['pid'] != $player['pid']) {
               $other_players[] = $extra_player;
             }
+          }
+
+          if ($user->hasPermission('administer summergame')) {
+            $quick_transfer = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerQuickTransferForm', $player, $other_players);
           }
         }
       }
@@ -151,7 +158,7 @@ class PlayerController extends ControllerBase {
       }
 
       // Check for cell phone attachment code
-      if (preg_match('/^[\d]{6}$/', $player['phone'])) {
+      if (preg_match('/^[\d]{6}$/', $player['phone'] ?? '')) {
         $char = chr(($player['pid'] % 26) + 65);
         $player['phone'] = 'TEXT ' . $char . $player['phone'] . ' to 734-327-4200 to connect your phone';
       }
@@ -208,6 +215,11 @@ class PlayerController extends ControllerBase {
 
       // Prepare Scorecards
       $render[] = [
+        '#attached' => [
+          'library' => [
+            'summergame/summergame-lib'
+          ]
+        ],
         '#cache' => [
           'max-age' => 0, // Don't cache, always get fresh data
         ],
@@ -217,6 +229,7 @@ class PlayerController extends ControllerBase {
         '#player' => $player,
         '#player_access' => $player_access,
         '#other_players' => $other_players,
+        '#quick_transfer' => $quick_transfer,
         '#points' => summergame_get_player_points($player['pid']),
         '#balances' => $balances,
         '#pointsomatic_weekly_totals' => $pointsomatic_weekly_totals,
@@ -319,115 +332,7 @@ class PlayerController extends ControllerBase {
       '#type' => 'gamecode'
     ];
   }
-/*
-  public function friends() {
-    global $user;
-    drupal_add_css(drupal_get_path('module', 'summergame') . '/summergame.css');
-    $pid = intval($pid);
 
-    if ($pid) {
-      $player = summergame_player_load(array('pid' => $pid));
-    }
-    else if ($user->uid) {
-      // Default to the logged in player if none specified
-      $player = $user->player;
-    }
-
-    if ($player) {
-      // Following, Followers, Friends
-      $following = array();
-      $following_pids = array();
-      $followers = array();
-      $friends = array();
-
-      $res = db_query("SELECT * FROM sg_ledger WHERE pid = %d AND metadata LIKE '%%fc_player:%%'", $player['pid']);
-      while ($row = db_fetch_object($res)) {
-        // grab player ID
-        preg_match('/fc_player:([\d]+)/', $row->metadata, $matches);
-        $following_player = summergame_player_load($matches[1]);
-        if ($following_player['show_leaderboard']) {
-          $player_name = $following_player['nickname'] ? $following_player['nickname'] : $following_player['name'];
-        }
-        else {
-          $player_name = 'Player #' . $following_player['pid'];
-        }
-        if ($following_player['show_myscore'] || user_access('administer summergame')) {
-          $player_name = l($player_name, 'summergame/player/' . $following_player['pid']);
-        }
-        $following[] = array(
-          'count' => ++$following_counter,
-          'player' => $player_name,
-        );
-        $following_pids[] = $matches[1];
-      }
-      $res = db_query("SELECT * FROM sg_ledger WHERE metadata LIKE 'fc_player:%d'", $player['pid']);
-      while ($row = db_fetch_object($res)) {
-        $follower_player = summergame_player_load($row->pid);
-        if ($follower_player['show_leaderboard']) {
-          $player_name = $follower_player['nickname'] ? $follower_player['nickname'] : $follower_player['name'];
-        }
-        else {
-          $player_name = 'Player #' . $follower_player['pid'];
-        }
-        if ($follower_player['show_myscore'] || user_access('administer summergame')) {
-          $player_name = l($player_name, 'summergame/player/' . $follower_player['pid']);
-        }
-        $followers[] = array(
-          'count' => ++$follower_counter,
-          'player' => $player_name,
-        );
-        if (in_array($row->pid, $following_pids)) {
-          $friends[] = array(
-            'count' => ++$friend_counter,
-            'player' => $player_name,
-          );
-        }
-      }
-
-      $content .= '<div id="friend-code">';
-      $content .= '<div id="friend-title"><h2>FRIEND CODE: ' . $player['friend_code'] . '</h2>';
-      if (count($followers) == 0) {
-        if ($player['friend_code']) {
-          $action = 'I WANT A DIFFERENT';
-          $hint = 'Get a new random Friend Code. You can\'t change it once you give it out.';
-        }
-        else {
-          $action = 'GENERATE';
-          $hint = "Create a random Friend Code for yourself. You can try again if you don't like it.";
-        }
-        $options = array('html' => TRUE, 'attributes' => array('class' => 'hint--bottom',
-                                                               'data-hint' => $hint,
-                                                               ));
-        $content .= '[ ' . l($action . ' CODE', 'summergame/player/gfc/' . $player['pid'], $options) . ' ]';
-      }
-      $content .= '</div>';
-      $content .= "<p>You now can have a code of your own! If another player enters your Friend Code, they'll start following you, and " .
-                  "you'll EACH earn 100 points. If you enter the Friend Code of any of your followers, you'll become Friends and each earn an additional " .
-                  "50 point bonus.</p>";
-      $following_header = '<span class="hint--bottom" data-hint="You have entered these players\' Friend Codes">Following: ' .
-                          count($following) . '</span>';
-      $content .= theme('table',
-                        array(array('data' => $following_header, 'colspan' => 2)),
-                        $following);
-      $followers_header = '<span class="hint--bottom" data-hint="These Players have entered your Friend Code">Followers: ' .
-                          count($followers) . '</span>';
-      $content .= theme('table',
-                        array(array('data' => $followers_header, 'colspan' => 2)),
-                        $followers);
-      $friends_header = '<span class="hint--left" data-hint="You and these Players have entered each others\' Friend Codes">Friends: ' .
-                        count($friends) . '</span>';
-      $content .= theme('table',
-                        array(array('data' => $friends_header, 'colspan' => 2)),
-                        $friends);
-      $content .= '</div>'; // $friend-code
-    }
-    else {
-      $content .= '<p>No Player Found</p>';
-    }
-
-    return $content;
-  }
-*/
   public function consume($pid = 0) {
     $response = $this->auth_redemptions($pid, 'consume');
 
@@ -491,54 +396,10 @@ class PlayerController extends ControllerBase {
     return new RedirectResponse('/summergame/player');
   }
 
-  public function gfc() {
-    if ($player = summergame_player_load(['pid' => $pid])) {
-      // Check to see if player already has a code
-      if ($player['friend_code']) {
-        // Check if anyone has redeemed it already
-        $res = $db->query("SELECT COUNT(*) AS fcount FROM sg_ledger WHERE pid = :pid AND metadata LIKE '%fc_follower:%'", [':pid' => $pid]);
-        $fcount = $res->fetch();
-        if ($fcount->fcount) {
-          $followers = $fcount->fcount . ' follower' . ($fcount->fcount == 1 ? '' : 's');
-          \Drupal::messenger()->addError("Cannot regenerate Friend Code once it has been redeemed ($followers)");
-          return new RedirectResponse('summergame/player/' . $player['pid']);
-        }
-      }
-
-      // Generate a new referral code
-      $nums = '34679';
-      $num_max_idx = strlen($nums) - 1;
-      $lines = file(\Drupal::service('extension.list.module')->getPath('summergame') . '/upgoer5words.txt');
-
-      $code = '';
-      while ($code == '') {
-        $word = str_replace("'", '', trim($lines[array_rand($lines)]));
-        if (strlen($word) > 3) {
-          $code = strtoupper($word);
-          for ($i = 0; $i < 3; $i++) {
-            $code .= $nums[mt_rand(0, $num_max_idx)];
-          }
-          $collision = $db->query("SELECT pid FROM sg_players WHERE friend_code = :code", [':code' => $code])->fetch();
-          if ($collision->pid) {
-            $code = '';
-          }
-        }
-      }
-      $player['friend_code'] = $code;
-      summergame_player_save($player);
-      \Drupal::messenger()->addMessage("Your play.aadl.org Friend Code is $code. Earn bonus points when a friend enters that code as a Game Code.");
-      return new RedirectResponse('summergame/player/' . $player['pid']);
-    }
-    return new RedirectResponse('summergame/player');
-  }
-
   public function ledger($pid) {
     $summergame_settings = \Drupal::config('summergame.settings');
-    $pid = intval($pid);
-
-    if ($pid) {
-      $player = summergame_player_load(array('pid' => $pid));
-    }
+    $ledger = NULL;
+    $player = summergame_player_load(['pid' => $pid]);
 
     if ($player) {
       $player_access = summergame_player_access($player['pid']);
@@ -548,30 +409,44 @@ class PlayerController extends ControllerBase {
         return $this->redirect('<front>');
       }
 
-      // build the pager
-      $pager_manager = \Drupal::service('pager.manager');
-      $page = \Drupal::service('pager.parameters')->findPage();
-      $per_page = 100;
-      $offset = $per_page * $page;
+      // Process GET parameters
+      $filter_search = $_GET['filter_search'] ?? FALSE;
+      $filter_type = $_GET['filter_type'] ?? FALSE;
+      $game_term = $_GET['term'] ?? FALSE;
 
       $db = \Drupal::database();
-      if (isset($_GET['term'])) {
-        $total = $db->query("SELECT COUNT(lid) as total FROM sg_ledger WHERE pid = :pid AND game_term = :term",
-        [':pid' => $pid, ':term' => $_GET['term']])->fetch();
-        $total = $total->total;
-        $result = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND game_term = :term ORDER BY timestamp DESC LIMIT $offset, $per_page",
-        [':pid' => $pid, ':term' => $_GET['term']]);
-      } else {
-        $total = $db->query("SELECT COUNT(lid) as total FROM sg_ledger WHERE pid = :pid",
-          [':pid' => $pid])->fetch();
-        $total = $total->total;
-        $result = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid ORDER BY timestamp DESC LIMIT $offset, $per_page",
-          [':pid' => $pid]);
+      $query = $db->select('sg_ledger', 'l')
+        ->extend('Drupal\Core\Database\Query\PagerSelectExtender')
+        ->fields('l')
+        ->condition('pid', $pid);
+      if ($game_term) {
+        $query->condition('game_term', $game_term);
       }
+      if ($filter_type) {
+        $query->condition('type', $filter_type);
+      }
+      if ($filter_search) {
+        $query->condition('description', '%' . $db->escapeLike($filter_search) . '%', 'LIKE');
+      }
+      $query->orderBy('timestamp', 'DESC');
+      $query->limit(100);
+      $result = $query->execute();
 
-      $pager =\Drupal::service('pager.manager')->createPager($total, $per_page);
-
+      $score_table = [];
       while ($row = $result->fetchAssoc()) {
+        $row['classes'] = [];
+
+        // Check if row is access restricted
+        if (strpos($row['metadata'], 'access:player') !== FALSE) {
+          if ($player_access) {
+            $row['classes'][] = 'access_player';
+          }
+          else {
+            // skip it
+            continue;
+          }
+        }
+
         // Change bnum: code to a link to the bib record
         if (preg_match('/bnum:([\w-]+)/', $row['metadata'], $matches)) {
           if (preg_match('/^\d{7}$/', $matches[1])) {
@@ -616,6 +491,7 @@ class PlayerController extends ControllerBase {
         }
 
         $table_row = [
+          'classes' => $row['classes'],
           'date' => date('F j, Y, g:i a', $row['timestamp']),
           'type' => $row['type'],
           'description' => ($player['show_titles'] || $player_access ? $row['description'] : ''),
@@ -634,17 +510,31 @@ class PlayerController extends ControllerBase {
 
       if (count($score_table)) {
         $ledger = $score_table;
-      }
-      else {
-        $ledger = NULL;
+        // Get distinct ledger types
+        $ledger_types = $db->select('sg_ledger', 'l')
+          ->fields('l', ['type'])
+          ->condition('pid', $pid)
+          ->condition('game_term', $game_term)
+          ->distinct()
+          ->orderBy('type')
+          ->execute()
+          ->fetchCol();
+        $ledger_types = array_combine($ledger_types, $ledger_types);
+        $filter_form = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerLedgerFilterForm', $pid, $ledger_types);
       }
     }
 
     return [
+      '#attached' => [
+        'library' => [
+          'summergame/summergame-lib'
+        ]
+      ],
       '#cache' => [
         'max-age' => 0, // Don't cache, always get fresh data
       ],
       '#theme' => 'summergame_player_ledger',
+      '#filter_form' => $filter_form ?? '',
       '#ledger' => $ledger,
       '#pager' => [
         '#type' => 'pager',
@@ -654,8 +544,65 @@ class PlayerController extends ControllerBase {
     ];
   }
 
-  public function getRecentBadges() {
+  public function leagues($league_id = 0) {
+    $output = [];
 
+    if (\Drupal::config('summergame.settings')->get('summergame_leagues_enabled')) {
+      if ($player = summergame_get_active_player()) {
+  /*
+        // Check if player has created a league
+        if ($player['league_code']) {
+          $league_code = $player['league_code'];
+          if ($league_id < 1) {
+            $league_id = $player['pid']; // Default to player ID
+          }
+        }
+        else {
+          // No league code for player
+          $league_code = 'GENERATE LEAGUE CODE';
+        }
+  */
+        $league_code = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGameLeagueCodeForm', $player['pid']);
+
+        // Display Join Form
+        $join_form = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGameLeagueJoinForm', $player['pid']);
+
+        // Get League list for Player
+        $player_leagues = summergame_player_leagues($player['pid']);
+
+        // Get League Leaderboard
+        $league_leaderboard = summergame_league_leaderboard((int)$league_id);
+      }
+      else {
+        \Drupal::messenger()->addError("You must have an active player connected to your account to access leagues");
+        return new RedirectResponse('summergame/leaderboard');
+      }
+
+      return [
+        '#theme' => 'summergame_leagues_page',
+        '#attached' => [
+          'library' => [
+            'summergame/summergame-lib'
+          ]
+        ],
+        '#cache' => [
+          'max-age' => 0, // Don't cache, always get fresh data
+        ],
+        '#player' => $player,
+        '#league_id'=>(int)$league_id,
+        '#league_code' => $league_code,
+        '#player_leagues' => $player_leagues,
+        '#league_leaderboard' => $league_leaderboard,
+        '#join_form' => $join_form,
+      ];
+    }
+    else {
+      \Drupal::messenger()->addError("Leagues are not currently enabled");
+      return new RedirectResponse('/summergame/player');
+    }
+  }
+
+  public function getRecentBadges() {
     $session = \Drupal::request()->getSession();
     $recently_viewed_badges = $session->get('recently_viewed_badges');
     $resp = json_decode("{}");
