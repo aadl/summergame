@@ -13,7 +13,7 @@ class BadgeRenderer {
    * @return array
    */
   static function abstractSGBadgeRender($variables) {
-    $variables['isByteClub'] = \summergame_is_byteclub_page();
+    $variables['is_byteclub'] = \summergame_is_byteclub_page();
 
     $badge_level = $variables['node']->field_badge_level->value;
     switch ($badge_level) {
@@ -264,11 +264,11 @@ class BadgeRenderer {
                   $ledger = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND (type LIKE :type OR metadata LIKE :metadata) AND game_term = :term LIMIT 1",
                                                     [':pid' => $pid, ':type' => $pattern, ':metadata' => 'gamecode:'.$pattern, ':term' => $badge->game_term])->fetch();
                   if (isset($ledger->lid)) {
-                    if (!$player_matches[$code_id]) {
+                    if (!isset($player_matches[$code_id])) {
                       $player_count++;
                       $player_matches[$code_id] = TRUE;
                     }
-                    if ($gc->code_id) {
+                    if (isset($gc->code_id)) {
                       $gc_row['game_code'] = $gc->text;
                       $gc_row['description'] = $gc->description;
                     }
