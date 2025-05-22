@@ -22,9 +22,8 @@ class SuperSearchController extends ControllerBase
 		$file_path = \Drupal::service('file_system')->realpath('private://super_search/' . $nid . '.json');
 		$puzzle_data = json_decode(file_get_contents($file_path), true);
 		$sets = [];
-		$session = \Drupal::requestStack()->getCurrentRequest()->getSession();
-		$solved = $session->get('ss-' . $nid, []);
-		$sIds = array_column($solved, 'ids');
+		$progress = $this->getProgress($nid);
+		$sIds = array_column($progress, 'ids');
 		foreach ($sIds as $s) {
 			if (!array_diff($ids, $s) && count($ids) === count($s)) {
 				return new JsonResponse(['correct' => false]);
@@ -34,10 +33,9 @@ class SuperSearchController extends ControllerBase
 			$sets = array_column($a['set'], 'ids');
 			foreach ($sets as $n => $c) {
 				if (!array_diff($ids, $c) && count($ids) === count($c)) {
-
-					$solved[] = ['ids' => $ids, 'color' => $a['color']];
-					$session->set('ss-' . $nid, $solved);
-					if (count($solved) === 36) {
+					$progress[] = ['ids' => $ids, 'color' => $a['color']];
+					$this->storeProgress($nid, $progress);
+					if (count($progress) === 36) {
 						$answer = '<div class="win-prompt"><p>Solved! The remaining letters reveal...<span class="ss-answer"> ' . $puzzle_data['answer'] . '</span> Redeem this game code for Summer Game points!</p></div>';
 					}
 					return new JsonResponse(['hint' => $puzzle_data['categories'][$k]['set'][$n]['hint'], 'color' => $a['color'], 'category' => $k, 'correct' => true, 'word' => $puzzle_data['categories'][$k]['set'][$n]['answer'], 'answer' => $answer ?? null]);
@@ -56,8 +54,7 @@ class SuperSearchController extends ControllerBase
 	}
 	public function get_puzzle($nid)
 	{
-		$session = \Drupal::requestStack()->getCurrentRequest()->getSession();
-		$solved = $session->get('ss-' . $nid, []);
+		$progress = $this->getProgress($nid, true);
 		$file_path = \Drupal::service('file_system')->realpath('private://super_search/' . $nid . '.json');
 		if (!file_exists($file_path)) {
 			return new JsonResponse([
@@ -75,7 +72,7 @@ class SuperSearchController extends ControllerBase
 			foreach ($c['set'] as $a) {
 				$encodedAnswers[] = $this->xor_encode(implode('', $a['ids']), $sk);
 			}
-			foreach ($solved as $s) {
+			foreach ($progress as $s) {
 				$sets = array_column($c['set'], 'ids');
 				foreach ($sets as $n => $g) {
 					if (!array_diff($s['ids'], $g) && count($s['ids']) === count($g)) {
@@ -87,7 +84,7 @@ class SuperSearchController extends ControllerBase
 		if (count($completedHints) === 36) {
 			$answer = '<div class="win-prompt"><p>Solved! The remaining letters reveal...<span class="ss-answer"> ' . $puzzle_data['answer'] . '</span> Redeem this game code for Summer Game points!</p></div>';
 		}
-		return new JsonResponse(['categories' => $categories, 'letters' => $puzzle_data['letters'], 'progress' => $solved, 'answer' => $answer ?? null, 'completedHints' => $completedHints, 'ea' => $encodedAnswers, 'sk' => $sk]);
+		return new JsonResponse(['categories' => $categories, 'letters' => $puzzle_data['letters'], 'progress' => $progress, 'answer' => $answer ?? null, 'completedHints' => $completedHints, 'ea' => $encodedAnswers, 'sk' => $sk]);
 	}
 	private function xor_encode(string $a, $key)
 	{
@@ -98,5 +95,35 @@ class SuperSearchController extends ControllerBase
 			$result .= chr($c);
 		}
 		return base64_encode($result);
+	}
+
+	private function storeProgress($nid, $progress)
+	{
+		if (\Drupal::currentUser()->isAnonymous()) {
+			$session = \Drupal::requestStack()->getCurrentRequest()->getSession();
+			$session->set('ss-' . $nid, $progress);
+		} else {
+			$uid = \Drupal::currentUser()->id();
+			\Drupal::service('user.data')->set('summergame', $uid, 'ss-' . $nid, $progress);
+		}
+	}
+	private function getProgress($nid, $fresh = false): array
+	{
+		if (\Drupal::currentUser()->isAnonymous()) {
+			$session = \Drupal::requestStack()->getCurrentRequest()->getSession();
+			$progress = $session->get('ss-' . $nid, []);
+		} else {
+			if ($fresh) {
+				$session = \Drupal::requestStack()->getCurrentRequest()->getSession();
+				if ($session->has('ss-' . $nid)) {
+					$progress = $session->get('ss-' . $nid, []);
+					$this->storeProgress($nid, $progress);
+					$session->remove('ss-' . $nid);
+				}
+			}
+			$uid = \Drupal::currentUser()->id();
+			$progress = \Drupal::service('user.data')->get('summergame', $uid, 'ss-' . $nid);
+		}
+		return $progress ?? [];
 	}
 }
