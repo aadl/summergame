@@ -16,7 +16,7 @@
 			solution = '<a style="font-weight:bold" href="/summergame/player">Create a player</a>'
 		}
 		ssHTML =
-			'<p>Imagine a word-search, but you\'ve got to figure out the words, too! Meet the SUPER SEARCH!</p><p>Find the 36 hidden words (forwards, backwards, or diagonally) that fall under SIX categories (listed under the puzzle grid). Tap/click the grid\'s letters to highlight the answers as you find them—letters can be used in multiple words. All words have at least 3-letters, are not plural (unless a title is plural), and do not use abbreviations. No words are contained entirely within other words.</p> When you are finished, there will be 8 letters that aren\'t used in any words, which, when written in order, will give you your final code.</p><p>' + solution + ' to redeem points for the code, <strong>learn more</strong> about solving these puzzles, or to <strong>download a printer friendly version</strong>!</p>' +
+			'<p>' + solution + ' to redeem points for the code, <strong>learn more</strong> about solving these puzzles, or to <strong>download a printer friendly version</strong>!</p>' +
 			ssHTML;
 	}
 	badgeProgress.insertAdjacentHTML("beforeBegin", ssHTML);
@@ -259,7 +259,7 @@
 				const angleB = Math.atan2(b.y - centroid.y, b.x - centroid.x);
 				return angleA - angleB;
 			});
-			ctx.lineWidth = 6 * dpr;
+			ctx.lineWidth = 8;
 			ctx.beginPath();
 			if (!lined) {
 				for (let i = 0; i < sorted.length; i++)
@@ -491,7 +491,7 @@
 	}
 	function insetBounds(vertices) {
 		const insetPoints = [];
-		const offset = 3 * dpr;
+		const offset = 4;
 		for (let i = 0; i < vertices.length; i++) {
 			const prev = vertices[(i - 1 + vertices.length) % vertices.length];
 			const curr = vertices[i];
