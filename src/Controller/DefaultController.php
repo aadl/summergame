@@ -570,13 +570,20 @@ We don't have all the details yet, but we'll reuse the signs for the 2023 game, 
 
           // Set Series info if not set yet
           if (!isset($badges[$term_id])) {
+            $series_info = '';
+            $series_level = 1; // default to series level 1
+
             if (isset($term->get('description')->value)) {
-              $series_info = explode("\n", strip_tags($term->get('description')->value));
+              // parse description and level from term description
+              preg_match_all('/<p\b[^>]*>(.*?)<\/p>/is', $term->get('description')->value, $matches);
+              if (isset($matches[1][0])) {
+                $series_info = trim($matches[1][0]);
+              }
+              if (isset($matches[1][1])) {
+                $series_level = (int) trim($matches[1][1]);
+              }
             }
-            else {
-              $series_info = '';
-            }
-            $series_level = (int) ($series_info[2] ?? 1); // default to series level 1
+
             switch ($series_level) {
               case 2:
                 $level_output = "⭐️⭐️ Tricky";
@@ -593,7 +600,7 @@ We don't have all the details yet, but we'll reuse the signs for the 2023 game, 
 
             $badges[$term_id] = [
               'name' => $term->get('name')->value,
-              'description' => isset($series_info[0]) ? $series_info[0] : "",
+              'description' => $series_info,
               'level' => $level_output,
               'tags' => [],
               'diff_class' => 'diff' . $series_level,
