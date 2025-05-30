@@ -65,6 +65,43 @@ class DefaultController extends ControllerBase {
     ];
   }
 
+  public function league($lid = 0) {
+    if (\Drupal::config('summergame.settings')->get('summergame_leagues_enabled')) {
+      // check if user has acess to this league
+      if (summergame_league_access($lid)) {
+        $player = summergame_get_active_player();
+
+        // League Code Display
+        $league_code = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGameLeagueCodeForm', $player['pid']);
+
+        // Get League list for Player
+        $player_leagues = summergame_player_leagues($player['pid']);
+
+        return [
+          '#theme' => 'summergame_league_page',
+          '#attached' => [
+            'library' => [
+              'summergame/summergame-lib'
+            ]
+          ],
+          '#player' => $player,
+          '#league_id'=> (int)$lid,
+          '#league_code' => $league_code,
+          '#player_leagues' => $player_leagues,
+          '#league_leaderboard' => summergame_league_leaderboard($lid),
+        ];
+      }
+      else {
+        \Drupal::messenger()->addError("You do not have access to this league");
+        return $this->redirect('summergame.leaderboard');
+      }
+    }
+    else {
+      \Drupal::messenger()->addError("Leagues are not currently enabled");
+      return $this->redirect('summergame.leaderboard');
+    }
+  }
+
   public function leaderboard_old() {
     $summergame_settings = \Drupal::config('summergame.settings');
 

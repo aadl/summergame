@@ -1,0 +1,41 @@
+{#
+/**
+ * Summer Game Player Leagues
+ */
+#}
+<h1 class="t-center ruled-heading large-heading">
+  <span>{{ player.nickname ? player.nickname : player.name }}'s Leagues</span>
+</h1>
+
+<div class="leagues">
+
+<div>
+  {% if player_leagues|length > 0 %}
+  <ul>
+    {% for league in player_leagues %}
+      <li>
+      {% if league.lid == league_id %}
+        {{ league.name }}'s League
+      {% else %}
+        <a href="/summergame/league/{{ league.lid }}">{{ league.name }}'s League</a>
+      {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p>No leagues joined</p>
+  {% endif %}
+</div>
+
+<div class="generate-league-wrapper">{{ league_code }}</div>
+
+<div class="manage-leagues">
+  {% if league_id  %}
+    <h2>Manage {{ player.name }}'s Leagues</h2>
+  {% else %}
+    <h1>Manage {{ player.name }}'s Leagues</h1>
+ {% endif %}
+  <div class="join-league-wrapper">{{ join_form }}</div>
+</div>
+
+</div>

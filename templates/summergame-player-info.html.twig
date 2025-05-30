@@ -92,7 +92,7 @@
           </td>
         </tr>
         <tr>
-          <th>Cell Phone:</th>
+          <th>Cell&nbsp;Phone:</th>
           <td>
             {% if player.phone %}
               {{ player.phone }}
@@ -101,12 +101,15 @@
             {% endif %}
           </td>
         </tr>
-        <tr><th>Age Group:</th><td>{{ player.agegroup|title }}</td></tr>
+        <tr><th>Age&nbsp;Group:</th><td>{{ player.agegroup|title }}</td></tr>
         {% if website_user %}
-          <tr><th>Website User:</th><td>{{ website_user|raw }}</td></tr>
+          <tr><th>Website&nbsp;User:</th><td>{{ website_user|raw }}</td></tr>
         {% endif %}
         {% if homecode %}
-          <tr><th>Lawn/Library Code:</th><td>{{ homecode|raw }}</td></tr>
+          <tr><th>Lawn/Library&nbsp;Code:</th><td>{{ homecode|raw }}</td></tr>
+        {% endif %}
+        {% if summergame_leagues_enabled %}
+          <tr><th>Leagues:</th><td><a href="/summergame/player/{{ player.pid }}/leagues">View/Join Leagues</a></td></tr>
         {% endif %}
       </table>
     </div>

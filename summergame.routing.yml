@@ -214,11 +214,10 @@ summergame.player.recentbadges:
   requirements:
     _permission: 'access summergame'
 summergame.player.leagues:
-  path: '/summergame/player/leagues/{league_id}'
+  path: '/summergame/player/{pid}/leagues'
   defaults:
     _controller: '\Drupal\summergame\Controller\PlayerController::leagues'
-    _title: 'Summer Game Leagues'
-    league_id: 0
+    _title: 'Summer Game Player Leagues'
   requirements:
     _permission: 'access summergame'
 # Summer Game Default ##########################################################
@@ -229,6 +228,14 @@ summergame.leaderboard:
     _title: 'Summer Game Leaderboard'
   requirements:
     _permission: 'access content'
+summergame.league:
+  path: '/summergame/league/{lid}'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\DefaultController::league'
+    _title: 'Summer Game League'
+    lid: 0
+  requirements:
+    _permission: 'access summergame'
 summergame.geocode:
   path: '/summergame/geocode/{address}'
   defaults:

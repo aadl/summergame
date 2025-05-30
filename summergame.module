@@ -161,10 +161,10 @@ function summergame_leaderboard_update() {
 }
 
 function summergame_leagues_leaderboard_update() {
-  // Find all players with league codes
   $db = \Drupal::database();
   $redis = new Client(\Drupal::config('summergame.settings')->get('summergame_redis_conn'));
 
+  // Find all players with league codes
   $league_ids = $db->select('sg_players', 'sp')
                    ->fields('sp', ['pid'])
                    ->condition('league_code', '', '!=')
@@ -179,36 +179,44 @@ function summergame_leagues_leaderboard_update() {
                       ->condition('lid', $league_id)
                       ->execute()
                       ->fetchCol();
-    $league_pids = array_map('intval', $league_pids);
 
-    $res = $db->query('SELECT pid, SUM(points) AS lb_total ' .
-                      'FROM {sg_ledger} ' .
-                      'WHERE pid IN (' . implode(',', $league_pids) .') ' .
-                      "AND game_term = 'SummerGame2024' " .
-                      "AND metadata NOT LIKE '%leaderboard:no%' " .
-                      'GROUP BY pid ' .
-                      'ORDER BY lb_total DESC');
+    if (count($league_pids)) {
+      // Ensure all league PIDs are integers
+      $league_pids = array_map('intval', $league_pids);
 
-    while ($row = $res->fetchAssoc()) {
-      $lb_player = summergame_player_load($row['pid']);
+      // Leaderboard is only for the current game term
+      $current_game_term = \Drupal::config('summergame.settings')->get('summergame_current_game_term');
+      $res = $db->query('SELECT pid, SUM(points) AS lb_total ' .
+                        'FROM {sg_ledger} ' .
+                        'WHERE pid IN (' . implode(',', $league_pids) .') ' .
+                        "AND game_term = '$current_game_term' " .
+                        "AND metadata NOT LIKE '%leaderboard:no%' " .
+                        'GROUP BY pid ' .
+                        'ORDER BY lb_total DESC');
 
-      if ($lb_player['show_leaderboard']) {
-        $player_name = $lb_player['nickname'] ? $lb_player['nickname'] : $lb_player['name'];
+      while ($row = $res->fetchAssoc()) {
+        $lb_player = summergame_player_load($row['pid']);
+
+        if ($lb_player['show_leaderboard']) {
+          $player_name = $lb_player['nickname'] ? $lb_player['nickname'] : $lb_player['name'];
+        }
+        else {
+          $player_name = 'Player #' . $lb_player['pid'];
+        }
+
+        $leaderboard[] = [
+          'pid' => $lb_player['pid'],
+          'show_myscore' => $lb_player['show_myscore'],
+          'player' => $player_name,
+          'score' => $row['lb_total'],
+        ];
       }
-      else {
-        $player_name = 'Player #' . $lb_player['pid'];
-      }
 
-      $leaderboard[] = [
-        'pid' => $lb_player['pid'],
-        'show_myscore' => $lb_player['show_myscore'],
-        'player' => $player_name,
-        'score' => $row['lb_total'],
-      ];
+      // Save the league leaderboard to Redis
+      if (count($leaderboard)) {
+        $redis->set("summergame:leaderboard:league:$league_id", json_encode($leaderboard));
+      }
     }
-
-    // Save the league leaderboard to Redis
-    $redis->set("summergame:leaderboard:league:$league_id", json_encode($leaderboard));
   }
 }
 
@@ -243,7 +251,7 @@ function summergame_generate_league_code($pid) {
           $code .= $nums[mt_rand(0, $num_max_idx)];
         }
         $collision = $db->query("SELECT pid FROM sg_players WHERE league_code = :code", [':code' => $code])->fetch();
-        if ($collision->pid) {
+        if (isset($collision->pid)) {
           $code = '';
         }
       }
@@ -284,11 +292,23 @@ function summergame_player_join_league($pid, $league_code) {
 }
 
 function summergame_league_leaderboard($league_id) {
+  $leaderboard = [];
   $redis = new Client(\Drupal::config('summergame.settings')->get('summergame_redis_conn'));
-  return [
-    'timestamp' => $redis->get('summergame:leaderboard:timestamp'),
-    'rows' => json_decode($redis->get("summergame:leaderboard:league:$league_id") ?? '', TRUE),
-  ];
+
+  try {
+    $leaderboard = [
+      'timestamp' => $redis->get('summergame:leaderboard:timestamp'),
+      'rows' => json_decode($redis->get("summergame:leaderboard:league:$league_id") ?? '', TRUE),
+    ];
+  }
+  catch (\Exception $e) {
+    \Drupal::messenger()->addError(t('Connection failed while retreiving leaderboard'));
+    if (\Drupal::currentUser()->hasPermission('administer summergame')) {
+      \Drupal::messenger()->addError(t('Error: @message', ['@message' => $e->getMessage()]));
+    }
+  }
+
+  return $leaderboard;
 }
 
 function summergame_player_leagues($player_id) {
@@ -425,6 +445,7 @@ function summergame_theme() {
         'website_user' => NULL,
         'homecode' => NULL,
         'game_display_name' => NULL,
+        'summergame_leagues_enabled' => NULL,
       ],
     ],
     'summergame_player_ledger' => [
@@ -472,7 +493,16 @@ function summergame_theme() {
         'type' => NULL,
       ]
     ],
-    'summergame_leagues_page' => [
+    'summergame_player_leagues_page' => [
+      'variables' => [
+        'player' => NULL,
+        'player_leagues' => NULL,
+        'league_code' => NULL,
+        'league_id' => NULL,
+        'join_form' => NULL,
+      ]
+    ],
+    'summergame_league_page' => [
       'variables' => [
         'player' => NULL,
         'league_code' => NULL,
@@ -1063,6 +1093,36 @@ function summergame_player_access($pid) {
       if ($uid = $user->id()) {
         $player = summergame_player_load($pid);
         if ($uid == $player['uid']) {
+          $access = TRUE;
+        }
+      }
+    }
+  }
+  return $access;
+}
+
+/**
+ * UTILITY: Determine access to a league
+ */
+function summergame_league_access($league_id) {
+  $access = FALSE;
+
+  if ($league_id = (int) $league_id) {
+    $user = \Drupal::currentUser();
+    if ($user->hasPermission('administer summergame')) {
+      $access = TRUE;
+    }
+    else {
+      if ($uid = $user->id()) {
+        // Check if any player attached to current user is a member of the league
+        $db = \Drupal::database();
+        $result = $db->query("SELECT p.pid " .
+                             "FROM sg_players p, sg_players_leagues l " .
+                             "WHERE p.uid = :uid " .
+                             "AND p.pid = l.pid " .
+                             "AND l.lid = :league_id",
+                             [':uid' => $uid, ':league_id' => $league_id]);
+        if ($result->fetchField()) {
           $access = TRUE;
         }
       }
