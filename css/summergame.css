@@ -61,6 +61,12 @@
 
 .leagues .generate-league-wrapper #summergame-league-code-form {
   width:100%;
+  border: 1px solid #999;
+  padding: 1em;
+}
+
+.leagues .generate-league-wrapper #summergame-league-code-form h3 {
+  margin-top: 0;
 }
 
 .leagues .join-league-wrapper {

@@ -574,6 +574,7 @@ class PlayerController extends ControllerBase {
             'max-age' => 0, // Don't cache, always get fresh data
           ],
           '#player' => $player,
+          '#league_code' => $league_code,
           '#player_leagues' => $player_leagues,
           '#join_form' => $join_form,
         ];

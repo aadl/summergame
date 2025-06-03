@@ -71,9 +71,6 @@ class DefaultController extends ControllerBase {
       if (summergame_league_access($lid)) {
         $player = summergame_get_active_player();
 
-        // League Code Display
-        $league_code = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGameLeagueCodeForm', $player['pid']);
-
         // Get League list for Player
         $player_leagues = summergame_player_leagues($player['pid']);
 
@@ -86,7 +83,6 @@ class DefaultController extends ControllerBase {
           ],
           '#player' => $player,
           '#league_id'=> (int)$lid,
-          '#league_code' => $league_code,
           '#player_leagues' => $player_leagues,
           '#league_leaderboard' => summergame_league_leaderboard($lid),
         ];
