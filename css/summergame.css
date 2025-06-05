@@ -13,6 +13,13 @@
   padding: 0.5em;
   text-align: center;
 }
+#summergame-leaderboard-header, #summergame-leaderboard-page h1, #summergame-leaderboard-page p {
+  text-align: center;
+  margin-bottom: 0.5em;
+}
+#sg-scores-filter-form {
+  text-align: center;
+}
 .access_player {
   background: repeating-linear-gradient(
     45deg,

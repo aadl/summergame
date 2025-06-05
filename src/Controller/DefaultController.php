@@ -53,6 +53,7 @@ class DefaultController extends ControllerBase {
         'max-age' => 0, // Don't cache, always get fresh data
       ],
       '#theme' => 'summergame_leaderboard_page',
+      '#header_text' => \Drupal::config('summergame.settings')->get('leaderboard_header_text'),
       '#total' => $total,
       '#player_count' => $player_count,
       '#game_terms' => summergame_get_game_terms(),

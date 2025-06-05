@@ -5,6 +5,7 @@
 #}
 
 <div id="summergame-leaderboard-page">
+  <div id="summergame-leaderboard-header">{{ header_text|raw }}</div>
   <div id="summergame-live-points">
     {{ total|number_format }} POINTS earned from {{ player_count|number_format }} Player{% if player_count != 1 %}s{% endif %} across all games so far today
   </div>

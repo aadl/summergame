@@ -475,6 +475,7 @@ function summergame_theme() {
     ],
     'summergame_leaderboard_page' => [
       'variables' => [
+        'header_text' => NULL,
         'total' => NULL,
         'player_count' => NULL,
         'game_terms' => NULL,
