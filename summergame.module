@@ -1590,7 +1590,7 @@ function summergame_redeem_code($player, $code_text) {
   }
   else if (summergame_gamecode_close_match($code_text, NULL, TRUE)) {
     // Check if code is a close match to a building code in the current game term
-    return ['warning' => "Game Code is close to a building code, check your spelling and try again"];
+    return ['warning' => "The text you entered is close to a Branch Explorer code, check your spelling and try again!"];
   }
   else {
     return ['warning' => "Code is not recognized"];
