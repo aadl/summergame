@@ -618,14 +618,22 @@ function summergame_index_gamecodes($game_term, $code_id = 0, $dev = FALSE) {
   else {
     // Index all game codes for this game term
     $result = [];
-    $res = $db->query('SELECT code_id, text FROM sg_game_codes WHERE game_term = :game_term', [':game_term' => $game_term]);
+    $res = $db->query('SELECT code_id, text, clue FROM sg_game_codes WHERE game_term = :game_term', [':game_term' => $game_term]);
     foreach ($res as $row) {
+      // Check if code is a building or banner code
+      $building_code = FALSE;
+      if (preg_match('/^Find a code in the .* Library!$|^Look for a banner on the outside of the .* Library!$/', $row->clue)) {
+        // Check if the code is a building code
+        $building_code = TRUE;
+      }
+
       // index game code text in elasticsearch
       $result[] = $es_client->index([
         'index' => $es_index,
         'id' => $row->code_id,
         'body' => [
           'text' => $row->text,
+          'building_code' => $building_code,
         ],
       ]);
     }
@@ -634,7 +642,7 @@ function summergame_index_gamecodes($game_term, $code_id = 0, $dev = FALSE) {
   return $result;
 }
 
-function summergame_gamecode_close_match($text, $game_term = NULL, $dev = FALSE) {
+function summergame_gamecode_close_match($text, $game_term = NULL, $building_code = FALSE, $dev = FALSE) {
   $game_term = $game_term ?? \Drupal::config('summergame.settings')->get('summergame_current_game_term');
   $hosts = [
     \Drupal::config('arborelastic.settings')->get('arborelastic_host') . ':' .
@@ -648,19 +656,36 @@ function summergame_gamecode_close_match($text, $game_term = NULL, $dev = FALSE)
 
   // Don't search if the index doesn't exist
   if ($es_client->indices()->exists(['index' => $es_index])) {
+    $text_match = [
+      'match' => [
+        'text' => [
+          'query' => $text,
+          'fuzziness' => 'AUTO',
+        ],
+      ],
+    ];
+
     $params = [
       'index' => $es_index,
       'body' => [
         'query' => [
-          'match' => [
-            'text' => [
-              'query' => $text,
-              'fuzziness' => 'AUTO',
+          'bool' => [
+            'must' => [
+              $text_match,
             ],
           ],
         ],
       ],
     ];
+
+    // If this is a building code, add a match for building codes
+    if ($building_code) {
+      $params['body']['query']['bool']['must'][] = [
+        'match' => [
+          'building_code' => TRUE,
+        ],
+      ];
+    }
 
     try {
       $response = $es_client->search($params);
@@ -1471,7 +1496,7 @@ function summergame_redeem_code($player, $code_text) {
   // Check for Game Code (limit to the latest one when text is reused)
   $code = $db->query("SELECT * FROM sg_game_codes WHERE text = :text ORDER BY created DESC LIMIT 1",
                       [':text' => $code_text])->fetchObject();
-  if ($code->code_id) {
+  if (isset($code->code_id)) {
     // Existing code
     $now = time();
     if ($now < $code->valid_start) {
@@ -1562,6 +1587,10 @@ function summergame_redeem_code($player, $code_text) {
     }
 
     return $result;
+  }
+  else if (summergame_gamecode_close_match($code_text, NULL, TRUE)) {
+    // Check if code is a close match to a building code in the current game term
+    return ['warning' => "Game Code is close to a building code, check your spelling and try again"];
   }
   else {
     return ['warning' => "Code is not recognized"];
