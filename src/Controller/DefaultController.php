@@ -234,13 +234,17 @@ class DefaultController extends ControllerBase {
   }
 
   public function map($game_term = '') {
+    $summergame_settings = \Drupal::config('summergame.settings');
+
     // Set default Game Term
     if (empty($game_term)) {
-      $game_term = \Drupal::config('summergame.settings')->get('summergame_current_game_term');
+      $game_term = $summergame_settings->get('summergame_current_game_term');
     }
-    $sg_admin = \Drupal::currentUser()->hasPermission('administer summergame');
-    $summergame_points_enabled = \Drupal::config('summergame.settings')->get('summergame_points_enabled');
-    $summergame_homecode_report_threshold = \Drupal::config('summergame.settings')->get('summergame_homecode_report_threshold');
+
+    $summergame_points_enabled = $summergame_settings->get('summergame_points_enabled');
+    $summergame_homecode_report_threshold = $summergame_settings->get('summergame_homecode_report_threshold');
+    $map_header_text = $summergame_settings->get('map_header_text');
+
     $explaination_markup = '<h1>Summer Game Locations</h1>';
     // $heatRadius = ($_GET['heatRadius'] ?? 0.001);
 
@@ -319,7 +323,7 @@ We don't have all the details yet, but we'll reuse the signs for the 2023 game, 
       '#cache' => [
         'max-age' => 0, // Don't cache, always get fresh data
       ],
-      '#markup' => $explaination_markup .
+      '#markup' => $map_header_text .
         '<h1>Summer Game Map</h1>' .
         $legend_markup .
         '<div id="map-wrapper">' .
