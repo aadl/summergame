@@ -16,7 +16,7 @@
 			solution = '<a style="font-weight:bold" href="/summergame/player">Create a player</a>'
 		}
 		ssHTML =
-			'<p>' + solution + ' to redeem points for the code, <strong>learn more</strong> about solving these puzzles, or to <strong>download a printer friendly version</strong>!</p>' +
+			'<p>' + solution + ' to redeem points for the code.</p>' +
 			ssHTML;
 	}
 	badgeProgress.insertAdjacentHTML("beforeBegin", ssHTML);
@@ -309,7 +309,7 @@
 		isInteractable = false;
 		const prompt = document.createElement("template");
 		const svg = await fetch(
-			"/modules/custom/summergame/images/SG2025-WebGraphic-sm.svg",
+			"/sites/default/files/super_search/SG2025-WebGraphic-sm.svg",
 		);
 		const svgText = await svg.text();
 		const parser = new DOMParser();

@@ -83,7 +83,7 @@ canvas {
 	margin: 0 auto;
 	display: block;
 	border: #27272a 4px groove;
-	background: no-repeat radial-gradient(rgba(0, 0, 0, .3) 0%, rgba(0, 0, 0, .6) 70%, rgba(0, 0, 0, .8) 90%), url("/modules/custom/summergame/images/SG2025-WebGraphic_1500px.jpg");
+	background: no-repeat radial-gradient(rgba(0, 0, 0, .3) 0%, rgba(0, 0, 0, .6) 70%, rgba(0, 0, 0, .8) 90%), url("/sites/default/files/super_search/SG2025-WebGraphic_1500px.jpg");
 	background-size: 115% 115%;
 }
 
@@ -353,7 +353,7 @@ canvas {
 	}
 
 	canvas {
-		background: no-repeat radial-gradient(rgba(0, 0, 0, .3) 0%, rgba(0, 0, 0, .6) 70%, rgba(0, 0, 0, .8) 90%), url("/modules/custom/summergame/images/SG2025-WebGraphic_750px.jpg");
+		background: no-repeat radial-gradient(rgba(0, 0, 0, .3) 0%, rgba(0, 0, 0, .6) 70%, rgba(0, 0, 0, .8) 90%), url("/sites/default/files/super_search/SG2025-WebGraphic_750px.jpg");
 		background-size: 115% 115%;
 
 	}
@@ -389,7 +389,7 @@ canvas {
 
 @media (max-width:450px) {
 	canvas {
-		background: no-repeat radial-gradient(rgba(0, 0, 0, .3) 0%, rgba(0, 0, 0, .6) 70%, rgba(0, 0, 0, .8) 90%), url("/modules/custom/summergame/images/SG2025-WebGraphic_750px.jpg");
+		background: no-repeat radial-gradient(rgba(0, 0, 0, .3) 0%, rgba(0, 0, 0, .6) 70%, rgba(0, 0, 0, .8) 90%), url("/sites/default/files/super_search/SG2025-WebGraphic_750px.jpg");
 		background-size: 115% 115%;
 	}
 
