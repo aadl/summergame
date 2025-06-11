@@ -159,7 +159,7 @@ class PlayerController extends ControllerBase {
 
       // Check for cell phone attachment code
       if (preg_match('/^[\d]{6}$/', $player['phone'] ?? '')) {
-        $char = chr(($player['pid'] % 26) + 65);
+        $char = summergame_get_phone_character($player['pid']);
         $player['phone'] = 'TEXT ' . $char . $player['phone'] . ' to 734-327-4200 to connect your phone';
       }
 
@@ -389,8 +389,8 @@ class PlayerController extends ControllerBase {
         }
         $player['phone'] = $code;
         summergame_player_save($player);
-        $char = chr(($player['pid'] % 26) + 65);
-        \Drupal::messenger()->addMessage('TEXT ' . $char. $code . ' to 734-327-4200 (42235) to connect your phone');
+        $char = summergame_get_phone_character($player['pid']);
+        \Drupal::messenger()->addMessage('TEXT ' . $char. $code . ' to 734-327-4200 to connect your phone');
       }
       return new RedirectResponse('/summergame/player/' . $player['pid']);
     }

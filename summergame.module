@@ -273,6 +273,16 @@ function summergame_generate_league_code($pid) {
   }
 }
 
+/**
+ * UTILITY: Get the character to preset the phone merge code for a player,
+ * don't use ambiguous characters like O, I
+ */
+function summergame_get_phone_character($pid) {
+  $characters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  $index = $pid % strlen($characters);
+  return $characters[$index];
+}
+
 function summergame_player_join_league($pid, $league_code) {
   $db = \Drupal::database();
 
