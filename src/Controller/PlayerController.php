@@ -427,7 +427,10 @@ class PlayerController extends ControllerBase {
         $query->condition('type', $filter_type);
       }
       if ($filter_search) {
-        $query->condition('description', '%' . $db->escapeLike($filter_search) . '%', 'LIKE');
+        $orGroup = $query->orConditionGroup()
+          ->condition('description', '%' . $db->escapeLike($filter_search) . '%', 'LIKE')
+          ->condition('metadata', '%' . $db->escapeLike($filter_search) . '%', 'LIKE');
+        $query->condition($orGroup);
       }
       $query->orderBy('timestamp', 'DESC');
       $query->limit(100);
