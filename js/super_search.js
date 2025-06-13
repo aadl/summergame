@@ -442,7 +442,7 @@
 				if (selected.count > 2)
 					if (check(selected.tiles.map((t) => t.id))) {
 						isInteractable = false;
-						handleGuess();
+						handleGuess(selected.tiles);
 						setTimeout(() => {
 							isInteractable = true;
 						}, 400);
@@ -725,8 +725,8 @@
 			}
 		});
 	}
-	function handleGuess() {
-		const ids = selected.tiles.map((t) => {
+	function handleGuess(gTiles) {
+		const ids = gTiles.map((t) => {
 			return t.id;
 		});
 		const body = JSON.stringify({ ids });
@@ -736,7 +736,7 @@
 			body,
 		).then((data) => {
 			if (data.correct) {
-				const c = { tiles: selected.tiles, color: data.color };
+				const c = { tiles: gTiles, color: data.color };
 				res.textContent = "Correct!";
 				correct.push(c);
 				canvas.classList.add("correct");
