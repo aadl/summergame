@@ -146,7 +146,12 @@
 
       // Add Bizcodes
       $.each(data.bizcodes, function(index, element) {
-        L.marker([element.lat, element.lon], {icon: redIcon}).bindPopup(element.bizcode).addTo(bizcodeLayerGroup);
+        // Add admin text to homecode text
+        if (element.text) {
+          element.bizcode += '<p class="homecode-admin">Code: <a href="/summergame/admin/gamecode/' +
+                             element.code_id	 + '">' + element.text + '</a></p>';
+        }
+        L.marker([element.lat, element.lon], {icon: greyIcon}).bindPopup(element.bizcode).addTo(bizcodeLayerGroup);
       });
 
       // Loop through homecode data and create markers
@@ -225,7 +230,7 @@
   // Add layers to map
   var overlayMaps = {
     "Branches <img src=\"https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-violet.png\" height=\"15px\">": branchLayerGroup,
-    "Business Codes <img src=\"https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png\" height=\"15px\">": bizcodeLayerGroup,
+    "Business Codes <img src=\"https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-grey.png\" height=\"15px\">": bizcodeLayerGroup,
     "Lawn Codes": homecodeLayerGroup,
     "< 3 days old <img src=\"https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png\" height=\"15px\">": homecodeLayerGroupA,
     "< 7 days old <img src=\"https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png\" height=\"15px\">": homecodeLayerGroupB,
