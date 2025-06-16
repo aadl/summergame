@@ -1254,7 +1254,7 @@ function summergame_get_active_player() {
       }
 
       $active_player = summergame_player_load($active_player['pid']);
-      if (count($user_players)) {
+      if (count($user_players) && $active_player) {
         $active_player['other_players'] = $user_players;
       }
     }
