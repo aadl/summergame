@@ -1242,19 +1242,27 @@ function summergame_get_active_player() {
       // Determine currently active player
       $userData = \Drupal::service('user.data');
       if ($sg_active_pid = $userData->get('summergame', $user->id(), 'sg_active_pid')) {
+        // Active player preference is set, make sure it's in the list of user players
         foreach ($user_players as $i => $user_player) {
           if ($user_player['pid'] == $sg_active_pid) {
             $active_player = $user_player;
             unset($user_players[$i]);
           }
         }
+        if (!$active_player) {
+          // Active player preference not found, use the first player
+          $active_player = array_shift($user_players);
+          // Remove the active player preference so will default to first player
+          $userData->delete('summergame', $user->id(), 'sg_active_pid');
+        }
       }
       else {
+        // No active player preference set, use the first player
         $active_player = array_shift($user_players);
       }
 
       $active_player = summergame_player_load($active_player['pid']);
-      if (count($user_players) && $active_player) {
+      if (count($user_players)) {
         $active_player['other_players'] = $user_players;
       }
     }
