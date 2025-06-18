@@ -328,9 +328,15 @@ function summergame_player_leagues($player_id) {
   foreach ($db->select('sg_players_leagues', 'spl')->fields('spl')
               ->condition('pid', $player_id)->execute()->fetchAll() as $league) {
     $league_owner = summergame_player_load($league->lid);
+    $league_player_count = $db->select('sg_players_leagues', 'spl')
+                              ->condition('lid', $league->lid)
+                              ->countQuery()
+                              ->execute()
+                              ->fetchField();
     $leagues[] = [
       'lid' => $league->lid,
       'name' => $league_owner['nickname'] ? $league_owner['nickname'] : $league_owner['name'],
+      'player_count' => $league_player_count,
     ];
   }
 
@@ -516,9 +522,9 @@ function summergame_theme() {
     'summergame_league_page' => [
       'variables' => [
         'player' => NULL,
-        'player_leagues' => NULL,
         'league_leaderboard' => NULL,
         'league_id' => NULL,
+        'league_name' => NULL,
         'join_form' => NULL,
       ]
     ]

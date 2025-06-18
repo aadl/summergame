@@ -71,9 +71,7 @@ class DefaultController extends ControllerBase {
       // check if user has acess to this league
       if (summergame_league_access($lid)) {
         $player = summergame_get_active_player();
-
-        // Get League list for Player
-        $player_leagues = summergame_player_leagues($player['pid']);
+        $league_owner = summergame_player_load($lid);
 
         return [
           '#theme' => 'summergame_league_page',
@@ -83,8 +81,8 @@ class DefaultController extends ControllerBase {
             ]
           ],
           '#player' => $player,
-          '#league_id'=> (int)$lid,
-          '#player_leagues' => $player_leagues,
+          '#league_id' => (int)$lid,
+          '#league_name' => $league_owner['nickname'] ? $league_owner['nickname'] : $league_owner['name'],
           '#league_leaderboard' => summergame_league_leaderboard($lid),
         ];
       }
