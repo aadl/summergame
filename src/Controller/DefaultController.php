@@ -61,6 +61,7 @@ class DefaultController extends ControllerBase {
       '#range' => $range,
       '#staff' => $staff,
       '#sg_admin' => \Drupal::currentUser()->hasPermission('administer summergame'),
+      '#leagues_enabled' => \Drupal::config('summergame.settings')->get('summergame_leagues_enabled'),
       '#leaderboard_timestamp' => $leaderboard['timestamp'],
       '#leaderboard' => $leaderboard['rows'],
     ];

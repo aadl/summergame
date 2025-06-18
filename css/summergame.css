@@ -65,6 +65,10 @@
   padding:1em;
   margin-top: 1em;
 }
+.leagues .manage-leagues h3 {
+  margin-top: 0;
+  margin-bottom: 0;
+}
 
 .leagues .generate-league-wrapper #summergame-league-code-form {
   width:100%;

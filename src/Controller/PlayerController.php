@@ -550,7 +550,17 @@ class PlayerController extends ControllerBase {
 
   public function leagues($pid = 0) {
     if (\Drupal::config('summergame.settings')->get('summergame_leagues_enabled')) {
-      if ($player = summergame_player_load(['pid' => $pid])) {
+      $pid = (int)$pid;
+      if ($pid) {
+        $player = summergame_player_load(['pid' => $pid]);
+      }
+      else {
+        // Default to the active player if none specified
+        if ($player = summergame_get_active_player()) {
+          return new RedirectResponse('/summergame/player/' . $player['pid'] . '/leagues');
+        }
+      }
+      if ($player) {
         // Check if user has access to this player
         if (!summergame_player_access($player['pid'])) {
           \Drupal::messenger()->addError("You do not have access to Player #{$player['pid']}'s leagues");

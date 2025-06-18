@@ -160,18 +160,13 @@ function summergame_leaderboard_update() {
   $redis->set("summergame:leaderboard:timestamp", time());
 }
 
-function summergame_leagues_leaderboard_update() {
+function summergame_leagues_leaderboard_update($lid = 0) {
   $db = \Drupal::database();
   $redis = new Client(\Drupal::config('summergame.settings')->get('summergame_redis_conn'));
 
-  // Find all players with league codes
-  $league_ids = $db->select('sg_players', 'sp')
-                   ->fields('sp', ['pid'])
-                   ->condition('league_code', '', '!=')
-                   ->execute()
-                   ->fetchCol();
+  $lid = (int)$lid;
 
-  foreach ($league_ids as $league_id) {
+  if ($lid) {
     // Build the league leaderboard
     $leaderboard = [];
     $league_pids = $db->select('sg_players_leagues', 'spl')
@@ -216,6 +211,19 @@ function summergame_leagues_leaderboard_update() {
       if (count($leaderboard)) {
         $redis->set("summergame:leaderboard:league:$league_id", json_encode($leaderboard));
       }
+    }
+  }
+  else {
+    // Find all players with league codes
+    $league_ids = $db->select('sg_players', 'sp')
+                    ->fields('sp', ['pid'])
+                    ->condition('league_code', '', '!=')
+                    ->execute()
+                    ->fetchCol();
+
+    // Update each league leaderboard
+    foreach ($league_ids as $league_id) {
+      summergame_leagues_leaderboard_update($league_id);
     }
   }
 }
@@ -299,6 +307,9 @@ function summergame_player_join_league($pid, $league_code) {
 
   $owner_name = $league_owner['nickname'] ? $league_owner['nickname'] : $league_owner['name'];
   \Drupal::messenger()->addStatus(t("You have joined $owner_name's league", ['%owner_name' => $owner_name]));
+
+  // Update the league leaderboard
+  summergame_leagues_leaderboard_update($league_owner['pid']);
 }
 
 function summergame_league_leaderboard($league_id) {
@@ -499,6 +510,7 @@ function summergame_theme() {
         'range' => NULL,
         'staff' => NULL,
         'sg_admin' => NULL,
+        'leagues_enabled' => NULL,
         'leaderboard_timestamp' => NULL,
         'leaderboard' => NULL,
       ]
