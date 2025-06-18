@@ -21,6 +21,9 @@
     {# Points Summary #}
     <div id="player-points-summary">
       <h2>Points Summary</h2>
+      {% if points|length == 1 and points.career == 0 %}
+
+      {% else %}
       <table class="account-summary not-fixed-table">
         <tr><th>Game</th><th>Points</th></tr>
         {% for game_term, player_game_points in points %}
@@ -29,6 +32,7 @@
           {% endif %}
         {% endfor %}
       </table>
+      {% endif %}
       <br>
       <br>
       <a href="#scorecards">See previous game scorecards</a>
