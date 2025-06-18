@@ -6,13 +6,6 @@
 <div class="leagues">
 
 {% if league_id  %}
-  {% set league_name = "" %}
-  {% for league in player_leagues %}
-    {% if league_id|number_format == league.lid|number_format %}
-      {% set league_name = league.name %}
-    {% endif %}
-  {% endfor %}
-
   <div class="league-leaderboard">
   <h1>{{ league_name }}'s League</h1>
   <p>
@@ -51,24 +44,5 @@
 {% endif %}
 
 <p><a href="/summergame/player/{{ player.pid }}/leagues">≪ Return to player's Leagues</a></p>
-
-<div>
-  <h3>Your Leagues: </h3>
-  {% if player_leagues|length > 0 %}
-  <ul>
-    {% for league in player_leagues %}
-      <li>
-      {% if league.lid == league_id %}
-        {{ league.name }}'s League
-      {% else %}
-        <a href="/summergame/league/{{ league.lid }}">{{ league.name }}'s League</a>
-      {% endif %}
-      </li>
-    {% endfor %}
-  </ul>
-  {% else %}
-  <p>No leagues joined</p>
-  {% endif %}
-</div>
 
 </div>

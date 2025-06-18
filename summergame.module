@@ -160,18 +160,13 @@ function summergame_leaderboard_update() {
   $redis->set("summergame:leaderboard:timestamp", time());
 }
 
-function summergame_leagues_leaderboard_update() {
+function summergame_leagues_leaderboard_update($league_id = 0) {
   $db = \Drupal::database();
   $redis = new Client(\Drupal::config('summergame.settings')->get('summergame_redis_conn'));
 
-  // Find all players with league codes
-  $league_ids = $db->select('sg_players', 'sp')
-                   ->fields('sp', ['pid'])
-                   ->condition('league_code', '', '!=')
-                   ->execute()
-                   ->fetchCol();
+  $league_id = (int)$league_id;
 
-  foreach ($league_ids as $league_id) {
+  if ($league_id) {
     // Build the league leaderboard
     $leaderboard = [];
     $league_pids = $db->select('sg_players_leagues', 'spl')
@@ -216,6 +211,19 @@ function summergame_leagues_leaderboard_update() {
       if (count($leaderboard)) {
         $redis->set("summergame:leaderboard:league:$league_id", json_encode($leaderboard));
       }
+    }
+  }
+  else {
+    // Find all players with league codes
+    $league_ids = $db->select('sg_players', 'sp')
+                    ->fields('sp', ['pid'])
+                    ->condition('league_code', '', '!=')
+                    ->execute()
+                    ->fetchCol();
+
+    // Update each league leaderboard
+    foreach ($league_ids as $league_id) {
+      summergame_leagues_leaderboard_update($league_id);
     }
   }
 }
@@ -299,6 +307,9 @@ function summergame_player_join_league($pid, $league_code) {
 
   $owner_name = $league_owner['nickname'] ? $league_owner['nickname'] : $league_owner['name'];
   \Drupal::messenger()->addStatus(t("You have joined $owner_name's league", ['%owner_name' => $owner_name]));
+
+  // Update the league leaderboard
+  summergame_leagues_leaderboard_update($league_owner['pid']);
 }
 
 function summergame_league_leaderboard($league_id) {
@@ -328,9 +339,15 @@ function summergame_player_leagues($player_id) {
   foreach ($db->select('sg_players_leagues', 'spl')->fields('spl')
               ->condition('pid', $player_id)->execute()->fetchAll() as $league) {
     $league_owner = summergame_player_load($league->lid);
+    $league_player_count = $db->select('sg_players_leagues', 'spl')
+                              ->condition('lid', $league->lid)
+                              ->countQuery()
+                              ->execute()
+                              ->fetchField();
     $leagues[] = [
       'lid' => $league->lid,
       'name' => $league_owner['nickname'] ? $league_owner['nickname'] : $league_owner['name'],
+      'player_count' => $league_player_count,
     ];
   }
 
@@ -503,6 +520,7 @@ function summergame_theme() {
         'range' => NULL,
         'staff' => NULL,
         'sg_admin' => NULL,
+        'leagues_enabled' => NULL,
         'leaderboard_timestamp' => NULL,
         'leaderboard' => NULL,
       ]
@@ -526,9 +544,9 @@ function summergame_theme() {
     'summergame_league_page' => [
       'variables' => [
         'player' => NULL,
-        'player_leagues' => NULL,
         'league_leaderboard' => NULL,
         'league_id' => NULL,
+        'league_name' => NULL,
         'join_form' => NULL,
       ]
     ]

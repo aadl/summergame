@@ -27,7 +27,10 @@ class SummerGameLeagueCodeForm extends FormBase {
 
     if ($player['league_code']) {
       $form['league_code'] = [
-        '#markup' => '<h3>Your League Code: ' . $player['league_code'] . '</h3>'
+        '#markup' => '<h3>Your League Code: ' . $player['league_code'] . '</h3>' .
+                     '<p>Share this code with friends to let them join your league.</p>' .
+                     '<p>Anyone with this code can join your league, so <strong>be mindful of how you share it!!</strong></p>' .
+                     '<p>The name of your league will be your player name (no, we can\'t change it).</p>',
       ];
       $form['pid'] = [
         '#type' => 'value',
@@ -47,9 +50,15 @@ class SummerGameLeagueCodeForm extends FormBase {
         '#type' => 'value',
         '#value' => $player['pid'],
       ];
+      $form['explaination'] = [
+        '#markup' => '<h3>Make Your Own League</h3>' .
+                     '<p>Click the Make My League button to make your league. It will make a randomized code that you can share with friends who want to join. ' .
+                     'Anyone with that code can join your league, so <strong>be mindful of how you share it!!</strong></p>' .
+                     "<p>The name of your league will be your player name (no, we can't change it).</p>",
+      ];
       $form['create'] = [
         '#type' => 'submit',
-        '#value' => t('Generate League Code'),
+        '#value' => t('Make My League'),
       ];
     }
     return $form;

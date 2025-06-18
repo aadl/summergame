@@ -34,7 +34,7 @@ class SummerGameLeagueJoinForm extends FormBase {
       '#value' => $player['pid'],
     ];
     $form['explaination'] = [
-      '#markup' => '<h3>Join a league ' /*. ($player['nickname'] ? $player['nickname'] : $player['name']) */. '</h3>'
+      '#markup' => '<h3>JOIN A LEAGUE</h3>'
     ];
     $form['league_code'] = [
       '#type' => 'textfield',

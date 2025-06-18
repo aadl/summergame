@@ -54,6 +54,9 @@
       The Leaderboard updates once a day after midnight. Check back tomorrow to see points scored today.
       Updated {{ leaderboard_timestamp|date("l, F j, Y H:i:j") }}
     </p>
+    {% if leagues_enabled %}
+      <p>Looking for a private leaderboard for you and your friends? Check out <a href="/summergame/player/0/leagues">Summer Game Leagues</a>!</p>
+    {% endif %}
     <table>
     <tr>
       <th>Place</th>
