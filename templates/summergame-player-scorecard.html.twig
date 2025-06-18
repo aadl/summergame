@@ -27,6 +27,10 @@
                   {% endif %}
                 </table>
 
+                <div class="scorecard-buttons">
+                    <a class="button" href="/summergame/player/{{ player.pid }}/ledger?term={{ page_game_term }}">See Full Scorecard</a>
+                </div>
+
                 <p>Points date range: <br>
                 {{ player_game_points.min_timestamp|date('F j, Y, g:i a') }} -<br>
                 {{ player_game_points.max_timestamp|date('F j, Y, g:i a') }}</p>
