@@ -160,13 +160,13 @@ function summergame_leaderboard_update() {
   $redis->set("summergame:leaderboard:timestamp", time());
 }
 
-function summergame_leagues_leaderboard_update($lid = 0) {
+function summergame_leagues_leaderboard_update($league_id = 0) {
   $db = \Drupal::database();
   $redis = new Client(\Drupal::config('summergame.settings')->get('summergame_redis_conn'));
 
-  $lid = (int)$lid;
+  $league_id = (int)$league_id;
 
-  if ($lid) {
+  if ($league_id) {
     // Build the league leaderboard
     $leaderboard = [];
     $league_pids = $db->select('sg_players_leagues', 'spl')
