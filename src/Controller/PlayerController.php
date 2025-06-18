@@ -230,7 +230,8 @@ class PlayerController extends ControllerBase {
         '#player_access' => $player_access,
         '#other_players' => $other_players,
         '#quick_transfer' => $quick_transfer,
-        '#points' => summergame_get_player_points($player['pid']),
+        '#points' => summergame_get_player_points($player['pid'], $current_game_term),
+        '#game_terms_played'=>summergame_get_player_game_terms($pid),
         '#balances' => $balances,
         '#pointsomatic_weekly_totals' => $pointsomatic_weekly_totals,
         '#progress' => $progress,
@@ -265,6 +266,83 @@ class PlayerController extends ControllerBase {
     // }
 
     return $render;
+  }
+
+  public function get_game_term_scorecard($pid, $game_term){
+   $user = \Drupal::currentUser();
+    if (!$user->isAuthenticated()) {
+      return new RedirectResponse('/user/login?destination=/summergame/player');
+    }
+
+
+    $pid = (int) $pid;
+
+    if ($pid) {
+      $player = summergame_player_load(['pid' => $pid]);
+    }
+    else {
+      // Default to the active player if none specified
+      if ($player = summergame_get_active_player()) {
+        return new RedirectResponse('/summergame/player/' . $player['pid']);
+      }
+    }
+
+    //verify game_term
+    if ($player) {
+      $summergame_settings = \Drupal::config('summergame.settings');
+
+      $player_access = summergame_player_access($player['pid']);
+
+      // Check if player's score card is private and we don't have access
+      if (!$player['show_myscore'] && !$player_access) {
+        \Drupal::messenger()->addError("Player #$pid's Score Card is private");
+        return $this->redirect('<front>');
+      }
+
+
+      $game_terms = summergame_get_player_game_terms($player['pid']);
+      if (!in_array($game_term, $game_terms)) {
+        $points = NULL;
+        $game_term_valid = false;
+      } else {
+        $points = summergame_get_player_points($player['pid'], $game_term);
+        $game_term_valid = true;
+      }
+
+      //logic for controller goes here
+      $renderArray = [
+        '#theme' => 'summergame_player_scorecard',
+        '#points' => $points,
+        '#game_term_valid'=>$game_term_valid,
+        '#page_game_term' => $game_term,
+        '#player' => $player,
+        '#directory'=>'themes/custom/aadl',
+        '#attached'=>[
+          'library'=> array('summergame/summergame-lib'),
+          ],
+        '#cache' => ['max-age' => 0]
+      ];
+
+      return $renderArray;
+
+    } else {
+      // invalid PID or not authorized
+      if ($pid) {
+        \Drupal::messenger()->addError('Invalid Player ID: ' . $pid);
+        return $this->redirect('<front>');
+      }
+      else {
+        if ($user->id()) {
+          return $this->redirect('summergame.player.new');
+        }
+        else {
+          \Drupal::messenger()->addMessage('You must log into a website account in order to access your Player page');
+          return new RedirectResponse('/user/login?destination=summergame/player');
+        }
+      }
+    }
+
+
   }
 
   private function auth_redemptions($pid, $type) {
