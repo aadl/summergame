@@ -89,5 +89,9 @@
   margin-bottom: 3em;
   padding-bottom:1em;
   border-bottom:1px solid #999;
+}
 
+.league-leave {
+  float: right;
+  text-align: right;
 }

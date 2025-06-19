@@ -81,6 +81,9 @@ class DefaultController extends ControllerBase {
               'summergame/summergame-lib'
             ]
           ],
+          '#cache' => [
+            'max-age' => 0, // Don't cache, always get fresh data
+          ],
           '#player' => $player,
           '#league_id' => (int)$lid,
           '#league_name' => $league_owner['nickname'] ? $league_owner['nickname'] : $league_owner['name'],

@@ -43,6 +43,10 @@
   {% endif %}
 {% endif %}
 
+{% if player.pid != league_id %}
+  <p class="league-leave"><a href="/summergame/league/{{ league_id }}/leave/{{ player.pid }}">Leave this League</a></p>
+{% endif %}
+
 <p><a href="/summergame/player/{{ player.pid }}/leagues">≪ Return to player's Leagues</a></p>
 
 </div>
