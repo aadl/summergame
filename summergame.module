@@ -301,6 +301,18 @@ function summergame_player_join_league($pid, $league_code) {
     return;
   }
 
+  // Check if the player is already in the league
+  $member = $db->select('sg_players_leagues', 'spl')
+               ->fields('spl', ['pid'])
+               ->condition('pid', $pid)
+               ->condition('lid', $league_owner['pid'])
+               ->execute()
+               ->fetchField();
+  if ($member) {
+    \Drupal::messenger()->addError("Player #$pid is already a member of this league.");
+    return;
+  }
+
   $db->insert('sg_players_leagues')
      ->fields(['pid' => $pid, 'lid' => $league_owner['pid']])
      ->execute();
