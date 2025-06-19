@@ -30,15 +30,13 @@ class SummerGameLeagueCodeForm extends FormBase {
         '#markup' => '<h3>Your League Code: ' . $player['league_code'] . '</h3>' .
                      '<p>Share this code with friends to let them join your league.</p>' .
                      '<p>Anyone with this code can join your league, so <strong>be mindful of how you share it!!</strong></p>' .
-                     '<p>The name of your league will be your player name (no, we can\'t change it).</p>',
-      ];
-      $form['pid'] = [
-        '#type' => 'value',
-        '#value' => $player['pid'],
+                     '<p>The name of your league is your player name (no, we can\'t change it).</p>',
       ];
       $form['delete'] = [
-        '#type' => 'submit',
-        '#value' => t('Delete League'),
+        '#type' => 'link',
+        '#title' => $this->t('Delete My League'),
+        '#url' => Url::fromRoute('summergame.league.delete', ['league_id' => $pid]),
+        '#suffix' => '</div>'
       ];
     }
     else {
