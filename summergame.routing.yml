@@ -236,6 +236,13 @@ summergame.league:
     lid: 0
   requirements:
     _permission: 'access summergame'
+summergame.league.delete:
+  path: '/summergame/league/{league_id}/delete'
+  defaults:
+    _title: 'Delete League'
+    _form: '\Drupal\summergame\Form\SummerGameLeagueDeleteForm'
+  requirements:
+    _permission: 'access summergame'
 summergame.geocode:
   path: '/summergame/geocode/{address}'
   defaults:
