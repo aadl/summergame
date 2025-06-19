@@ -191,7 +191,7 @@ class PlayerController extends ControllerBase {
       // Get Player Balances
       $balances = [];
       if (\Drupal::moduleHandler()->moduleExists('commerce_summergame')) {
-        $balances = commerce_summergame_get_player_balances($player['pid']);
+        $balances = commerce_summergame_get_player_balances($player['pid'], $commerce_shop_term);
       }
 
       // Get Points-o-Matic weekly scores
