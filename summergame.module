@@ -157,6 +157,11 @@ function summergame_leaderboard_update() {
       }
     }
   }
+
+  // Update league leaderboards
+  summergame_leagues_leaderboard_update();
+
+  // Update timestamp
   $redis->set("summergame:leaderboard:timestamp", time());
 }
 
