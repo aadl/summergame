@@ -71,7 +71,14 @@ class DefaultController extends ControllerBase {
     if (\Drupal::config('summergame.settings')->get('summergame_leagues_enabled')) {
       // check if user has acess to this league
       if (summergame_league_access($lid)) {
-        $player = summergame_get_active_player();
+        // Grab current user player ids for leave links
+        $user = \Drupal::currentUser();
+        $user_players = summergame_player_load_all($user->id());
+        $user_pids = [];
+        foreach ($user_players as $player) {
+          $user_pids[] = $player['pid'];
+        }
+
         $league_owner = summergame_player_load($lid);
 
         return [
@@ -84,7 +91,8 @@ class DefaultController extends ControllerBase {
           '#cache' => [
             'max-age' => 0, // Don't cache, always get fresh data
           ],
-          '#player' => $player,
+          '#user_pids' => $user_pids,
+          '#sg_admin' => $user->hasPermission('administer summergame'),
           '#league_id' => (int)$lid,
           '#league_name' => $league_owner['nickname'] ? $league_owner['nickname'] : $league_owner['name'],
           '#league_leaderboard' => summergame_league_leaderboard($lid),

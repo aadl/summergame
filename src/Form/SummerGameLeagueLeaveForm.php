@@ -34,7 +34,8 @@ class SummerGameLeagueLeaveForm extends FormBase {
     }
 
     if (summergame_player_access($pid) && summergame_league_access($league_id)) {
-      $db = \Drupal::database();
+      $player = summergame_player_load($pid);
+      $player_name = $player['nickname'] ? $player['nickname'] : $player['name'];
       $league_owner = summergame_player_load($league_id);
       $league_name = $league_owner['nickname'] ? $league_owner['nickname'] : $league_owner['name'];
 
@@ -49,7 +50,7 @@ class SummerGameLeagueLeaveForm extends FormBase {
         '#value' => $league_id,
       ];
       $form['warning'] = [
-        '#markup' => "<h1>Leave League</h1><p>Are you sure you want to leave $league_name's League?</p>" .
+        '#markup' => "<h1>Leave League</h1><p>Are you sure you want $player_name to leave $league_name's League?</p>" .
                      "<p>If you wish to rejoin you will need to reenter the league code. This action cannot be undone.</p>",
       ];
       $form['inline'] = [

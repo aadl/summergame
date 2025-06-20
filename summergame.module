@@ -565,11 +565,11 @@ function summergame_theme() {
     ],
     'summergame_league_page' => [
       'variables' => [
-        'player' => NULL,
+        'user_pids' => NULL,
+        'sg_admin' => NULL,
         'league_leaderboard' => NULL,
         'league_id' => NULL,
         'league_name' => NULL,
-        'join_form' => NULL,
       ]
     ]
   ];

@@ -17,6 +17,7 @@
     <th>Place</th>
     <th>Player</th>
     <th>Total Score</th>
+    <th>&nbsp;</th>
   </tr>
 
   {% if league_leaderboard.rows|length > 0 %}
@@ -31,6 +32,11 @@
           {% endif %}
         </td>
         <td>{{ row.score }}</td>
+        <td>
+        {% if ((row.pid in user_pids) or sg_admin) and row.pid != league_id %}
+        [ <a href="/summergame/league/{{ league_id }}/leave/{{ row.pid }}" title="Leave this League?">X</a> ]
+        {% endif %}
+        </td>
       </tr>
     {% endfor %}
   {% else %}
@@ -43,10 +49,6 @@
   {% endif %}
 {% endif %}
 
-{% if player.pid != league_id %}
-  <p class="league-leave"><a href="/summergame/league/{{ league_id }}/leave/{{ player.pid }}">Leave this League</a></p>
-{% endif %}
-
-<p><a href="/summergame/player/{{ player.pid }}/leagues">≪ Return to player's Leagues</a></p>
+<p><a href="/summergame/player/{{ user_pids|first }}/leagues">≪ Return to My Leagues</a></p>
 
 </div>
