@@ -273,6 +273,9 @@ function summergame_generate_league_code($pid) {
      ->fields(['pid' => $pid, 'lid' => $pid])
      ->execute();
 
+    // Create the league leaderboard
+    summergame_leagues_leaderboard_update($pid);
+
     return $code;
   }
   else {
