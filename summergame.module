@@ -1350,18 +1350,19 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
   ];
 
 
-  $query = 'SELECT * FROM sg_ledger WHERE pid = :pid';
+  $query = "SELECT SUM(points) AS total, MIN(timestamp) as min_timestamp,  MAX(timestamp) as max_timestamp, game_term, type, (CASE WHEN metadata LIKE '%leaderboard:no%' THEN 'leaderboard:no' WHEN metadata NOT LIKE '%leaderboard:no%' THEN '' END) as leader from sg_ledger WHERE pid = :pid";
+
   $args = [':pid' => $pid];
   if ($game_term != '') {
     $query .= " AND game_term = :game_term";
     $args[':game_term'] = $game_term;
     $term_filter = TRUE;
   }
-  if ($type) {
+  if ($type !== '') {
     $query .= " AND type = :type";
     $args[':type'] = $type;
   }
-  $query .= ' ORDER BY timestamp DESC';
+  $query .= " group by game_term, type,  (CASE WHEN metadata LIKE '%leaderboard:no%' THEN 'leaderboard:no' WHEN metadata NOT LIKE '%leaderboard:no%' THEN '' END)";
 
 
   $db = \Drupal::database();
@@ -1371,7 +1372,7 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
     if (!$term_filter) {
       $game_term = $row['game_term'];
     }
-    
+
     $type = $row['type'];
 
     // if game term is not set, initialize point values
@@ -1380,21 +1381,16 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
         'balance' => 0,
         'total' => 0,
         'prize_count' => 0,
-        'max_timestamp' => (int)$row['timestamp'],
-        'min_timestamp' => (int)$row['timestamp'],
+        'max_timestamp' => (int)$row['min_timestamp'],
+        'min_timestamp' => (int)$row['max_timestamp'],
       ];
     }
     else {
       // Check min timestamp for game term
       // (row sort is timestamp DESC so max_timestamp is always set with first row of game term)
-      if ($row['timestamp'] < $player_points[$game_term]['min_timestamp']) {
-        $player_points[$game_term]['min_timestamp'] = $row['timestamp'];
+      if ($row['min_timestamp'] < $player_points[$game_term]['min_timestamp'] && $row['game_term'] == $game_term) {
+        $player_points[$game_term]['min_timestamp'] = $row['min_timestamp'];
       }
-    }
-
-    // Only include ledger rows if filtered to a game term
-    if ($term_filter) {
-      $player_points[$game_term]['ledger'][] = $row;
     }
 
     // if type for this game term is not set, initialize point value
@@ -1402,19 +1398,44 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
       $player_points[$game_term]['types'][$type] = 0;
     }
 
-    $player_points[$game_term]['balance'] += $row['points'];
-    $player_points[$game_term]['types'][$type] += $row['points'];
-    if ($row['points'] > 0 && strpos($row['metadata'], 'leaderboard:no') === FALSE) {
+    if ($row['total'] > 0 && strpos($row['leader'], 'leaderboard:no') === FALSE) {
       // Don't count non-leaderboard points in the total
-      $player_points[$game_term]['total'] += $row['points'];
-      $player_points['career'] += $row['points'];
+
+      $player_points[$game_term]['total'] += $row['total'];
+      $player_points[$game_term]['balance'] += $row['total'];
+      $player_points[$game_term]['types'][$type] += $row['total'];
+      $player_points['career'] += $row['total'];
+    } else {
+      $player_points[$game_term]['balance'] += $row['total'];
     }
-    if (preg_match('/prize_count:(-?\d+)/', $row['metadata'], $matches)) {
-      $player_points[$game_term]['prize_count'] += $matches[1];
+
+  }
+
+
+  //$regexp = 'prize_count:(-?[0-9]+)';
+  $query = $db->select('sg_ledger', 'sg_ledger')
+  ->condition('pid', $pid, '=');
+  if ($term_filter) {
+    $query = $query->condition('game_term', $game_term, '=');
+  }
+  $query = $query->condition('metadata', 'delete:no leaderboard:no prize_count:%', 'LIKE');
+  $query->fields('sg_ledger', ['metadata', 'game_term']);
+
+  $result = $query->execute();
+
+  foreach ($result as $row) {    
+
+    if (!$term_filter) {
+      $game_term = $row->game_term;
+    }
+
+    if (preg_match('/prize_count:(-?\d+)/', $row->metadata, $matches)) {
+      $player_points[$game_term]['prize_count'] += (int)$matches[1];
     }
     else {
       $player_points[$game_term]['prize_count'] += 0;
     }
+
   }
 
   // Sort type points
@@ -1476,9 +1497,9 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
     $player_points[$game_term]['badges'][] = $badge;
   }
 
+
   return $player_points;
 }
-
 
 function summergame_get_player_game_terms($pid){
   $query = 'SELECT DISTINCT game_term FROM sg_ledger WHERE pid = :pid AND points <> 0 ORDER BY game_term DESC';
