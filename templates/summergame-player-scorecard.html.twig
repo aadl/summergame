@@ -3,30 +3,17 @@
  * Summer Game Player Page
  */
 #}
+{% if game_term_valid %}
+<h1 class="t-center ruled-heading large-heading"><span>{{ page_game_term }} Scorecard</span></h1>
 
-<h1 class="t-center ruled-heading large-heading"><span>My Game Players</span></h1>
 <div class="sidebar-container">
   <div class="page-with-sidebar-content">
-    <div id="summergame-player-page">
-      {% if player_access %}
-        {% include('@summergame/summergame-player-info.html.twig') %}
-      {% endif %}
-      {# Player Score #}
 
-      {% for game_term, player_game_points in points %}
+{% for game_term, player_game_points in points %}
+
+  {% if game_term == page_game_term %}
         {% if player_game_points.total or player_game_points.balance %}
           <div class="scorecard">
-            {% if loop.index0 != 1 %}
-              <div class="facets-toggle">
-                <span class="facets-toggle-icon">
-                  <span class="facets-toggle-symbol">+</span>
-                </span>
-                <h2 id="{{ game_term }}" class="l-inline-b no-margin-bottom">{{ game_term }} Scorecard</h2>
-              </div>
-            {% else %}
-              <h2 id="{{ game_term }}" class="l-inline-b no-margin-bottom">{{ game_term }} Scorecard</h2>
-            {% endif %}
-            <div {% if loop.index0 != 1 %} class="no-display" {% endif %}>
               <div class="player-points">
                 <h3 class="no-margin-bottom">Points</h3>
                 <table>
@@ -43,7 +30,7 @@
                 </table>
 
                 <div class="scorecard-buttons">
-                    <a class="button" href="/summergame/player/{{ player.pid }}/ledger?term={{ game_term }}">See Full Scorecard</a>
+                    <a class="button" href="/summergame/player/{{ player.pid }}/ledger?term={{ page_game_term }}">See Full Scorecard</a>
                 </div>
 
                 <p>Points date range: <br>
@@ -70,19 +57,16 @@
                   {% endif %}
                 </div>
               {% endif %}
-            </div>
+     
           </div> <!-- .scorecard -->
         {% endif %}
+        {% endif %}
       {% endfor %}
-
-      <br><br>
-      <div id="scorecards">
-      {% for game_term in game_terms_played %}
-        <h2><a href="/summergame/scorecard/{{ player.pid }}/{{ game_term }}" target="_blank">{{ game_term }} Scorecard</a></h2>
-      {% endfor %}
-      </div>
-
-    </div>
+      <a href="/summergame/player/{{ player.pid }}">Back to My Player</a>
   </div>
   {% include directory ~ "/templates/base/nodes/sidebars/summergame.html.twig" %}
 </div>
+{% endif %}
+{% if not game_term_valid %}
+<p>You don't have any points in this game term</p>
+{% endif %}

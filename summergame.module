@@ -500,6 +500,7 @@ function summergame_theme() {
         'other_players' => NULL,
         'quick_transfer' => NULL,
         'points' => NULL,
+        'game_terms_played' => NULL,
         'balances' => NULL,
         'pointsomatic_weekly_totals' => NULL,
         'progress' => NULL,
@@ -513,6 +514,15 @@ function summergame_theme() {
         'homecode' => NULL,
         'game_display_name' => NULL,
         'summergame_leagues_enabled' => NULL,
+      ],
+    ],
+    'summergame_player_scorecard' => [
+      'variables' => [
+        'points' => NULL,
+        'game_term_valid' => FALSE,
+        'page_game_term' => NULL,
+        'player' => NULL,
+        'directory'=>'themes/custom/aadl',
       ],
     ],
     'summergame_player_ledger' => [
@@ -1334,13 +1344,15 @@ function summergame_get_active_player() {
  */
 function summergame_get_player_points($pid, $game_term = '', $type = '') {
   $term_filter = FALSE;
+
   $player_points = [
     'career' => 0,
   ];
 
+
   $query = 'SELECT * FROM sg_ledger WHERE pid = :pid';
   $args = [':pid' => $pid];
-  if ($game_term) {
+  if ($game_term != '') {
     $query .= " AND game_term = :game_term";
     $args[':game_term'] = $game_term;
     $term_filter = TRUE;
@@ -1351,17 +1363,16 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
   }
   $query .= ' ORDER BY timestamp DESC';
 
+
   $db = \Drupal::database();
   $res = $db->query($query, $args);
 
   while ($row = $res->fetchAssoc()) {
-    $game_term = $row['game_term'];
-    $type = $row['type'];
-
-    // Only include ledger rows if filtered to a game term
-    if ($term_filter) {
-      $player_points[$game_term]['ledger'][] = $row;
+    if (!$term_filter) {
+      $game_term = $row['game_term'];
     }
+    
+    $type = $row['type'];
 
     // if game term is not set, initialize point values
     if (!isset($player_points[$game_term])) {
@@ -1369,8 +1380,8 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
         'balance' => 0,
         'total' => 0,
         'prize_count' => 0,
-        'max_timestamp' => $row['timestamp'],
-        'min_timestamp' => $row['timestamp'],
+        'max_timestamp' => (int)$row['timestamp'],
+        'min_timestamp' => (int)$row['timestamp'],
       ];
     }
     else {
@@ -1379,6 +1390,11 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
       if ($row['timestamp'] < $player_points[$game_term]['min_timestamp']) {
         $player_points[$game_term]['min_timestamp'] = $row['timestamp'];
       }
+    }
+
+    // Only include ledger rows if filtered to a game term
+    if ($term_filter) {
+      $player_points[$game_term]['ledger'][] = $row;
     }
 
     // if type for this game term is not set, initialize point value
@@ -1409,9 +1425,19 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
   }
 
   // Get old badges
+  $params = [':pid' => $pid];
+  $game_term_filter = "";
+  $new_game_term_filter = "";
+  if ($game_term !== "") {
+    $game_term_filter = " AND sg_badges.game_term = :game_term ";
+    $new_game_term_filter = " AND gt.field_badge_game_term_value = :game_term ";
+
+    $params[':game_term'] = $game_term;
+  }
+
   $res = $db->query("SELECT * FROM sg_players_badges, sg_badges " .
-                    "WHERE sg_players_badges.pid = :pid AND sg_players_badges.bid = sg_badges.bid " .
-                    "ORDER BY sg_players_badges.timestamp ASC", [':pid' => $pid]);
+                    "WHERE sg_players_badges.pid = :pid AND sg_players_badges.bid = sg_badges.bid " . $game_term_filter .
+                    "ORDER BY sg_players_badges.timestamp ASC", $params);
   while ($badge = $res->fetchAssoc()) {
     $game_term = $badge['game_term'];
     $badge['img'] = '/files/old-sg-images/' . $badge['image'] . '_100.png';
@@ -1426,8 +1452,8 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
   $res = $db->query("SELECT gt.entity_id AS bid, gt.field_badge_game_term_value AS game_term, b.bid AS pbid " .
                     "FROM node__field_badge_game_term gt, sg_players_badges b " .
                     "WHERE gt.entity_id = b.bid " .
-                    "AND b.pid = :pid " .
-                    "ORDER BY bid ASC", [':pid' => $pid]);
+                    "AND b.pid = :pid " . $new_game_term_filter .
+                    "ORDER BY bid ASC", $params);
   while ($badge = $res->fetchAssoc()) {
     $game_term = $badge['game_term'];
     $badge['nid'] = $badge['bid'];
@@ -1451,6 +1477,19 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
   }
 
   return $player_points;
+}
+
+
+function summergame_get_player_game_terms($pid){
+  $query = 'SELECT DISTINCT game_term FROM sg_ledger WHERE pid = :pid AND points <> 0 ORDER BY game_term DESC';
+  $args = [':pid' => (int)$pid];
+  $db = \Drupal::database();
+  $res = $db->query($query, $args);
+  $arr = [];
+  while ($row = $res->fetchAssoc()) {
+    $arr[] = $row['game_term'];
+  }
+  return $arr;
 }
 
 /**

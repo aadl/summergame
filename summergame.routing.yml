@@ -129,6 +129,14 @@ summergame.player:
     pid: 0
   requirements:
     _permission: 'access content'
+summergame.player.scorecard:
+  path: '/summergame/scorecard/{pid}/{game_term}'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\PlayerController::get_game_term_scorecard'
+    _title: 'Summer Game Player Scorecard'
+    pid: 0
+  requirements:
+    _permission: 'access content'
 summergame.player.new:
   path: '/summergame/player/new'
   defaults:
