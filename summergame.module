@@ -1339,6 +1339,7 @@ function summergame_get_active_player() {
   return $active_player;
 }
 
+
 /**
  * UTILITY: Load player points
  */
@@ -1362,8 +1363,7 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
     $query .= " AND type = :type";
     $args[':type'] = $type;
   }
-  $query .= " group by game_term, type,  (CASE WHEN metadata LIKE '%leaderboard:no%' THEN 'leaderboard:no' WHEN metadata NOT LIKE '%leaderboard:no%' THEN '' END)";
-
+  $query .= " group by game_term, type,  (CASE WHEN metadata LIKE '%leaderboard:no%' THEN 'leaderboard:no' WHEN metadata NOT LIKE '%leaderboard:no%' THEN '' END) ORDER BY max_timestamp DESC";
 
   $db = \Drupal::database();
   $res = $db->query($query, $args);
@@ -1381,15 +1381,15 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
         'balance' => 0,
         'total' => 0,
         'prize_count' => 0,
-        'max_timestamp' => (int)$row['min_timestamp'],
-        'min_timestamp' => (int)$row['max_timestamp'],
+        'max_timestamp' => (int)$row['max_timestamp'],
+        'min_timestamp' => (int)$row['min_timestamp'],
       ];
     }
     else {
       // Check min timestamp for game term
       // (row sort is timestamp DESC so max_timestamp is always set with first row of game term)
-      if ($row['min_timestamp'] < $player_points[$game_term]['min_timestamp'] && $row['game_term'] == $game_term) {
-        $player_points[$game_term]['min_timestamp'] = $row['min_timestamp'];
+      if ($row['min_timestamp'] < $player_points[$game_term]['min_timestamp']) {
+        $player_points[$game_term]['min_timestamp'] = (int)$row['min_timestamp'];
       }
     }
 
@@ -1406,6 +1406,7 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
       $player_points[$game_term]['types'][$type] += $row['total'];
       $player_points['career'] += $row['total'];
     } else {
+      $player_points[$game_term]['types'][$type] += $row['total'];
       $player_points[$game_term]['balance'] += $row['total'];
     }
 
@@ -1449,7 +1450,7 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
   $params = [':pid' => $pid];
   $game_term_filter = "";
   $new_game_term_filter = "";
-  if ($game_term !== "") {
+  if ($term_filter) {
     $game_term_filter = " AND sg_badges.game_term = :game_term ";
     $new_game_term_filter = " AND gt.field_badge_game_term_value = :game_term ";
 
