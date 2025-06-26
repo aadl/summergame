@@ -5,7 +5,7 @@
 	if (redeem != null) redeem.removeAttribute("autofocus");
 	badgeProgress.insertAdjacentHTML("beforeBegin", "<div class='ss-loader'></div>");
 	let ssHTML =
-		'<div id="ss-container" class="ss-container"><canvas id="triangleCanvas"></canvas><div class="tray"><div class="action-tray"><button id="ss-clear">Clear</button></div><div class="zoom-tray"><button id="ss-zoom-in">+</button><button id="ss-zoom-out">-</button></div></div><div id="ss-result"></div><div class="ss-ui-hint">Hint: once a tile is selected, you may tap/click and drag across to select multiple eligible tiles. Clear the selection to reposition the puzzle.</div><button id="ss-contrast">Enable Contrast Mode</button></div><div class="ss-categories"><h2>Categories & Hints</h2><p>Completed hints will appear with a strikethrough.</p><ol id="ss-hints"></ol></div>';
+		'<div id="ss-container" class="ss-container"><canvas id="triangleCanvas"></canvas><div class="tray"><div class="action-tray"><button id="ss-clear">Deselect</button></div><div class="zoom-tray"><button id="ss-zoom-in">+</button><button id="ss-zoom-out">-</button></div></div><div id="ss-result"></div><div class="ss-ui-hint">Hint: after a tile is selected, tap/click and drag across to select multiple eligible tiles. Or just tap each individually! Deselect the tiles to reposition the puzzle.</div><button id="ss-contrast">Enable Contrast Mode</button></div><div class="ss-categories"><h2>Categories & Hints</h2><p>Completed hints will appear with a strikethrough.</p><ol id="ss-hints"></ol></div>';
 	if (playerRedeem === null) {
 		let solution;
 		if (badgeProgress.getElementsByTagName('h3').length === 0) {
@@ -81,7 +81,7 @@
 	let isMulti = false;
 	let lastX, lastY, dt;
 	const t = 6;
-	let width = canvas.offsetWidth;
+	let width = Math.ceil(canvas.offsetWidth / 2) * 2;
 	sizeCanvas();
 	function sizeCanvas() {
 		canvas.width = width * dpr;
@@ -701,6 +701,7 @@
 	}
 	function handleHint(b) {
 		const id = b.getAttribute("data-hint-id");
+		b.disabled = true;
 		const c = document.querySelector("#ss-revealed-" + id);
 		const r = c.querySelectorAll("li");
 		const revealed = Array.from(r).map((l) => {
@@ -719,6 +720,7 @@
 					c.append(h);
 				} else {
 				}
+			b.disabled = false;
 			if (r.length === 5) {
 				b.disabled = true;
 				b.style.backgroundColor = "#ccc";
