@@ -44,7 +44,7 @@ class SummerGamePlayerRedeemForm extends FormBase {
       '#default_value' => ($_GET['text'] ?? ''),
       '#prefix' => '<div class="container-inline">',
       '#suffix' => '</div>',
-      '#attributes' => ['autofocus' => '']
+      '#attributes' => ['autofocus' => '', 'autocomplete'=>'off', 'autocorrect'=>'off', 'autocapitalize'=>'off', 'spellcheck'=>'false']
     ];
     $all_players = summergame_player_load_all($player['uid']);
     if (count($all_players) > 1) {
