@@ -1954,12 +1954,12 @@ function summergame_player_check_badges($pid, $game_term) {
         $distict_days = [];
         $distinct_count = 0;
 
-        $wc_text_pattern =  "/" . str_replace("%", "(.+)", $text_pattern) . "/";
-        $wc_gamecode_pattern =  "/" . str_replace("%", "(.+)", "gamecode:".$text_pattern."%") . "/";
+        $wc_text_pattern =  "/" . str_replace("%", ".*", $text_pattern) . "$/";
+        $wc_gamecode_pattern =  "/" . str_replace("%", ".*", "gamecode:".$text_pattern."%") . "/";
 
         foreach ($points_rows as $points) {
-
           $day = date('z', $points->timestamp);
+          
           if (!in_array($day, $distict_days) && (preg_match($wc_text_pattern, $points->type) || preg_match($wc_gamecode_pattern, $points->metadata)) ) {
             $distict_days[] = $day;
             $distinct_count++;
@@ -1979,8 +1979,8 @@ function summergame_player_check_badges($pid, $game_term) {
                                   "AND (type LIKE :text_pattern OR metadata LIKE :gamecode_pattern) AND game_term = :game_term",
                                   [':text_pattern' => $text_pattern, ':gamecode_pattern' => "gamecode:$text_pattern%", ':game_term' => $game_term])->fetchObject();*/
             $lid_count = 0;
-            $wc_text_pattern =  "/" . str_replace("%", "(.+)", $text_pattern) . "/";
-            $wc_gamecode_pattern =  "/" . str_replace("%", "(.+)", "gamecode:".$text_pattern."%") . "/";
+            $wc_text_pattern =  "/" . str_replace("%", ".*", $text_pattern) . "$/";
+            $wc_gamecode_pattern =  "/" . str_replace("%", ".*", "gamecode:".$text_pattern."%") . "$/";
             foreach ($points_rows as $points) {
               if ( preg_match($wc_text_pattern, $points->type) || preg_match($wc_gamecode_pattern, $points->metadata) ) {
                 $lid_count++;
@@ -1995,16 +1995,16 @@ function summergame_player_check_badges($pid, $game_term) {
         elseif (count($formula_parts) == 3) {
           // New multiple of a ledger pattern (count::field::pattern)
           list($count_limit, $ledger_field, $text_pattern) = $formula_parts;
-          $lid_count = $db->query("SELECT COUNT(lid) AS lid_count FROM sg_ledger WHERE pid = $pid " .
+          /*$lid_count = $db->query("SELECT COUNT(lid) AS lid_count FROM sg_ledger WHERE pid = $pid " .
                                   'AND game_term = :game_term ' .
                                   "AND $ledger_field LIKE :text_pattern",
-                                  [':game_term' => $game_term, ':text_pattern' => $text_pattern])->fetchObject();
+                                  [':game_term' => $game_term, ':text_pattern' => $text_pattern])->fetchObject();*/
             
             $lid_count = 0;
-            $wc_text_pattern =  "/" . str_replace("%", "(.+)", $text_pattern) . "/";
+            $wc_text_pattern =  "/" . str_replace("%", ".*", $text_pattern) . "/";
 
           foreach ($points_rows as $points) {
-            if (preg_match($wc_text_pattern, $points[$ledger_field])) {
+            if (preg_match($wc_text_pattern, $points->{$ledger_field})) {
               $lid_count++;
             }
 
@@ -2033,8 +2033,8 @@ function summergame_player_check_badges($pid, $game_term) {
          /* $args[':type_' . $i] = $pattern;
             $args[':metadata_' . $i] = 'gamecode:' . $pattern;
             $pattern = "(type LIKE :type_$i OR metadata LIKE :metadata_$i)";*/
-              $wc_text_pattern = "/" . str_replace("%", "(.+)", $pattern) . "/";
-              $wc_gamecode_pattern = "/" . str_replace("%", "(.+)", "gamecode:".$pattern."%") . "/";
+              $wc_text_pattern = "/" . str_replace("%", ".*", $pattern) . "/";
+              $wc_gamecode_pattern = "/" . str_replace("%", ".*", "gamecode:".$pattern."$") . "/";
               if (preg_match($wc_text_pattern, $points->type) || 
                   preg_match($wc_gamecode_pattern, $points->metadata)
               ) {
@@ -2054,10 +2054,10 @@ function summergame_player_check_badges($pid, $game_term) {
 
           //$ledger = $db->query($query, $args)->fetchObject();
 
-          if (!isset($ledger->lid)) {
+          /*if (!isset($ledger->lid)) {
             $eligible = FALSE;
             break;
-          }
+          }*/
         }
         if ($eligible) {
           $awarded = summergame_player_award_badge($pid, $badge->bid);
