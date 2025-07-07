@@ -414,3 +414,10 @@ summergame.aaps.code:
     line_number_hash: null
   requirements:
     _permission: 'access content'
+summergame.all.player.summary:
+  path: '/summergame/user/{uid}/all-players'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\PlayerController::all_player_summary'
+    _title: 'Summer Game All Player Summary'
+  requirements:
+    _permission: 'access summergame'
