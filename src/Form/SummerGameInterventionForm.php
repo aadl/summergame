@@ -79,7 +79,7 @@ class SummerGameInterventionForm extends FormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $to_pid = $form_state->getValue('to_pid');
-    $points = $form_state->getValue('points');
+    $points = preg_replace('/\D/', '', $form_state->getValue('points')); // remove non-digits from points
     $game_term = $form_state->getValue('game_term');
     $description = $form_state->getValue('description');
     $from_pid = $form_state->getValue('from_pid');
