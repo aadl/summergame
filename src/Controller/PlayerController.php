@@ -733,6 +733,30 @@ class PlayerController extends ControllerBase {
     return $response;
   }
 
+  public function all_player_summary($uid = 0){
+    $user = \Drupal::currentUser();
+
+    if ((int)$user->id() !== (int)$uid && !\Drupal::service('permission_checker')->hasPermission('manage summergame', $user)) {
+        return new RedirectResponse('/user/login?destination=/summergame/player');
+    }
+    $players = summergame_player_load_all($uid);
+    foreach ($players as $key => $player) {
+      $player_points = summergame_get_player_points($player['pid']);
+      $commerce_points = commerce_summergame_get_player_balances($player['pid']);
+      $players[$key]['player_points'] = $player_points;
+      $players[$key]['commerce_points'] = $commerce_points;
+    }
+    $renderArray = array(
+      "players"=>$players,
+    );
+    $module_path = \Drupal::service('module_handler')->getModule('summergame')->getpath();
+    $html = $this->renderTwig($module_path."/templates/sg-all-player-summary.html.twig",  $renderArray);
+    return [
+      '#markup' => $html,
+      '#cache' => ['max-age' => 0]
+    ];
+  }
+
   private function renderTwig($template_file, array $variables){
     $renderArray = [
       '#type'     => 'inline_template',

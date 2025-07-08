@@ -1,0 +1,25 @@
+<article>
+  <h1 class="no-margin">All Players Summary</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>Player ID</th>
+        <th>Player Name</th>
+        <th>Player Nickname</th>
+        <th>Total Career Points</th>
+        <th>Total Shop Points</th>
+      </tr>
+    </thead>
+      {% for player in players %}
+        
+      <tr>
+        <td><a href="/summergame/player/{{ player.pid }}">{{ player.pid }}</a></td>
+        <td>{{ player.name }}</td>
+        <td>{{ player.nickname }}</td>
+        <td>{{ player.player_points.career }}</td>
+        <td>{{ player.commerce_points.SummerGame }}</td>
+      </tr>
+        
+      {% endfor %}
+  </table>     
+</article>
