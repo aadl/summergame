@@ -40,6 +40,8 @@ function summergame_is_byteclub_page() {
 }
 
 function summergame_preprocess_html(&$variables) {
+
+
   if (summergame_is_byteclub_page()) {
     $variables['attributes']['class'][] = 'byte-club-skin';
     $module_path = \Drupal::service('module_handler')->getModule('summergame')->getpath();
@@ -1351,9 +1353,36 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
   ];
 
 
-  $query = "SELECT SUM(points) AS total, MIN(timestamp) as min_timestamp,  MAX(timestamp) as max_timestamp, game_term, type, (CASE WHEN metadata LIKE '%leaderboard:no%' THEN 'leaderboard:no' WHEN metadata NOT LIKE '%leaderboard:no%' THEN '' END) as leader from sg_ledger WHERE pid = :pid";
+  //redis setup
+  $after = 0;
+  $using_cache = false;
+  $redis = new Client(\Drupal::config('summergame.settings')->get('summergame_redis_conn'));
+  $cached_points_raw = $redis->get("summergame:points:$pid");
+  if (!is_null($cached_points_raw)) {
+    $cached_points = json_decode($cached_points_raw, true);
+    if($cached_points['timestamp'] > strtotime('-1 hour',time())){
+      // lets use the cache
+      $using_cache = true;
+      $after = $cached_points['timestamp'];
+      $player_points = $cached_points['player_points'];
+      //deload badges and grab them fresh
+      foreach ($player_points as $badge_game_term => $data) {
+        if (isset($player_points[$badge_game_term]['badges'])) {
+          $player_points[$badge_game_term]['badges'] = [];
+        }
+        //unset game terms we don't want here.
+        if ($game_term !== '' && $badge_game_term !== $game_term && $badge_game_term !== 'career') {
+          unset($player_points[$badge_game_term]);
+        }
+      }
+    } else {
+      $redis->del("summergame:points:$pid");
+    }
+  }
 
-  $args = [':pid' => $pid];
+  $query = "SELECT SUM(points) AS total, MIN(timestamp) as min_timestamp,  MAX(timestamp) as max_timestamp, game_term, type, (CASE WHEN metadata LIKE '%leaderboard:no%' THEN 'leaderboard:no' WHEN metadata NOT LIKE '%leaderboard:no%' THEN '' END) as leader from sg_ledger WHERE pid = :pid AND timestamp > :after";
+
+  $args = [':pid' => $pid, ':after' => $after];
   if ($game_term != '') {
     $query .= " AND game_term = :game_term";
     $args[':game_term'] = $game_term;
@@ -1416,10 +1445,13 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
   //$regexp = 'prize_count:(-?[0-9]+)';
   $query = $db->select('sg_ledger', 'sg_ledger')
   ->condition('pid', $pid, '=');
+  $query = $query->condition('timestamp', $after, '>');
   if ($term_filter) {
     $query = $query->condition('game_term', $game_term, '=');
   }
   $query = $query->condition('metadata', 'delete:no leaderboard:no prize_count:%', 'LIKE');
+  
+
   $query->fields('sg_ledger', ['metadata', 'game_term']);
 
   $result = $query->execute();
@@ -1496,6 +1528,14 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
     }
     $badge['title'] = $node->get('title')->value;
     $player_points[$game_term]['badges'][] = $badge;
+  }
+
+  //save in redis if we're not loading from it to ensure we sometimes still load from points from scratch.  also only save if there is no term filter. regardless of whether we loaded with the cache.
+  if (!$using_cache && $term_filter == FALSE) {
+    $points_cache_obj = [];
+    $points_cache_obj['timestamp'] = time(); 
+    $points_cache_obj['player_points'] = $player_points;
+    $redis->setEx("summergame:points:$pid", 3600, json_encode($points_cache_obj));
   }
 
 
