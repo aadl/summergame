@@ -735,11 +735,8 @@ class PlayerController extends ControllerBase {
 
   public function all_player_summary($uid = 0){
     $user = \Drupal::currentUser();
-    if (!$user->isAuthenticated()) {
-      return new RedirectResponse('/user/login?destination=/summergame/player');
-    }
-    $roles = $user->getRoles();
-     if ((int)$user->id() !== (int)$uid && !in_array('staff', $roles) && !in_array('administrator', $roles)) {
+
+    if ((int)$user->id() !== (int)$uid && !\Drupal::service('permission_checker')->hasPermission('manage summergame', $user)) {
         return new RedirectResponse('/user/login?destination=/summergame/player');
     }
     $players = summergame_player_load_all($uid);
