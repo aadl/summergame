@@ -42,6 +42,9 @@
           <tr><th>Type</th><th>Balance</th></tr>
           <tr><td>Summer Game Shop Total</td><td><strong>{{ attribute(balances, commerce_game_term) }}</strong></td></tr>
           <tr><td>{{commerce_shop_term}} Prize Count</td><td>({{ balances.prize_count }}/4 items)</td></tr>
+          {% if user_orders_link %}
+            <tr><td colspan="2">{{ user_orders_link|raw }}</td></tr>
+          {% endif %}
           {% if balances.BookPrizeToken is defined %}
             <tr><td>- Book Prize Token</td><td>{{ balances.BookPrizeToken }}</td></tr>
           {% endif %}

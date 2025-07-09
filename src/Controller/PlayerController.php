@@ -163,6 +163,12 @@ class PlayerController extends ControllerBase {
         $player['phone'] = 'TEXT ' . $char . $player['phone'] . ' to 734-327-4200 to connect your phone';
       }
 
+      // Get Player Balances
+      $balances = [];
+      if (\Drupal::moduleHandler()->moduleExists('commerce_summergame')) {
+        $balances = commerce_summergame_get_player_balances($player['pid']);
+      }
+
       // Lookup drupal user if admin
       $website_user = '';
       $homecode = '';
@@ -184,14 +190,12 @@ class PlayerController extends ControllerBase {
 
           if ($user->id() == $account->id() || $user->hasPermission('administer users')) {
             $website_user = '<a href="/user/' . $account->id() . '">' . $website_user . '</a>';
+            // Link to user's order page if prize count is greater than 0
+            if (isset($balances['prize_count']) && $balances['prize_count'] > 0) {
+              $order_link = '<a href="/user/' . $account->id() . '/orders">View My Shop Orders</a>';
+            }
           }
         }
-      }
-
-      // Get Player Balances
-      $balances = [];
-      if (\Drupal::moduleHandler()->moduleExists('commerce_summergame')) {
-        $balances = commerce_summergame_get_player_balances($player['pid']);
       }
 
       // Get Points-o-Matic weekly scores
@@ -239,6 +243,7 @@ class PlayerController extends ControllerBase {
         '#commerce_shop_term' => $commerce_shop_term,
         '#summergame_shop_message_threshold' => $summergame_settings->get('summergame_shop_message_threshold'),
         '#summergame_shop_message' => $summergame_settings->get('summergame_shop_message'),
+        '#user_orders_link' => $order_link ?? '',
         '#commerce_game_term' => $commerce_game_term,
         '#completed_classic' => $completed_classic,
         '#website_user' => $website_user,

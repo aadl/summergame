@@ -508,6 +508,7 @@ function summergame_theme() {
         'commerce_shop_term' => NULL,
         'summergame_shop_message_threshold' => NULL,
         'summergame_shop_message' => NULL,
+        'user_orders_link' => NULL,
         'commerce_game_term' => NULL,
         'completed_classic' => NULL,
         'website_user' => NULL,
@@ -1424,7 +1425,7 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
 
   $result = $query->execute();
 
-  foreach ($result as $row) {    
+  foreach ($result as $row) {
 
     if (!$term_filter) {
       $game_term = $row->game_term;
