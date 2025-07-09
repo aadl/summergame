@@ -1365,7 +1365,8 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
   }
   
   if (!is_null($redis)) {
-    $cached_points_raw = $redis->get("summergame:points:$pid");
+    $host = \Drupal::request()->getHost();
+    $cached_points_raw = $redis->get("$host:summergame:points:$pid");
     if (!is_null($cached_points_raw)) {
       $cached_points = json_decode($cached_points_raw, true);
       if($cached_points['timestamp'] > strtotime('-1 hour',time())){
@@ -1384,7 +1385,7 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
           }
         }
       } else {
-        $redis->del("summergame:points:$pid");
+        $redis->del("$host:summergame:points:$pid");
       }
     }
   }
@@ -1544,7 +1545,7 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
     $points_cache_obj = [];
     $points_cache_obj['timestamp'] = time(); 
     $points_cache_obj['player_points'] = $player_points;
-    $redis->setEx("summergame:points:$pid", 3600, json_encode($points_cache_obj));
+    $redis->setEx("$host:summergame:points:$pid", 3600, json_encode($points_cache_obj));
   }
 
   return $player_points;
