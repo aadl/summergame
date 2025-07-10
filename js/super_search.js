@@ -23,6 +23,7 @@
 	const canvas = document.getElementById("triangleCanvas");
 	const canvasContainer = document.getElementById("ss-container");
 	const ctx = canvas.getContext("2d");
+	const isEdge = window.navigator.userAgent.indexOf("Edg") > -1;
 	const n = 7;
 	let EA, SK;
 	let contrastMode = false;
@@ -199,6 +200,7 @@
 		ctx.moveTo(tile.vertices[0].x, tile.vertices[0].y);
 		ctx.lineTo(tile.vertices[1].x, tile.vertices[1].y);
 		ctx.lineTo(tile.vertices[2].x, tile.vertices[2].y);
+		ctx.lineTo(tile.vertices[0].x, tile.vertices[0].y);
 		ctx.closePath();
 		ctx.lineWidth = 1;
 		if (tile.selected == true) {
@@ -212,7 +214,9 @@
 			ctx.lineWidth = 3;
 			ctx.fillStyle = "#fff";
 		}
-		ctx.stroke();
+		if (!isEdge) {
+			ctx.stroke();
+		}
 		ctx.fill();
 		ctx.restore();
 	}
@@ -412,12 +416,12 @@
 		if (isInteractable) {
 			const rect = canvas.getBoundingClientRect();
 			const ptX = isTouchDevice()
-				? (event.changedTouches[0].clientX - rect.left) *
-				(canvas.width / rect.width)
+				? event.changedTouches != null ? (event.changedTouches[0].clientX - rect.left) *
+					(canvas.width / rect.width) : (event.clientX - rect.left) * (canvas.width / rect.width)
 				: (event.clientX - rect.left) * (canvas.width / rect.width);
 			const ptY = isTouchDevice()
-				? (event.changedTouches[0].clientY - rect.top) *
-				(canvas.height / rect.height)
+				? event.changedTouches != null ? (event.changedTouches[0].clientY - rect.top) *
+					(canvas.height / rect.height) : (event.clientY - rect.top) * (canvas.height / rect.height)
 				: (event.clientY - rect.top) * (canvas.height / rect.height);
 			const point = { x: ptX, y: ptY };
 			let pt = null;
