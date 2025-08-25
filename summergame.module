@@ -549,6 +549,7 @@ function summergame_theme() {
         'list_tags' => NULL,
         'badge_list' => NULL,
         'is_byteclub' => NULL,
+        'is_summergame' => NULL,
       ]
     ],
     'summergame_leaderboard_page' => [

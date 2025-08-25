@@ -736,6 +736,7 @@ We don't have all the details yet, but we'll reuse the signs for the 2023 game, 
       '#list_tags' => $list_tags,
       '#badge_list' => $badges,
       '#is_byteclub' => summergame_is_byteclub_page(),
+      '#is_summergame' => (strpos($badgelist_game_term, 'SummerGame') === 0),
     ];
   }
 
