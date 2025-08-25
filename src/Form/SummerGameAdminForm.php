@@ -103,6 +103,14 @@ class SummerGameAdminForm extends ConfigFormBase
       '#maxlength' => 32,
       '#description' => t("Default Game Term to apply to earned points (e.g. SummerGame2011)"),
     ];
+    $form['summergame_signup_game_term'] = [
+      '#type' => 'textfield',
+      '#title' => t("Current Signup Game Term"),
+      '#default_value' => $summergame_settings->get('summergame_signup_game_term'),
+      '#size' => 32,
+      '#maxlength' => 32,
+      '#description' => t("Default Game Term for new players when signing up via text (e.g. MLEADershipGame)"),
+    ];
     $form['summergame_suppress_current_leaderboard'] = [
       '#type' => 'checkbox',
       '#title' => t('Suppress Current Leaderboard'),

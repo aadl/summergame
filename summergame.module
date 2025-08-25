@@ -790,7 +790,8 @@ function summergame_gamecode_close_match($text, $game_term = NULL, $building_cod
 function summergame_twilio_respond($incoming) {
   $db = \Drupal::database();
   $summergame_settings = \Drupal::config('summergame.settings');
-  $current_game_term = \Drupal::config('summergame.settings')->get('summergame_current_game_term');
+  $current_game_term = $summergame_settings->get('summergame_current_game_term');
+  $signup_game_term = $summergame_settings->get('summergame_signup_game_term');
 
   // Prep generic response array
   $response_template = ['uid' => twilio_lookup_user($incoming['phone']),
@@ -851,12 +852,12 @@ function summergame_twilio_respond($incoming) {
       $new_player_needed = TRUE;
     }
     else {
+      // Show player points, default to signup game term
       $response = $response_template;
-      $gameDisplayName = \Drupal::config('summergame.settings')->get('game_display_name');
       $player_points = summergame_get_player_points($player['pid']);
-      $total = (int) $player_points[$current_game_term]['total'];
+      $total = (int) $player_points[$signup_game_term]['total'];
 
-      $response['text'] = ($player['nickname'] ? $player['nickname'] : $player['name']) . "'s $gameDisplayName Point Total: ";
+      $response['text'] = ($player['nickname'] ? $player['nickname'] : $player['name']) . "'s $signup_game_term Point Total: ";
       $response['text'] .= $total . ' points';
 
       $responses[] = $response;
@@ -901,12 +902,11 @@ function summergame_twilio_respond($incoming) {
     $new_player = array('name' => $incoming['phone'], 'phone' => $incoming['phone']);
     $player = summergame_player_save($new_player);
     $response = $response_template;
-    $gameDisplayName = \Drupal::config('summergame.settings')->get('game_display_name');
-    $response['text'] = "New $gameDisplayName player #" . $player['pid'] . " created for this phone.";
+    $response['text'] = "New $signup_game_term player #" . $player['pid'] . " created for this phone.";
     $responses[] = $response;
 
     // Special message
-    if ($current_game_term == 'MLEADershipGame') {
+    if ($signup_game_term == 'MLEADershipGame') {
       $response = $response_template;
       $response['text'] = 'Welcome to the M-LEADership Game - a university-wide, month long scavenger hunt ' .
                           'to find leadership resources across campus! To get started, please fill out this ' .
@@ -917,7 +917,7 @@ function summergame_twilio_respond($incoming) {
 
     // Signup bonus
     $points = summergame_player_points($player['pid'], 100, 'Signup',
-                                       'Signed Up for the Game', 'via:txt');
+                                       'Signed Up for the Game', 'via:txt', $signup_game_term);
     $response = $response_template;
     $response['text'] = "Earned $points points for signing up!";
     $responses[] = $response;
