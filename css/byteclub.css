@@ -112,12 +112,15 @@ body.byte-club-skin .sg-badge-progress-bar[value]::-moz-progress-bar {
   .byteclub-top-menu{
     display:flex;
     justify-content: flex-start;
+    flex-wrap: nowrap;
+    gap:4em;
   }
 
   .byteclub-top-menu a{
 
-    padding: 1em 0.8em;
-    margin: 0 2em;
+    /*padding: 1em 0.8em;
+    margin: 0 2em;*/
+    padding: 1em 0;
 
   }
 
@@ -249,10 +252,13 @@ body.byte-club-skin #main-content #summergame-self-award-form .button:active{
           font-size: 1em;
         }
       
-
+      .byteclub-top-menu{
+        gap:2em;
+      }
       .byteclub-top-menu a {
+          /*padding: 0.5em 0.5em;
+          margin: 0 0.5em;*/
           padding: 0.5em 0.5em;
-          margin: 0 0.5em;
         }
 
         .byteclub-big-logo img {
