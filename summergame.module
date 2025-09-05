@@ -1889,16 +1889,16 @@ function summergame_player_check_badges($pid, $game_term) {
   while ($badge = $res->fetchObject()) {
     if (!in_array($badge->bid, $player_bids)) {
       $awarded = FALSE;
-      if (strpos($badge->formula, 'SELFAWARD:') === 0) {
+      if (preg_match('/^SELFAWARD(\d*):(.*)/', $badge->formula, $matches)) {
         // Self Award Badge
-        $tasks = explode('|', substr($badge->formula, strlen('SELFAWARD:')));
-        $total_count = count($tasks);
+        $tasks = explode('|', $matches[2]);
+        $total_count = (int)$matches[1] ?: count($tasks);
         $player_count = $db->query("SELECT COUNT(lid) AS player_count FROM `sg_ledger` WHERE `pid` = $pid AND metadata LIKE '%badgetask:$badge->bid%'")->fetchField();
         if ($player_count >= $total_count) {
           $awarded = summergame_player_award_badge($pid, $badge->bid);
         }
       }
-      if (strpos($badge->formula, '**')) {
+      elseif (strpos($badge->formula, '**')) {
         // Multi Game Term ("Hall of Fame") Badge
         list($hof_type, $game_term_pattern, $badge_limit) = explode('**', $badge->formula);
         if ($hof_type == 'game_terms') {

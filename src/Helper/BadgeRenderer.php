@@ -92,7 +92,7 @@ class BadgeRenderer {
           $earned_ts = (int) $db->query("SELECT timestamp FROM sg_players_badges WHERE pid=:pid AND bid=:bid",
                                         [':pid' => $pid, ':bid' => $bid])->fetchField();
 
-          if (strpos($badge->formula, 'SELFAWARD:') === 0) {
+          if (preg_match('/^SELFAWARD(\d*):(.*)/', $badge->formula)) {
             $variables['self_award_form'] = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGameSelfAwardForm', $pid, $bid);
           }
           else {
@@ -137,10 +137,10 @@ class BadgeRenderer {
 
           if (!$variables['hide_badge']) {
             $player_count = 0;
-            if (strpos($badge->formula, 'SELFAWARD:') === 0) {
+            if (preg_match('/^SELFAWARD(\d*):(.*)/', $badge->formula, $matches)) {
               // Self Awarding Badge
-              $tasks = explode('|', substr($badge->formula, strlen('SELFAWARD:')));
-              $total_count = count($tasks);
+              $tasks = explode('|', $matches[2]);
+              $total_count = (int)$matches[1] ?: count($tasks);
               $player_count = $db->query("SELECT COUNT(lid) AS player_count FROM `sg_ledger` WHERE `pid` = $pid AND metadata LIKE '%badgetask:$bid%'")->fetchField();
               //$formula_type = 'self awarded task' . ($total_count > 1 ? 's' : '');
               $formula_type = 'Bits Complete';
