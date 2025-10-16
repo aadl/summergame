@@ -2447,11 +2447,10 @@ function summergame_tag_bib($bib_id, $game_code, $game_term = '') {
   }
 
   if (!isset($doc->gamecodes->{$game_term}) || (is_array($doc->gamecodes->{$game_term}) && !in_array($game_code, $doc->gamecodes->{$game_term}))) {
-
     $doc->gamecodes->{$game_term}[] = $game_code;
   }
 
-  if(!isset($doc->flags)) {
+  if (!isset($doc->flags)) {
     $doc->flags = new \stdClass;
   }
   $doc->flags->protected = 1;
@@ -2464,4 +2463,63 @@ function summergame_tag_bib($bib_id, $game_code, $game_term = '') {
   }
 
   return ['success' => $doc];
+}
+
+/**
+ * UTILITY: Unprotect all bibs tagged in a given game term
+ *          Call via drush to unprotect all bibs tagged at the end of a game season
+ */
+function summergame_unprotect_bibs($game_term = '', $limit = '') {
+  // Set a new connector to the CouchDB server
+  $summergame_settings = \Drupal::config('summergame.settings');
+  $couch_dsn = $summergame_settings->get('summergame_couch_dsn');
+  $couch_db = $summergame_settings->get('summergame_couch_db');
+  $client = new CouchClient($couch_dsn, $couch_db);
+
+  if (empty($game_term)) {
+    $game_term = $summergame_settings->get('summergame_current_game_term');
+  }
+
+  // Find all game codes with bibs tagged in this game term
+  $db = \Drupal::database();
+  $rows = $db->query("SELECT * FROM sg_game_codes " .
+                     "WHERE game_term = :game_term " .
+                     "AND link LIKE 'bnum:%'", [':game_term' => $game_term])->fetchAll();
+
+  $count = 0;
+  $total = count($rows);
+  foreach ($rows as $row) {
+    $count++;
+    if ($limit && $count > $limit) {
+      break;
+    }
+
+    $bib_id = str_replace('bnum:', '', $row->link);
+    $message = "Processing $count/$total $bib_id: ";
+
+    try {
+      $doc = $client->getDoc($bib_id);
+    } catch (Exception $e) {
+      $message .= "No Couch Document: " . $e->getMessage();
+      echo $message . PHP_EOL;
+      continue;
+    }
+
+    // If protected flag is set, set to unprotected and update
+    if (isset($doc->flags->protected) && $doc->flags->protected) {
+      $message .= "Unprotecting";
+      $doc->flags->protected = 0;
+      try {
+        $client->storeDoc($doc);
+      } catch (Exception $e) {
+        $message .= "Couch Document storage failed for $bib_id: " . $e->getMessage();
+      }
+    }
+    else {
+      $message .= "Not protected";
+    }
+    echo $message . PHP_EOL;
+  }
+
+  return $count;
 }
