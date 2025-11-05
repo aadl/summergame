@@ -2116,6 +2116,56 @@ function summergame_check_all_player_badges($game_term = '') {
   }
 }
 
+/**
+ * UTILITY: Get badge statistics
+ */
+function summergame_get_badge_stats($bid) {
+  $return = [
+    'bid' => $bid,
+  ];
+
+  // Get badge title and formula
+  $db = \Drupal::database();
+  $return['title'] = $db->query("SELECT n.title FROM node_field_data n WHERE n.nid = :bid",
+                                [':bid' => $bid])->fetchField();
+  $formula = $db->query("SELECT field_badge_formula_value FROM node__field_badge_formula WHERE entity_id = :bid",
+                        [':bid' => $bid])->fetchField();
+
+  // Determine formula type
+  if (preg_match('/^SELFAWARD(\d*):(.*)/', $formula, $matches)) {
+     // Self Award Badge
+  }
+  elseif (strpos($formula, '**')) {
+    // Multi Game Term ("Hall of Fame") Badge
+  }
+  elseif (preg_match('/^{([\d,]+)}$/', $formula, $matches)) {
+    // Badge collection badge
+  }
+  elseif (strpos($formula, '^^')) {
+    // Multiple days of a ledger type formula (streak)
+  }
+  elseif (strpos($formula, '::')) {
+    // Multiple of a ledger type formula
+  }
+  else {
+    // Collection Badge
+    $any_conditions = [];
+    foreach (explode(',', $formula) as $text_pattern) {
+      $condition = "metadata = 'gamecode:$text_pattern'";
+      $any_conditions[] = $condition;
+      $redemption_count = $db->query("SELECT COUNT(DISTINCT pid) FROM sg_ledger WHERE $condition")->fetchField();
+      $part_count[$text_pattern] = $redemption_count;
+    }
+    $any_count = $db->query("SELECT COUNT(DISTINCT pid) FROM sg_ledger WHERE " . implode(' OR ', $any_conditions))->fetchField();
+    $return['any'] = $any_count;
+  }
+
+  $return['formula'] = $formula;
+  $return['parts'] = $part_count ?? [];
+
+  return $return;
+}
+
 function summergame_check_completion_bonus($pid) {
   $db = \Drupal::database();
   $summergame_settings = \Drupal::config('summergame.settings');
