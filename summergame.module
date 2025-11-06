@@ -2128,6 +2128,8 @@ function summergame_get_badge_stats($bid) {
   $db = \Drupal::database();
   $return['title'] = $db->query("SELECT n.title FROM node_field_data n WHERE n.nid = :bid",
                                 [':bid' => $bid])->fetchField();
+  $return['awarded'] = $db->query("SELECT COUNT(pid) AS pcount FROM sg_players_badges WHERE bid=:bid",
+                                  [':bid' => $bid])->fetchField();
   $formula = $db->query("SELECT field_badge_formula_value FROM node__field_badge_formula WHERE entity_id = :bid",
                         [':bid' => $bid])->fetchField();
 
@@ -2164,6 +2166,47 @@ function summergame_get_badge_stats($bid) {
   $return['parts'] = $part_count ?? [];
 
   return $return;
+}
+
+function summergame_badge_stat_report($game_term) {
+  $filename = 'badge_stats_' . $game_term . '_' . date('Ymd_His') . '.csv';
+  $report_rows = [];
+
+  // Get all badges for this game term
+  $nids = \Drupal::entityQuery('node')
+            ->accessCheck(FALSE)
+            ->condition('type', 'sg_badge')
+            ->condition('field_badge_game_term', $game_term)
+            ->condition('status', 1)
+            ->execute();
+
+  foreach ($nids as $nid) {
+    $stats = summergame_get_badge_stats($nid);
+    // Only include gamecode badges
+    if ($stats['any']) {
+      foreach ($stats['parts'] as $part_code => $part_count) {
+        $report_rows[] = [
+          'Badge ID' => $stats['bid'],
+          'Title' => $stats['title'],
+          'Formula' => $stats['formula'],
+          'Awarded Count' => $stats['awarded'],
+          'Any Count' => $stats['any'],
+          'Game Code' => $part_code,
+          'Code Count' => $part_count,
+        ];
+      }
+    }
+  }
+
+  // Output CSV
+  $fp = fopen($filename, 'w');
+  fputcsv($fp, array_keys($report_rows[0])); // title row
+  foreach ($report_rows as $report_row) {
+    fputcsv($fp, $report_row);
+  }
+  fclose($fp);
+
+  echo "Badge statistics report saved to $filename" . PHP_EOL;
 }
 
 function summergame_check_completion_bonus($pid) {
