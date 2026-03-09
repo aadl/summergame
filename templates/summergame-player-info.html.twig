@@ -121,6 +121,7 @@
         {% if summergame_leagues_enabled %}
           <tr><th>Leagues:</th><td><a href="/summergame/player/{{ player.pid }}/leagues">View/Join Leagues</a></td></tr>
         {% endif %}
+        <tr><th>Read, Watched, Listened:<th><td><a href="/summergame/player/{{ player.pid }}/ledger?filter_type=Read%20Watched%20Listened%20Daily%20Bonus">View Log Entries</a></td></tr>
       </table>
     </div>
     <div id="player-other-players">
