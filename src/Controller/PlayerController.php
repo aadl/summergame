@@ -456,9 +456,10 @@ class PlayerController extends ControllerBase {
     return new RedirectResponse('/summergame/player/' . $pid);
   }
 
-  public function gcpc($pid = 0) {
+  public function gcpc($pid = 0, $delete = FALSE) {
     if ($player = summergame_player_load(['pid' => $pid])) {
       if (!$player['phone']) {
+        // phone is blank, generate a new link code and save it to the player record
         $db = \Drupal::database();
         unset($player['bids']);
         // Generate a new cell phone code
@@ -474,6 +475,23 @@ class PlayerController extends ControllerBase {
         summergame_player_save($player);
         $char = summergame_get_phone_character($player['pid']);
         \Drupal::messenger()->addMessage('TEXT ' . $char. $code . ' to 734-327-4200 to connect your phone');
+      }
+      else {
+        if ($delete) {
+          $player['phone'] = NULL;
+          summergame_player_save($player);
+          \Drupal::messenger()->addMessage('Cell phone cleared for Player #' . $player['pid']);
+        }
+        else {
+          // phone exists, display message and link to delete it if they want to connect a different phone
+          $output = "<p>Current cell phone for Player #{$player['pid']}: " . $player['phone'] . ".</p>
+                     <p>Delete to disable or allow to connect a different phone</p>
+                     <p><a class='button' href='/summergame/player/{$player['pid']}/gcpc/delete'>Delete Current Phone</a></p>";
+          return [
+            '#type' => 'markup',
+            '#markup' => $output,
+          ];
+        }
       }
       return new RedirectResponse('/summergame/player/' . $player['pid']);
     }

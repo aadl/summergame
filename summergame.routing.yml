@@ -187,10 +187,11 @@ summergame.player.setactive:
   requirements:
     _permission: 'access summergame'
 summergame.player.gcpc:
-  path: '/summergame/player/{pid}/gcpc'
+  path: '/summergame/player/{pid}/gcpc/{delete}'
   defaults:
     _controller: '\Drupal\summergame\Controller\PlayerController::gcpc'
     _title: 'Summer Game Player Generate Cell Phone Code'
+    delete: FALSE
   requirements:
     _permission: 'access summergame'
 summergame.player.ledger:
