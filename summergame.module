@@ -1659,6 +1659,7 @@ function summergame_redeem_code($player, $code_text) {
         return ['error' => "Code \"$code->text\" already redeemed on $existing_date"];
       }
     }
+
     // Go ahead and redeem
     $db->update('sg_game_codes')
       ->condition('code_id', $code->code_id, '=')
@@ -1704,7 +1705,14 @@ function summergame_redeem_code($player, $code_text) {
       $code->description .= ')';
     }
 
-    $points = summergame_player_points($player['pid'], $code->points, 'Game Code', $code->description, 'gamecode:' . $code->text, $code->game_term);
+    // Change ledger type for Lawn & Library codes
+    $ledger_type = 'Game Code';
+    if (strpos($code->clue, 'homecode') !== FALSE || strpos($code->clue, 'branchcode') !== FALSE) {
+      $ledger_type = 'Lawn & Library';
+    }
+
+    $points = summergame_player_points($player['pid'], $code->points, $ledger_type, $code->description, 'gamecode:' . $code->text, $code->game_term);
+
     $message = ($player['nickname'] ? $player['nickname'] : $player['name']) .
                " redeemed code \"$code->text\" for $points $code->game_term points";
     if ($code->description) {
