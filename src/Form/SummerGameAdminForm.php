@@ -153,6 +153,14 @@ class SummerGameAdminForm extends ConfigFormBase
       '#default_value' => $summergame_settings->get('summergame_game_limits'),
       '#description' => 'Set Game Limits for Types of scoring points. JSON array keyed by type and value with game long point limit',
     ];
+    $form['summergame_gamecode_rate_limit'] = [
+      '#type' => 'textfield',
+      '#title' => t("Game Code Rate Limit"),
+      '#default_value' => $summergame_settings->get('summergame_gamecode_rate_limit'),
+      '#size' => 32,
+      '#maxlength' => 32,
+      '#description' => t("Limit of number of codes that can be redeemed for a player in a given time period. Format is number:seconds (e.g. 10:300)"),
+    ];
     $form['summergame_user_search_path'] = [
       '#type' => 'textfield',
       '#title' => t("User Search Path"),

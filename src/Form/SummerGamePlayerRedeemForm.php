@@ -105,6 +105,16 @@ class SummerGamePlayerRedeemForm extends FormBase {
     }
 
     foreach ($pids as $pid) {
+      $summergame_settings = \Drupal::config('summergame.settings');
+      $rate_limit = $summergame_settings->get('summergame_gamecode_rate_limit');
+      if ($rate_limit) {
+        list($max_count, $time_window) = explode(':', $rate_limit);
+        if ($this->_getCodeCount($pid, $time_window) >= $max_count) {
+          \Drupal::messenger()->addError("Too many codes redeemed recently for player $pid. Please wait a bit and try again.");
+          break;
+        }
+      }
+
       $player = summergame_player_load(['pid' => $pid]);
       $status = summergame_redeem_code($player, $form_state->getValue('code_text'));
       if (!empty($status['error'])) {
@@ -125,5 +135,12 @@ class SummerGamePlayerRedeemForm extends FormBase {
     }
 
     return;
+  }
+
+  private function _getCodeCount($pid, $num_seconds) {
+    $db = \Drupal::database();
+    $count = $db->query('SELECT COUNT(*) FROM {sg_ledger} WHERE pid = :pid AND type IN (:types[]) AND timestamp > :timestamp',
+                        [':pid' => $pid, ':types[]' => ['Game Code', 'Lawn & Library'], ':timestamp' => time() - $num_seconds])->fetchField();
+    return $count;
   }
 }
