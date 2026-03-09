@@ -36,6 +36,12 @@ class SummerGameHomeCodeForm extends FormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state, $uid = 0) {
+    // Redirect user 0 to current user's home code form
+    if ($uid == 0) {
+      $uid = \Drupal::currentUser()->id();
+      return new RedirectResponse('/summergame/user/' . $uid . '/homecode');
+    }
+
     // Check access to Account
     $user = User::load(\Drupal::currentUser()->id());
     if ($user->get('uid')->value == $uid ||
@@ -44,6 +50,11 @@ class SummerGameHomeCodeForm extends FormBase {
       if (isset($account)) {
         $form = [
           '#attributes' => ['class' => 'form-width-exception'],
+          '#attached' => [
+            'library' => [
+              'summergame/summergame-homecode-form-lib',
+            ],
+          ],
         ];
 
         // Check for existing home code for this user
@@ -65,6 +76,10 @@ class SummerGameHomeCodeForm extends FormBase {
             '<p>It has been redeemed ' . $homecode->num_redemptions . ' time' . ($homecode->num_redemptions == 1 ? '' : 's') . '!</p>' .
             "<p>$location_message</p>"
           ];
+          // Display map with code location
+          $form['map'] = [
+            '#markup' => '<div id="mapid"></div>',
+          ];
           $homecode_player = summergame_player_load(['uid' => $homecode->creator_uid]);
           $form['cancel'] = [
             '#type' => 'link',
@@ -74,8 +89,6 @@ class SummerGameHomeCodeForm extends FormBase {
           ];
         }
         else if (\Drupal::config('summergame.settings')->get('summergame_homecode_form_enabled')) {
-          $form['#attached']['library'][] = 'summergame/summergame-homecode-form-lib';
-
           $form['instructions'] = [
             '#markup' => \Drupal::config('summergame.settings')->get('summergame_homecode_message'),
           ];
