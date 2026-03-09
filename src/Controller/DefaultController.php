@@ -381,7 +381,7 @@ We don't have all the details yet, but we'll reuse the signs for the 2023 game, 
                         [':game_term' => $game_term]);
       while ($game_code = $res->fetchObject()) {
         $geocode_data = json_decode($game_code->clue);
-        if ($geocode_data->display) {
+        if ($geocode_data->display || $sg_admin) {
           // Add game code data to geocode data
           $geocode_data->code_id = $game_code->code_id;
           $geocode_data->created = $game_code->created;
@@ -393,24 +393,29 @@ We don't have all the details yet, but we'll reuse the signs for the 2023 game, 
             $geocode_data->creator_uid = $game_code->creator_uid;
           }
 
-          // Determine layerGroup depending on age
-          $ts_diff = time() - $game_code->created;
-          $days_old = floor($ts_diff / (60 * 60 * 24));
+          if ($geocode_data->display) {
+            // Determine layerGroup depending on age
+            $ts_diff = time() - $game_code->created;
+            $days_old = floor($ts_diff / (60 * 60 * 24));
 
-          if ($days_old < 3) {
-            $geocode_data->layerGroup = 'A';
+            if ($days_old < 3) {
+              $geocode_data->layerGroup = 'A';
+            }
+            else if ($days_old < 7) {
+              $geocode_data->layerGroup = 'B';
+            }
+            else if ($days_old < 14) {
+              $geocode_data->layerGroup = 'C';
+            }
+            else if ($days_old < 21) {
+              $geocode_data->layerGroup = 'D';
+            }
+            else {
+              $geocode_data->layerGroup = 'E';
+            }
           }
-          else if ($days_old < 7) {
-            $geocode_data->layerGroup = 'B';
-          }
-          else if ($days_old < 14) {
-            $geocode_data->layerGroup = 'C';
-          }
-          else if ($days_old < 21) {
-            $geocode_data->layerGroup = 'D';
-          }
-          else {
-            $geocode_data->layerGroup = 'E';
+          else if ($sg_admin) {
+            $geocode_data->layerGroup = 'Hidden';
           }
 
           $homecodes[] = $geocode_data;

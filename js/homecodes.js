@@ -10,11 +10,13 @@
   var homecodeLayerGroupC = new L.layerGroup();
   var homecodeLayerGroupD = new L.layerGroup();
   var homecodeLayerGroupE = new L.layerGroup();
+  var homecodeLayerGroupHidden = new L.layerGroup();
 
   var myMap = L.map('mapid', {
       center: [42.2781734, -83.74570792114082],
       zoom: 13,
-      layers: [badgeLayerGroup, branchLayerGroup, bizcodeLayerGroup, homecodeLayerGroup, homecodeLayerGroupA, homecodeLayerGroupB, homecodeLayerGroupC, homecodeLayerGroupD, homecodeLayerGroupE]
+      layers: [badgeLayerGroup, branchLayerGroup, bizcodeLayerGroup, homecodeLayerGroup,
+               homecodeLayerGroupA, homecodeLayerGroupB, homecodeLayerGroupC, homecodeLayerGroupD, homecodeLayerGroupE]
   });
 
   var redIcon = new L.Icon({
@@ -90,6 +92,19 @@
     url: '/summergame/map/data/' + drupalSettings.hc_game_term,
     dataType: 'json',
     success: function (data) {
+
+      // Set up layer control with custom labels including icons
+      var overlayMaps = {
+        "Branches <img src=\"https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-violet.png\" height=\"15px\">": branchLayerGroup,
+        "Business Codes <img src=\"https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-grey.png\" height=\"15px\">": bizcodeLayerGroup,
+        "Lawn Codes": homecodeLayerGroup,
+        "< 3 days old <img src=\"https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png\" height=\"15px\">": homecodeLayerGroupA,
+        "< 7 days old <img src=\"https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png\" height=\"15px\">": homecodeLayerGroupB,
+        "< 2 weeks old <img src=\"https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-yellow.png\" height=\"15px\">": homecodeLayerGroupC,
+        "< 3 weeks old <img src=\"https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png\" height=\"15px\">": homecodeLayerGroupD,
+        "> 3 weeks old <img src=\"https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png\" height=\"15px\">": homecodeLayerGroupE,
+        "Badge Starting Points": badgeLayerGroup,
+      };
 /*
       var heatRadius = 0.001;
       if (element = document.querySelector('#heatRadius')) {
@@ -155,6 +170,7 @@
       });
 
       // Loop through homecode data and create markers
+      var hasHidden = false;
       $.each(data.homecodes, function(index, element) {
         if (drupalSettings.hc_points_enabled) {
           var reported = false;
@@ -174,7 +190,16 @@
           }
 
           // Determine layer group
-          if (element.layerGroup == 'A') {
+          if (element.layerGroup == 'Hidden') {
+            // Add hidden layer group if not already added to layer control
+            if (!hasHidden) {
+              // Add hidden layer group to layer control
+              overlayMaps["Hidden <img src=\"https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-violet.png\" height=\"15px\">"] = homecodeLayerGroupHidden;
+              hasHidden = true;
+            }
+            L.marker([element.lat, element.lon], {icon: purpleIcon}).bindPopup(element.homecode).addTo(homecodeLayerGroupHidden);
+          }
+          else if (element.layerGroup == 'A') {
             var aIcon = (reported ? greyIcon : redIcon);
             L.marker([element.lat, element.lon], {icon: aIcon}).bindPopup(element.homecode).addTo(homecodeLayerGroupA);
           }
@@ -215,6 +240,9 @@
           }
         }
       });
+
+      // Add conrol layers to map
+      L.control.layers(null, overlayMaps, {collapsed:false}).addTo(myMap);
     }
   });
 
@@ -224,22 +252,6 @@
   L.marker([42.25271695126512, -83.77811950157411], {icon: purpleIcon}).bindPopup('<strong>Pittsfield Library</strong><br>2359 Oak Valley Dr.<br>Building Codes<br>Library Code Stop').addTo(branchLayerGroup);
   L.marker([42.30838433760029, -83.71416680157276], {icon: purpleIcon}).bindPopup('<strong>Traverwood Library</strong><br>3333 Traverwood Dr.<br>Building Codes<br>Library Code Stop').addTo(branchLayerGroup);
   L.marker([42.27866255504599, -83.78305954390173], {icon: purpleIcon}).bindPopup('<strong>Westgate Library</strong><br>2503 Jackson Ave.<br>Building Codes<br>Library Code Stop').addTo(branchLayerGroup);
-
-  // Set up layer labels
-
-  // Add layers to map
-  var overlayMaps = {
-    "Branches <img src=\"https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-violet.png\" height=\"15px\">": branchLayerGroup,
-    "Business Codes <img src=\"https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-grey.png\" height=\"15px\">": bizcodeLayerGroup,
-    "Lawn Codes": homecodeLayerGroup,
-    "< 3 days old <img src=\"https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png\" height=\"15px\">": homecodeLayerGroupA,
-    "< 7 days old <img src=\"https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png\" height=\"15px\">": homecodeLayerGroupB,
-    "< 2 weeks old <img src=\"https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-yellow.png\" height=\"15px\">": homecodeLayerGroupC,
-    "< 3 weeks old <img src=\"https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png\" height=\"15px\">": homecodeLayerGroupD,
-    "> 3 weeks old <img src=\"https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png\" height=\"15px\">": homecodeLayerGroupE,
-    "Badge Starting Points": badgeLayerGroup,
-  };
-  L.control.layers(null, overlayMaps, {collapsed:false}).addTo(myMap);
 
   myMap.on("overlayremove", function(e){
     if (e.name == 'Lawn Codes') {
