@@ -77,6 +77,14 @@ class SummerGameHomeCodeForm extends FormBase {
             "<p>$location_message</p>"
           ];
           // Display map with code location
+          $form['homecode_lat'] = [
+            '#type' => 'hidden',
+            '#value' => $location_data->lat,
+          ];
+          $form['homecode_lon'] = [
+            '#type' => 'hidden',
+            '#value' => $location_data->lon,
+          ];
           $form['map'] = [
             '#markup' => '<div id="mapid"></div>',
           ];
