@@ -73,6 +73,15 @@
     shadowSize: [41, 41]
   });
 
+  var pinkIcon = new L.Icon({
+    iconUrl: 'https://raw.githubusercontent.com/Vectorial1024/leaflet-color-markers/HEAD/img/marker-icon-pink.svg',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+  });
+
   var greyIcon = new L.Icon({
     iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-grey.png',
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
@@ -194,10 +203,10 @@
             // Add hidden layer group if not already added to layer control
             if (!hasHidden) {
               // Add hidden layer group to layer control
-              overlayMaps["Hidden <img src=\"https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-violet.png\" height=\"15px\">"] = homecodeLayerGroupHidden;
+              overlayMaps["Hidden <img src=\"https://raw.githubusercontent.com/Vectorial1024/leaflet-color-markers/HEAD/img/marker-icon-pink.svg\" height=\"15px\">"] = homecodeLayerGroupHidden;
               hasHidden = true;
             }
-            L.marker([element.lat, element.lon], {icon: purpleIcon}).bindPopup(element.homecode).addTo(homecodeLayerGroupHidden);
+            L.marker([element.lat, element.lon], {icon: pinkIcon}).bindPopup(element.homecode).addTo(homecodeLayerGroupHidden);
           }
           else if (element.layerGroup == 'A') {
             var aIcon = (reported ? greyIcon : redIcon);
