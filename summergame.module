@@ -1038,9 +1038,10 @@ PARTITIONS 3 (
 ALTER TABLE `sg_ledger`
 PARTITION BY RANGE COLUMNS (`game_term`)
 (PARTITION `other_less` VALUES LESS THAN ('SummerGame') ENGINE = InnoDB,
-PARTITION `sg_old` VALUES LESS THAN ('SummerGame2025') ENGINE = InnoDB,
+PARTITION `sg_old` VALUES LESS THAN ('SummerGame2026') ENGINE = InnoDB,
 PARTITION `sg_new` VALUES LESS THAN ('SummerGame9999') ENGINE = InnoDB,
 PARTITION `other_more` VALUES LESS THAN MAXVALUE ENGINE = InnoDB);
+
   // Do Or Diag
   else if (variable_get('summergame_dod_enabled', FALSE)) {
     $text = strtoupper($incoming['text']);
