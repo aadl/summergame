@@ -298,25 +298,6 @@ class SummerGameAdminForm extends ConfigFormBase
       '#default_value' => $summergame_settings->get('summergame_homecode_report_threshold'),
       '#description' => 'Number of player reports needed to remove a Home Code from the map',
     ];
-    $form['summergame_scatterlog_key'] = [
-      '#type' => 'textfield',
-      '#title' => 'Scatterlog App Key',
-      '#default_value' => $summergame_settings->get('summergame_scatterlog_key'),
-      '#description' => 'Key for Scatterlog session creation',
-    ];
-    $form['summergame_scatterlog_url'] = [
-      '#type' => 'textfield',
-      '#title' => 'Scatterlog URL',
-      '#default_value' => $summergame_settings->get('summergame_scatterlog_url'),
-      '#description' => 'URL for scatter log',
-    ];
-    $form['summergame_supersearch_salt'] = [
-      '#type' => 'textfield',
-      '#title' => 'Super Search Salt',
-      '#default_value' => $summergame_settings->get('summergame_supersearch_salt'),
-      '#description' => 'Salt for supersearch answer encoding',
-    ];
-
     return parent::buildForm($form, $form_state);
   }
 }
