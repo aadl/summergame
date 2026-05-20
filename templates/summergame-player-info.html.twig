@@ -11,9 +11,9 @@
   <div id="player-earn-links">
     <h2>Earn Game Points</h2>
     <div class="no-padding-left">
-      <a class="button" href="/summergame/player/{{ player.pid }}/gamecode">I have a Game Code!</a>
+      <a class="button base-margin-small-bottom" style="margin-right: 1.5em;" href="/summergame/player/{{ player.pid }}/gamecode">I have a Game Code!</a>
       {% if summergame_points_enabled %}
-        <a class="button base-margin-left" href="/summergame/player/{{ player.pid }}/consume">I Read, Listened to, or Watched something!</a>
+        <a class="button" href="/summergame/player/{{ player.pid }}/consume">I Read, Listened to, or Watched something!</a>
       {% endif %}
     </div>
   </div>
