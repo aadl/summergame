@@ -690,15 +690,12 @@ function summergame_index_gamecodes($game_term, $code_id = 0, $dev = FALSE) {
   }
   else {
     // Index all game codes for this game term
+    $building_code_regex = \Drupal::config('summergame.settings')->get('summergame_fuzzy_code_regex');
     $result = [];
     $res = $db->query('SELECT code_id, text, clue FROM sg_game_codes WHERE game_term = :game_term', [':game_term' => $game_term]);
     foreach ($res as $row) {
       // Check if code is a building or banner code
-      $building_code = FALSE;
-      if (preg_match('/^Find a code in the .* Library!$|^Look for a banner on the outside of the .* Library!$/', $row->clue)) {
-        // Check if the code is a building code
-        $building_code = TRUE;
-      }
+      $building_code = (preg_match($building_code_regex, $row->clue) ? TRUE : FALSE);
 
       // index game code text in elasticsearch
       $result[] = $es_client->index([

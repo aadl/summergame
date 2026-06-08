@@ -141,6 +141,14 @@ class SummerGameAdminForm extends ConfigFormBase
       '#maxlength' => 32,
       '#description' => t("Game Code awarded for completion of the Classic Reading Game (e.g. PUPPYLOVE13)"),
     ];
+    $form['summergame_fuzzy_code_regex'] = [
+      '#type' => 'textfield',
+      '#title' => t("Fuzzy Code Regex"),
+      '#default_value' => $summergame_settings->get('summergame_fuzzy_code_regex'),
+      '#size' => 100,
+      '#maxlength' => 255,
+      '#description' => t("Regular expression for clue field to identify player-facing fuzzy match game codes (e.g. /^Find a code in the .* Library!$/)"),
+    ];
     $form['summergame_game_term_homes'] = [
       '#type' => 'textarea',
       '#title' => 'Home Pages by Game Term',
