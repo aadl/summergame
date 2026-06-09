@@ -485,11 +485,13 @@ class PlayerController extends ControllerBase {
         else {
           // phone exists, display message and link to delete it if they want to connect a different phone
           $output = "<p>Current cell phone for Player #{$player['pid']}: " . $player['phone'] . ".</p>
-                     <p>Delete to disable or allow to connect a different phone</p>
-                     <p><a class='button' href='/summergame/player/{$player['pid']}/gcpc/delete'>Delete Current Phone</a></p>";
+                     <p>Delete to remove this phone from your player, which will also allow you to connect a different phone.</p>
+                     <p><a class='button' href='/summergame/player/{$player['pid']}/gcpc/delete'>Delete Current Phone</a>
+                     &nbsp;<a href='/summergame/player/{$player['pid']}'>Cancel</a></p>";
           return [
             '#type' => 'markup',
             '#markup' => $output,
+            '#cache' => ['max-age' => 0],
           ];
         }
       }
