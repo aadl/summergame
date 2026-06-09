@@ -261,6 +261,8 @@
   L.marker([42.25271695126512, -83.77811950157411], {icon: purpleIcon}).bindPopup('<strong>Pittsfield Library</strong><br>2359 Oak Valley Dr.<br>Building Codes<br>Library Code Stop').addTo(branchLayerGroup);
   L.marker([42.30838433760029, -83.71416680157276], {icon: purpleIcon}).bindPopup('<strong>Traverwood Library</strong><br>3333 Traverwood Dr.<br>Building Codes<br>Library Code Stop').addTo(branchLayerGroup);
   L.marker([42.27866255504599, -83.78305954390173], {icon: purpleIcon}).bindPopup('<strong>Westgate Library</strong><br>2503 Jackson Ave.<br>Building Codes<br>Library Code Stop').addTo(branchLayerGroup);
+  L.marker([42.280969845328286, -83.81069732467459], {icon: purpleIcon}).bindPopup('<strong>The AALF</strong><br>265 Parkland Plaza<br>Building Codes<br>Library Code Stop').addTo(branchLayerGroup);
+
 
   myMap.on("overlayremove", function(e){
     if (e.name == 'Lawn Codes') {
