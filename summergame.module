@@ -1541,7 +1541,7 @@ function summergame_get_classic_status($pid) {
   $completed = 0;
 
   // check if player has submitted the completion game code
-  $row = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND metadata LIKE :metadata",
+  $row = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND metadata LIKE :metadata ORDER BY timestamp DESC LIMIT 1",
                     [':pid' => $pid, ':metadata' => "%gamecode:$completion_gamecode%"])->fetchObject();
   if ($row->lid) {
     $completed = $row->timestamp;
