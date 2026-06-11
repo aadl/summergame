@@ -259,12 +259,10 @@ class SummerGameGameCodeForm extends FormBase {
     $code_id = $form_state->getValue('code_id');
 
     // Check whether new game code is unique
-    if (!$code_id) {
-      $code = $db->query("SELECT code_id FROM sg_game_codes WHERE text LIKE :text AND game_term LIKE :game_term",
-                         [':text' => $text, ':game_term' => $game_term])->fetchObject();
-      if (isset($code->code_id)) {
-        $form_state->setErrorByName('text', 'Code text is already in use for this game term. Please select another code.');
-      }
+    $code = $db->query("SELECT code_id FROM sg_game_codes WHERE text LIKE :text AND game_term LIKE :game_term",
+                        [':text' => $text, ':game_term' => $game_term])->fetchObject();
+    if (isset($code->code_id) && ($code->code_id != $code_id)) {
+      $form_state->setErrorByName('text', 'Code text is already in use for this game term. Please select another code.');
     }
 
     // Check is code text is close to another code
