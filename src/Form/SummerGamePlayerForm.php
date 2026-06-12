@@ -119,7 +119,6 @@ class SummerGamePlayerForm extends FormBase
     $form['buttons']['submit'] = [
       '#type' => 'submit',
       '#value' => t($submit_text),
-      '#attributes' => ['onClick' => 'resetDirty()'],
     ];
 
     if ($player['pid']) {
