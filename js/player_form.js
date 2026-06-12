@@ -7,30 +7,23 @@
       styleObj.display='block';
   }
 
-  const beforeUnloadHandler = (event) => {
-    // Recommended
-    event.preventDefault();
+  window.addEventListener('load', function () {
+    checkForSchool(document.getElementById("edit-agegroup"));
+    if (!window.location.pathname.replace(/\/$/, '').endsWith('/edit')) {
+      return;
+    }
+    const beforeUnloadHandler = (event) => {
+      event.preventDefault();
+      event.returnValue = true;
+    };
 
-    // Included for legacy support, e.g. Chrome/Edge < 119
-    event.returnValue = true;
-  };
-
-  function checkForDirty() {
     const form = document.getElementById("summergame-player-form");
-    form.addEventListener('change', (event) => {
-      const element = event.target;
-      console.log('Element changed:', element.name, 'Value:', element.value);
+    form.addEventListener('change', () => {
       window.addEventListener("beforeunload", beforeUnloadHandler);
     });
-  }
-
-  function resetDirty() {
-    window.removeEventListener("beforeunload", beforeUnloadHandler);
-  }
-
-  window.addEventListener('load', function() {
-    checkForSchool(document.getElementById("edit-agegroup"));
-    checkForDirty();
+    form.addEventListener('submit', () => {
+      window.removeEventListener("beforeunload", beforeUnloadHandler);
+    });
   });
 
 })();
