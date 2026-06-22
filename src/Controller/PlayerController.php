@@ -146,16 +146,6 @@ class PlayerController extends ControllerBase {
         }
       }
 */
-      // Determine Classic Reading Game status
-      $completion_gamecode = $summergame_settings->get('summergame_completion_gamecode');
-      $row = $db->query("SELECT * FROM sg_ledger WHERE pid = " . $player['pid'] .
-                        " AND metadata LIKE '%gamecode:$completion_gamecode%'")->fetchObject();
-      if (isset($row->lid)) {
-        $completed_classic = date('F j, Y', $row->timestamp);
-      }
-      else {
-        $completed_classic = FALSE;
-      }
 
       // Check for cell phone attachment code
       if (preg_match('/^[\d]{6}$/', $player['phone'] ?? '')) {
@@ -245,7 +235,7 @@ class PlayerController extends ControllerBase {
         '#summergame_shop_message' => $summergame_settings->get('summergame_shop_message'),
         '#user_orders_link' => $order_link ?? '',
         '#commerce_game_term' => $commerce_game_term,
-        '#completed_classic' => $completed_classic,
+        '#completed_classic' => summergame_get_classic_status($player['pid']),
         '#website_user' => $website_user,
         '#homecode' => $homecode,
         '#game_display_name' => $summergame_settings->get('game_display_name'),

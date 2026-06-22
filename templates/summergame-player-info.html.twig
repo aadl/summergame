@@ -71,7 +71,7 @@
             <td>Classic Reading Game</td>
             <td>
               {% if completed_classic %}
-                Completed on {{ completed_classic }}
+                Completed on {{ completed_classic|date("F j, Y") }}
               {% else %}
                 <a href="/summergame/player/{{ player.pid }}/consume">Log 10 items to complete!</a>
               {% endif %}
