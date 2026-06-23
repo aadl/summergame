@@ -1677,14 +1677,17 @@ function summergame_redeem_code($player, $code_text) {
                       "AND n.status = 1 " .
                       "AND gt.field_badge_game_term_value = :game_term " .
                       "AND f.field_badge_formula_value LIKE :code_text " .
-                      "ORDER BY bid DESC LIMIT 1",
-                      [':game_term' => $code->game_term, ':code_text' => "%$code->text%"])->fetchObject();
-    if (isset($res->bid)) {
-      $badge_formula = strtolower($res->formula);
-      $badge_formula_split = preg_split('/[,|]/', $badge_formula);
-      if (in_array(strtolower($code->text), $badge_formula_split)) {
-        $code->description .= " [Part of the $res->title badge.]";
-        $result['bid'] = $res->bid;
+                      "ORDER BY bid DESC",
+                      [':game_term' => $code->game_term, ':code_text' => "%$code->text%"])->fetchAll();
+    if (isset($res[0]->bid)) {
+      foreach ($res as $row) {
+        $badge_formula = strtolower($row->formula);
+        $badge_formula_split = preg_split('/[,|]/', $badge_formula);
+        if (in_array(strtolower($code->text), $badge_formula_split)) {
+          $code->description .= " [Part of the $row->title badge.]";
+          $result['bid'] = $row->bid;
+          break;
+        }
       }
     }
 
