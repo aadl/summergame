@@ -23,7 +23,7 @@ class SummerGamePlayerRedeemForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, FormStateInterface $form_state, $pid = 0) {
+  public function buildForm(array $form, FormStateInterface $form_state, $pid = 0, $autofocus = true) {
     $player = summergame_player_load($pid);
 
     $form = [
@@ -44,8 +44,11 @@ class SummerGamePlayerRedeemForm extends FormBase {
       '#default_value' => ($_GET['text'] ?? ''),
       '#prefix' => '<div class="container-inline">',
       '#suffix' => '</div>',
-      '#attributes' => ['autofocus' => '', 'autocomplete'=>'off', 'autocorrect'=>'off', 'autocapitalize'=>'off', 'spellcheck'=>'false']
+      '#attributes' => [ 'autocomplete'=>'off', 'autocorrect'=>'off', 'autocapitalize'=>'off', 'spellcheck'=>'false']
     ];
+    if ($autofocus){
+      $form['code_text']['#attributes']['autofocus'] = '';
+    }
     $all_players = summergame_player_load_all($player['uid']);
     if (count($all_players) > 1) {
       $pid_options = [];
