@@ -570,7 +570,7 @@ class AdminController extends ControllerBase {
 
     $table = [
       '#type' => 'table',
-      '#header' => ['Date', 'Player Count', 'Total Points', 'Shop Point Total', 'Classic Shop Point Total', 'Game Code Count', 'Badge Count'],
+      '#header' => ['Date', 'Player Count', 'Total Points', 'Shop Point Total', 'Classic Shop Point Total', 'Game Code Count', 'Badge Count', 'Lawn & Library Code Count'],
     ];
 
     while ($date <= $end) {
@@ -581,8 +581,9 @@ class AdminController extends ControllerBase {
       $classic_shop_total = $db->query("SELECT SUM(points) FROM `sg_ledger` WHERE `game_term` = 'SummerGameClassic' AND `type` = 'Shop Order' AND `timestamp` < $timestamp")->fetchField();
       $code_count = $db->query("SELECT COUNT(*) FROM `sg_ledger` WHERE `game_term` = '$game_term' AND `type` = 'Game Code' AND `timestamp` < $timestamp")->fetchField();
       $badge_count = $db->query("SELECT COUNT(*) FROM `sg_ledger` WHERE `game_term` = '$game_term' AND `type` = 'Badge Bonus' AND `timestamp` < $timestamp")->fetchField();
+      $lawn_library_count = $db->query("SELECT COUNT(*) FROM `sg_ledger` WHERE `game_term` = '$game_term' AND `type` = 'Lawn & Library' AND `timestamp` < $timestamp")->fetchField();
 
-      $table['#rows'][] = [$date->format('Y-m-d'), $player_count, $point_total, $shop_total, $classic_shop_total, $code_count, $badge_count];
+      $table['#rows'][] = [$date->format('Y-m-d'), $player_count, $point_total, $shop_total, $classic_shop_total, $code_count, $badge_count, $lawn_library_count];
 
       $date->modify('+1 day');
     }

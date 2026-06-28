@@ -146,21 +146,17 @@ class PlayerController extends ControllerBase {
         }
       }
 */
-      // Determine Classic Reading Game status
-      $completion_gamecode = $summergame_settings->get('summergame_completion_gamecode');
-      $row = $db->query("SELECT * FROM sg_ledger WHERE pid = " . $player['pid'] .
-                        " AND metadata LIKE '%gamecode:$completion_gamecode%'")->fetchObject();
-      if (isset($row->lid)) {
-        $completed_classic = date('F j, Y', $row->timestamp);
-      }
-      else {
-        $completed_classic = FALSE;
-      }
 
       // Check for cell phone attachment code
       if (preg_match('/^[\d]{6}$/', $player['phone'] ?? '')) {
         $char = summergame_get_phone_character($player['pid']);
         $player['phone'] = 'TEXT ' . $char . $player['phone'] . ' to 734-327-4200 to connect your phone';
+      }
+
+      // Get Player Balances
+      $balances = [];
+      if (\Drupal::moduleHandler()->moduleExists('commerce_summergame')) {
+        $balances = commerce_summergame_get_player_balances($player['pid']);
       }
 
       // Lookup drupal user if admin
@@ -184,14 +180,12 @@ class PlayerController extends ControllerBase {
 
           if ($user->id() == $account->id() || $user->hasPermission('administer users')) {
             $website_user = '<a href="/user/' . $account->id() . '">' . $website_user . '</a>';
+            // Link to user's order page if prize count is greater than 0
+            if (isset($balances['prize_count']) && $balances['prize_count'] > 0) {
+              $order_link = '<a href="/user/' . $account->id() . '/orders">View My Shop Orders</a>';
+            }
           }
         }
-      }
-
-      // Get Player Balances
-      $balances = [];
-      if (\Drupal::moduleHandler()->moduleExists('commerce_summergame')) {
-        $balances = commerce_summergame_get_player_balances($player['pid']);
       }
 
       // Get Points-o-Matic weekly scores
@@ -239,8 +233,9 @@ class PlayerController extends ControllerBase {
         '#commerce_shop_term' => $commerce_shop_term,
         '#summergame_shop_message_threshold' => $summergame_settings->get('summergame_shop_message_threshold'),
         '#summergame_shop_message' => $summergame_settings->get('summergame_shop_message'),
+        '#user_orders_link' => $order_link ?? '',
         '#commerce_game_term' => $commerce_game_term,
-        '#completed_classic' => $completed_classic,
+        '#completed_classic' => summergame_get_classic_status($player['pid']),
         '#website_user' => $website_user,
         '#homecode' => $homecode,
         '#game_display_name' => $summergame_settings->get('game_display_name'),
@@ -451,9 +446,10 @@ class PlayerController extends ControllerBase {
     return new RedirectResponse('/summergame/player/' . $pid);
   }
 
-  public function gcpc($pid = 0) {
+  public function gcpc($pid = 0, $delete = FALSE) {
     if ($player = summergame_player_load(['pid' => $pid])) {
       if (!$player['phone']) {
+        // phone is blank, generate a new link code and save it to the player record
         $db = \Drupal::database();
         unset($player['bids']);
         // Generate a new cell phone code
@@ -469,6 +465,25 @@ class PlayerController extends ControllerBase {
         summergame_player_save($player);
         $char = summergame_get_phone_character($player['pid']);
         \Drupal::messenger()->addMessage('TEXT ' . $char. $code . ' to 734-327-4200 to connect your phone');
+      }
+      else {
+        if ($delete) {
+          $player['phone'] = NULL;
+          summergame_player_save($player);
+          \Drupal::messenger()->addMessage('Cell phone cleared for Player #' . $player['pid']);
+        }
+        else {
+          // phone exists, display message and link to delete it if they want to connect a different phone
+          $output = "<p>Current cell phone for Player #{$player['pid']}: " . $player['phone'] . ".</p>
+                     <p>Delete to remove this phone from your player, which will also allow you to connect a different phone.</p>
+                     <p><a class='button' href='/summergame/player/{$player['pid']}/gcpc/delete'>Delete Current Phone</a>
+                     &nbsp;<a href='/summergame/player/{$player['pid']}'>Cancel</a></p>";
+          return [
+            '#type' => 'markup',
+            '#markup' => $output,
+            '#cache' => ['max-age' => 0],
+          ];
+        }
       }
       return new RedirectResponse('/summergame/player/' . $player['pid']);
     }
@@ -532,7 +547,7 @@ class PlayerController extends ControllerBase {
         // Change bnum: code to a link to the bib record
         if (preg_match('/bnum:([\w-]+)/', $row['metadata'], $matches)) {
           if (preg_match('/^\d{7}$/', $matches[1])) {
-            $row['description'] = '<img src="//cdn.aadl.com/covers/' . $matches[1] . '_100.jpg" width="50"> ' . $row['description'];
+            $row['description'] = '<img src="//cdn.aadl.com/covers/' . $matches[1] . '_100.jpg" width="50" alt="Item Cover Image"> ' . $row['description'];
           }
           if ($row['type'] != 'Download of the Day' || $player_access) { // Don't link to DotD records
             $row['description'] = '<a href="/catalog/record/' . $matches[1] .  '">' .$row['description'] . '</a>';
@@ -731,6 +746,33 @@ class PlayerController extends ControllerBase {
     }
     $response = new JsonResponse($resp, 200);
     return $response;
+  }
+
+  public function all_player_summary($uid = 0){
+    $user = \Drupal::currentUser();
+    if ((int)$user->id() !== (int)$uid && !\Drupal::service('permission_checker')->hasPermission('manage summergame', $user) && (int)$uid !== 0) {
+        return new RedirectResponse('/user/login?destination=/summergame/player');
+    }
+    if ($uid == 0) {
+      $uid = (int)$user->id();
+      return new RedirectResponse("/summergame/user/$uid/all-players");
+    }
+    $players = summergame_player_load_all($uid);
+    foreach ($players as $key => $player) {
+      $player_points = summergame_get_player_points($player['pid']);
+      $commerce_points = commerce_summergame_get_player_balances($player['pid']);
+      $players[$key]['player_points'] = $player_points;
+      $players[$key]['commerce_points'] = $commerce_points;
+    }
+    $renderArray = array(
+      "players"=>$players,
+    );
+    $module_path = \Drupal::service('module_handler')->getModule('summergame')->getpath();
+    $html = $this->renderTwig($module_path."/templates/sg-all-player-summary.html.twig",  $renderArray);
+    return [
+      '#markup' => $html,
+      '#cache' => ['max-age' => 0]
+    ];
   }
 
   private function renderTwig($template_file, array $variables){

@@ -109,12 +109,6 @@ class SummerGameSelfAwardForm extends FormBase {
     }
     $form['tasks_table_end']['#markup'] = '</table>';
 
-    $form['cancel'] = [
-      '#type' => 'link',
-      '#title' => 'Return to Player Page',
-      '#url' => Url::fromRoute('summergame.player'),
-    ];
-
     return $form;
   }
 

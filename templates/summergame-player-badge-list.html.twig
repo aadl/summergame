@@ -28,28 +28,30 @@
           {% endfor %}
         </p>
       {% endif %}
-      <div id="badge-filters">
-        <p>Filter by: <button class="button active" onclick="filterSelection('all')">SHOW ALL</button></p>
-        <p>Difficulty:
-          <button class="button" onclick="filterSelection('diff1')">⭐️ Standard</button>
-          <button class="button" onclick="filterSelection('diff2')">⭐️⭐️ Tricky</button>
-          <button class="button" onclick="filterSelection('diff3')">⭐️⭐️⭐️ Super Tricky</button>
-          <button class="button" onclick="filterSelection('diff4')">⭐️⭐️⭐️⭐️ Extremely Tricky</button>
-        </p>
-        {% if list_tags %}
-        <p>Tags:
-          {% for term_id, tag in list_tags %}
-            <button class="button"
-                    onmouseover="showDescription('tag{{ term_id }}')"
-                    onmouseout="showDescription('')"
-                    onclick="filterSelection('tag{{ term_id }}')">{{ tag.name }}</button>
-          {% endfor %}
-          {% for term_id, tag in list_tags %}
-            <div class="badge-tag-description" id="tag{{ term_id }}-description">{{ tag.description|raw }}</div>
-          {% endfor %}
-        </p>
-        {% endif %}
-      </div>
+      {% if is_summergame %}
+        <div id="badge-filters">
+          <p>Filter by: <button class="button active" onclick="filterSelection('all')">SHOW ALL</button></p>
+          <p>Difficulty:
+            <button class="button" onclick="filterSelection('diff1')">⭐️ Standard</button>
+            <button class="button" onclick="filterSelection('diff2')">⭐️⭐️ Tricky</button>
+            <button class="button" onclick="filterSelection('diff3')">⭐️⭐️⭐️ Super Tricky</button>
+            <button class="button" onclick="filterSelection('diff4')">⭐️⭐️⭐️⭐️ Extremely Tricky</button>
+          </p>
+          {% if list_tags %}
+          <p>Tags:
+            {% for term_id, tag in list_tags %}
+              <button class="button"
+                      onmouseover="showDescription('tag{{ term_id }}')"
+                      onmouseout="showDescription('')"
+                      onclick="filterSelection('tag{{ term_id }}')">{{ tag.name }}</button>
+            {% endfor %}
+            {% for term_id, tag in list_tags %}
+              <div class="badge-tag-description" id="tag{{ term_id }}-description">{{ tag.description|raw }}</div>
+            {% endfor %}
+          </p>
+          {% endif %}
+        </div>
+      {% endif %}
       <div id="badge-list">
         {% if not is_byteclub %}
         <h2>{{ game_term|replace({'_': ' '}) }}</h2>
@@ -91,7 +93,7 @@
           </div>
         {% endfor %}
       </div>
-    {% if not is_byteclub %}
+    {% if is_summergame %}
     </div>
     {% include directory ~ "/templates/base/nodes/sidebars/summergame.html.twig" %}
     {% endif %}

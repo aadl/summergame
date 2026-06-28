@@ -1,9 +1,4 @@
 (function ($, Drupal) {
-  var lookupBtn = document.getElementById('edit-lookup-address');
-  lookupBtn.addEventListener('click', function() {
-    geocode_address(document.getElementById('edit-street').value.trim(), document.getElementById('edit-zip').value.trim());
-  }, false);
-
   // Build marker layers
   var homecodeLayerGroup = new L.layerGroup();
 
@@ -26,7 +21,23 @@
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   }).addTo(myMap);
 
-  myMap.on('click', onMapClick);
+  var lookupBtn = document.getElementById('edit-lookup-address');
+  if (lookupBtn) {
+    lookupBtn.addEventListener('click', function() {
+      geocode_address(document.getElementById('edit-street').value.trim(), document.getElementById('edit-zip').value.trim());
+    }, false);
+
+    myMap.on('click', onMapClick);
+  }
+  else {
+    var lat = document.querySelector('[data-drupal-selector="edit-homecode-lat"]');
+    var lon = document.querySelector('[data-drupal-selector="edit-homecode-lon"]');
+    if (lat && lon) {
+      myMap.setView([lat.value, lon.value], 20);
+      L.marker([lat.value, lon.value], {icon: redIcon}).addTo(homecodeLayerGroup);
+      showActions();
+    }
+  }
 
   function geocode_address(street, zip) {
     if (street.search(/[\d].* .+/) == -1) {
@@ -123,20 +134,22 @@
 
 function checkCodeType() {
   element_to_check = document.getElementById('edit-type');
-  if (element_to_check.value == 'lawn') {
-    document.getElementById("homecode-form-details").className = "";
-    document.getElementById("lawn-elements").className = "";
-    document.getElementById("library-elements").className = "visually-hidden";
-  }
-  else if (element_to_check.value == 'library') {
-    document.getElementById("homecode-form-details").className = "";
-    document.getElementById("lawn-elements").className = "visually-hidden";
-    document.getElementById("library-elements").className = "";
-  }
-  else {
-    document.getElementById("homecode-form-details").className = "visually-hidden";
-    document.getElementById("lawn-elements").className = "";
-    document.getElementById("library-elements").className = "";
+  if (element_to_check) {
+    if (element_to_check.value == 'lawn') {
+      document.getElementById("homecode-form-details").className = "";
+      document.getElementById("lawn-elements").className = "";
+      document.getElementById("library-elements").className = "visually-hidden";
+    }
+    else if (element_to_check.value == 'library') {
+      document.getElementById("homecode-form-details").className = "";
+      document.getElementById("lawn-elements").className = "visually-hidden";
+      document.getElementById("library-elements").className = "";
+    }
+    else {
+      document.getElementById("homecode-form-details").className = "visually-hidden";
+      document.getElementById("lawn-elements").className = "";
+      document.getElementById("library-elements").className = "";
+    }
   }
 }
 

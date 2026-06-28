@@ -119,7 +119,6 @@ class SummerGamePlayerForm extends FormBase
     $form['buttons']['submit'] = [
       '#type' => 'submit',
       '#value' => t($submit_text),
-      '#attributes' => ['onClick' => 'resetDirty()'],
     ];
 
     if ($player['pid']) {
@@ -311,9 +310,7 @@ class SummerGamePlayerForm extends FormBase
   /**
    * {@inheritdoc}
    */
-  public function validateForm(array &$form, FormStateInterface $form_state)
-  {
-  }
+  public function validateForm(array &$form, FormStateInterface $form_state) {}
 
   /**
    * {@inheritdoc}
@@ -385,7 +382,7 @@ class SummerGamePlayerForm extends FormBase
       }
       if (($_GET['scatterlog'] ?? '') == true) {
         \Drupal::messenger()->deleteAll();
-        $form_state->setRedirect('summergame.scatterlog.connect');
+        $form_state->setRedirect('puzzles.scatterlog.connect');
       } else {
         $form_state->setRedirect('summergame.player', ['pid' => $player['pid']]);
       }

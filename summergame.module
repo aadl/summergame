@@ -508,6 +508,7 @@ function summergame_theme() {
         'commerce_shop_term' => NULL,
         'summergame_shop_message_threshold' => NULL,
         'summergame_shop_message' => NULL,
+        'user_orders_link' => NULL,
         'commerce_game_term' => NULL,
         'completed_classic' => NULL,
         'website_user' => NULL,
@@ -548,6 +549,7 @@ function summergame_theme() {
         'list_tags' => NULL,
         'badge_list' => NULL,
         'is_byteclub' => NULL,
+        'is_summergame' => NULL,
       ]
     ],
     'summergame_leaderboard_page' => [
@@ -563,13 +565,6 @@ function summergame_theme() {
         'leagues_enabled' => NULL,
         'leaderboard_timestamp' => NULL,
         'leaderboard' => NULL,
-      ]
-    ],
-    'summergame_player_external_redeem' => [
-      'variables' => [
-        'players' => NULL,
-        'uid' => NULL,
-        'type' => NULL,
       ]
     ],
     'summergame_player_leagues_page' => [
@@ -695,15 +690,12 @@ function summergame_index_gamecodes($game_term, $code_id = 0, $dev = FALSE) {
   }
   else {
     // Index all game codes for this game term
+    $building_code_regex = \Drupal::config('summergame.settings')->get('summergame_fuzzy_code_regex');
     $result = [];
     $res = $db->query('SELECT code_id, text, clue FROM sg_game_codes WHERE game_term = :game_term', [':game_term' => $game_term]);
     foreach ($res as $row) {
       // Check if code is a building or banner code
-      $building_code = FALSE;
-      if (preg_match('/^Find a code in the .* Library!$|^Look for a banner on the outside of the .* Library!$/', $row->clue)) {
-        // Check if the code is a building code
-        $building_code = TRUE;
-      }
+      $building_code = (preg_match($building_code_regex, $row->clue) ? TRUE : FALSE);
 
       // index game code text in elasticsearch
       $result[] = $es_client->index([
@@ -789,7 +781,8 @@ function summergame_gamecode_close_match($text, $game_term = NULL, $building_cod
 function summergame_twilio_respond($incoming) {
   $db = \Drupal::database();
   $summergame_settings = \Drupal::config('summergame.settings');
-  $current_game_term = \Drupal::config('summergame.settings')->get('summergame_current_game_term');
+  $current_game_term = $summergame_settings->get('summergame_current_game_term');
+  $signup_game_term = $summergame_settings->get('summergame_signup_game_term');
 
   // Prep generic response array
   $response_template = ['uid' => twilio_lookup_user($incoming['phone']),
@@ -850,12 +843,12 @@ function summergame_twilio_respond($incoming) {
       $new_player_needed = TRUE;
     }
     else {
+      // Show player points, default to signup game term
       $response = $response_template;
-      $gameDisplayName = \Drupal::config('summergame.settings')->get('game_display_name');
       $player_points = summergame_get_player_points($player['pid']);
-      $total = (int) $player_points[$current_game_term]['total'];
+      $total = (int) $player_points[$signup_game_term]['total'];
 
-      $response['text'] = ($player['nickname'] ? $player['nickname'] : $player['name']) . "'s $gameDisplayName Point Total: ";
+      $response['text'] = ($player['nickname'] ? $player['nickname'] : $player['name']) . "'s $signup_game_term Point Total: ";
       $response['text'] .= $total . ' points';
 
       $responses[] = $response;
@@ -900,12 +893,11 @@ function summergame_twilio_respond($incoming) {
     $new_player = array('name' => $incoming['phone'], 'phone' => $incoming['phone']);
     $player = summergame_player_save($new_player);
     $response = $response_template;
-    $gameDisplayName = \Drupal::config('summergame.settings')->get('game_display_name');
-    $response['text'] = "New $gameDisplayName player #" . $player['pid'] . " created for this phone.";
+    $response['text'] = "New $signup_game_term player #" . $player['pid'] . " created for this phone.";
     $responses[] = $response;
 
     // Special message
-    if ($current_game_term == 'MLEADershipGame') {
+    if ($signup_game_term == 'MLEADershipGame') {
       $response = $response_template;
       $response['text'] = 'Welcome to the M-LEADership Game - a university-wide, month long scavenger hunt ' .
                           'to find leadership resources across campus! To get started, please fill out this ' .
@@ -916,7 +908,7 @@ function summergame_twilio_respond($incoming) {
 
     // Signup bonus
     $points = summergame_player_points($player['pid'], 100, 'Signup',
-                                       'Signed Up for the Game', 'via:txt');
+                                       'Signed Up for the Game', 'via:txt', $signup_game_term);
     $response = $response_template;
     $response['text'] = "Earned $points points for signing up!";
     $responses[] = $response;
@@ -1036,9 +1028,10 @@ PARTITIONS 3 (
 ALTER TABLE `sg_ledger`
 PARTITION BY RANGE COLUMNS (`game_term`)
 (PARTITION `other_less` VALUES LESS THAN ('SummerGame') ENGINE = InnoDB,
-PARTITION `sg_old` VALUES LESS THAN ('SummerGame2025') ENGINE = InnoDB,
+PARTITION `sg_old` VALUES LESS THAN ('SummerGame2026') ENGINE = InnoDB,
 PARTITION `sg_new` VALUES LESS THAN ('SummerGame9999') ENGINE = InnoDB,
 PARTITION `other_more` VALUES LESS THAN MAXVALUE ENGINE = InnoDB);
+
   // Do Or Diag
   else if (variable_get('summergame_dod_enabled', FALSE)) {
     $text = strtoupper($incoming['text']);
@@ -1424,7 +1417,7 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
 
   $result = $query->execute();
 
-  foreach ($result as $row) {    
+  foreach ($result as $row) {
 
     if (!$term_filter) {
       $game_term = $row->game_term;
@@ -1545,12 +1538,13 @@ function summergame_get_player_log($pid, $game_term = '') {
 function summergame_get_classic_status($pid) {
   $db = \Drupal::database();
   $completion_gamecode = \Drupal::config('summergame.settings')->get('summergame_completion_gamecode');
+  $game_term = \Drupal::config('summergame.settings')->get('summergame_current_game_term');
   $completed = 0;
 
   // check if player has submitted the completion game code
-  $row = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND metadata LIKE :metadata",
-                    [':pid' => $pid, ':metadata' => "%gamecode:$completion_gamecode%"])->fetchObject();
-  if ($row->lid) {
+  $row = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND metadata LIKE :metadata AND game_term = :game_term",
+                    [':pid' => $pid, ':metadata' => "%gamecode:$completion_gamecode%", ':game_term' => $game_term])->fetchObject();
+  if (isset($row->lid)) {
     $completed = $row->timestamp;
   }
 
@@ -1657,6 +1651,7 @@ function summergame_redeem_code($player, $code_text) {
         return ['error' => "Code \"$code->text\" already redeemed on $existing_date"];
       }
     }
+
     // Go ahead and redeem
     $db->update('sg_game_codes')
       ->condition('code_id', $code->code_id, '=')
@@ -1682,14 +1677,17 @@ function summergame_redeem_code($player, $code_text) {
                       "AND n.status = 1 " .
                       "AND gt.field_badge_game_term_value = :game_term " .
                       "AND f.field_badge_formula_value LIKE :code_text " .
-                      "ORDER BY bid DESC LIMIT 1",
-                      [':game_term' => $code->game_term, ':code_text' => "%$code->text%"])->fetchObject();
-    if (isset($res->bid)) {
-      $badge_formula = strtolower($res->formula);
-      $badge_formula_split = preg_split('/[,|]/', $badge_formula);
-      if (in_array(strtolower($code->text), $badge_formula_split)) {
-        $code->description .= " [Part of the $res->title badge.]";
-        $result['bid'] = $res->bid;
+                      "ORDER BY bid DESC",
+                      [':game_term' => $code->game_term, ':code_text' => "%$code->text%"])->fetchAll();
+    if (isset($res[0]->bid)) {
+      foreach ($res as $row) {
+        $badge_formula = strtolower($row->formula);
+        $badge_formula_split = preg_split('/[,|]/', $badge_formula);
+        if (in_array(strtolower($code->text), $badge_formula_split)) {
+          $code->description .= " [Part of the $row->title badge.]";
+          $result['bid'] = $row->bid;
+          break;
+        }
       }
     }
 
@@ -1702,7 +1700,14 @@ function summergame_redeem_code($player, $code_text) {
       $code->description .= ')';
     }
 
-    $points = summergame_player_points($player['pid'], $code->points, 'Game Code', $code->description, 'gamecode:' . $code->text, $code->game_term);
+    // Change ledger type for Lawn & Library codes
+    $ledger_type = 'Game Code';
+    if (strpos($code->clue, 'homecode') !== FALSE || strpos($code->clue, 'branchcode') !== FALSE) {
+      $ledger_type = 'Lawn & Library';
+    }
+
+    $points = summergame_player_points($player['pid'], $code->points, $ledger_type, $code->description, 'gamecode:' . $code->text, $code->game_term);
+
     $message = ($player['nickname'] ? $player['nickname'] : $player['name']) .
                " redeemed code \"$code->text\" for $points $code->game_term points";
     if ($code->description) {
@@ -1727,7 +1732,7 @@ function summergame_redeem_code($player, $code_text) {
   }
   else if (summergame_gamecode_close_match($code_text, NULL, TRUE)) {
     // Check if code is a close match to a building code in the current game term
-    return ['warning' => "The text you entered is close to a Branch Explorer code, check your spelling and try again!"];
+    return ['warning' => "The text you entered is close to an Explorer code, check your spelling and try again!"];
   }
   else {
     return ['warning' => "Code is not recognized"];
@@ -1895,10 +1900,10 @@ function summergame_player_check_badges($pid, $game_term) {
   while ($badge = $res->fetchObject()) {
     if (!in_array($badge->bid, $player_bids)) {
       $awarded = FALSE;
-      if (strpos($badge->formula, 'SELFAWARD:') === 0) {
+      if (preg_match('/^SELFAWARD(\d*):(.*)/', $badge->formula, $matches)) {
         // Self Award Badge
-        $tasks = explode('|', substr($badge->formula, strlen('SELFAWARD:')));
-        $total_count = count($tasks);
+        $tasks = explode('|', $matches[2]);
+        $total_count = (int)$matches[1] ?: count($tasks);
         //$player_count = $db->query("SELECT COUNT(lid) AS player_count FROM `sg_ledger` WHERE `pid` = $pid AND metadata LIKE '%badgetask:$badge->bid%'")->fetchField();
         $player_count = 0;
         foreach ($points_rows as $points) {
@@ -1906,12 +1911,11 @@ function summergame_player_check_badges($pid, $game_term) {
             $player_count++;
           }
         }
-
         if ($player_count >= $total_count) {
           $awarded = summergame_player_award_badge($pid, $badge->bid);
         }
       }
-      if (strpos($badge->formula, '**')) {
+      elseif (strpos($badge->formula, '**')) {
         // Multi Game Term ("Hall of Fame") Badge
         list($hof_type, $game_term_pattern, $badge_limit) = explode('**', $badge->formula);
         if ($hof_type == 'game_terms') {
@@ -2179,6 +2183,99 @@ function summergame_check_all_player_badges($game_term = '') {
       echo date("Y-m-d H:i:s") . " Processed $p_count Players..." . PHP_EOL;
     }
   }
+}
+
+/**
+ * UTILITY: Get badge statistics
+ */
+function summergame_get_badge_stats($bid) {
+  $return = [
+    'bid' => $bid,
+  ];
+
+  // Get badge title and formula
+  $db = \Drupal::database();
+  $return['title'] = $db->query("SELECT n.title FROM node_field_data n WHERE n.nid = :bid",
+                                [':bid' => $bid])->fetchField();
+  $return['awarded'] = $db->query("SELECT COUNT(pid) AS pcount FROM sg_players_badges WHERE bid=:bid",
+                                  [':bid' => $bid])->fetchField();
+  $formula = $db->query("SELECT field_badge_formula_value FROM node__field_badge_formula WHERE entity_id = :bid",
+                        [':bid' => $bid])->fetchField();
+
+  // Determine formula type
+  if (preg_match('/^SELFAWARD(\d*):(.*)/', $formula, $matches)) {
+     // Self Award Badge
+  }
+  elseif (strpos($formula, '**')) {
+    // Multi Game Term ("Hall of Fame") Badge
+  }
+  elseif (preg_match('/^{([\d,]+)}$/', $formula, $matches)) {
+    // Badge collection badge
+  }
+  elseif (strpos($formula, '^^')) {
+    // Multiple days of a ledger type formula (streak)
+  }
+  elseif (strpos($formula, '::')) {
+    // Multiple of a ledger type formula
+  }
+  else {
+    // Collection Badge
+    $any_conditions = [];
+    foreach (explode(',', $formula) as $text_pattern) {
+      $condition = "metadata = 'gamecode:$text_pattern'";
+      $any_conditions[] = $condition;
+      $redemption_count = $db->query("SELECT COUNT(DISTINCT pid) FROM sg_ledger WHERE $condition")->fetchField();
+      $part_count[$text_pattern] = $redemption_count;
+    }
+    $any_count = $db->query("SELECT COUNT(DISTINCT pid) FROM sg_ledger WHERE " . implode(' OR ', $any_conditions))->fetchField();
+    $return['any'] = $any_count;
+  }
+
+  $return['formula'] = $formula;
+  $return['parts'] = $part_count ?? [];
+
+  return $return;
+}
+
+function summergame_badge_stat_report($game_term) {
+  $filename = 'badge_stats_' . $game_term . '_' . date('Ymd_His') . '.csv';
+  $report_rows = [];
+
+  // Get all badges for this game term
+  $nids = \Drupal::entityQuery('node')
+            ->accessCheck(FALSE)
+            ->condition('type', 'sg_badge')
+            ->condition('field_badge_game_term', $game_term)
+            ->condition('status', 1)
+            ->execute();
+
+  foreach ($nids as $nid) {
+    $stats = summergame_get_badge_stats($nid);
+    // Only include gamecode badges
+    if ($stats['any']) {
+      foreach ($stats['parts'] as $part_code => $part_count) {
+        $report_rows[] = [
+          'Badge ID' => $stats['bid'],
+          'Title' => $stats['title'],
+          'Formula' => $stats['formula'],
+          'Awarded Count' => $stats['awarded'],
+          'Any Count' => $stats['any'],
+          'Game Code' => $part_code,
+          'Code Count' => $part_count,
+        ];
+      }
+    }
+  }
+
+  // Output CSV
+  $fp = fopen($filename, 'w');
+  fputcsv($fp, array_keys($report_rows[0])); // title row
+  foreach ($report_rows as $report_row) {
+    fputcsv($fp, $report_row);
+  }
+  fclose($fp);
+
+  echo "Badge statistics report saved to $filename" . PHP_EOL;
 }
 
 function summergame_check_completion_bonus($pid) {
@@ -2512,11 +2609,10 @@ function summergame_tag_bib($bib_id, $game_code, $game_term = '') {
   }
 
   if (!isset($doc->gamecodes->{$game_term}) || (is_array($doc->gamecodes->{$game_term}) && !in_array($game_code, $doc->gamecodes->{$game_term}))) {
-
     $doc->gamecodes->{$game_term}[] = $game_code;
   }
 
-  if(!isset($doc->flags)) {
+  if (!isset($doc->flags)) {
     $doc->flags = new \stdClass;
   }
   $doc->flags->protected = 1;
@@ -2529,4 +2625,63 @@ function summergame_tag_bib($bib_id, $game_code, $game_term = '') {
   }
 
   return ['success' => $doc];
+}
+
+/**
+ * UTILITY: Unprotect all bibs tagged in a given game term
+ *          Call via drush to unprotect all bibs tagged at the end of a game season
+ */
+function summergame_unprotect_bibs($game_term = '', $limit = '') {
+  // Set a new connector to the CouchDB server
+  $summergame_settings = \Drupal::config('summergame.settings');
+  $couch_dsn = $summergame_settings->get('summergame_couch_dsn');
+  $couch_db = $summergame_settings->get('summergame_couch_db');
+  $client = new CouchClient($couch_dsn, $couch_db);
+
+  if (empty($game_term)) {
+    $game_term = $summergame_settings->get('summergame_current_game_term');
+  }
+
+  // Find all game codes with bibs tagged in this game term
+  $db = \Drupal::database();
+  $rows = $db->query("SELECT * FROM sg_game_codes " .
+                     "WHERE game_term = :game_term " .
+                     "AND link LIKE 'bnum:%'", [':game_term' => $game_term])->fetchAll();
+
+  $count = 0;
+  $total = count($rows);
+  foreach ($rows as $row) {
+    $count++;
+    if ($limit && $count > $limit) {
+      break;
+    }
+
+    $bib_id = str_replace('bnum:', '', $row->link);
+    $message = "Processing $count/$total $bib_id: ";
+
+    try {
+      $doc = $client->getDoc($bib_id);
+    } catch (Exception $e) {
+      $message .= "No Couch Document: " . $e->getMessage();
+      echo $message . PHP_EOL;
+      continue;
+    }
+
+    // If protected flag is set, set to unprotected and update
+    if (isset($doc->flags->protected) && $doc->flags->protected) {
+      $message .= "Unprotecting";
+      $doc->flags->protected = 0;
+      try {
+        $client->storeDoc($doc);
+      } catch (Exception $e) {
+        $message .= "Couch Document storage failed for $bib_id: " . $e->getMessage();
+      }
+    }
+    else {
+      $message .= "Not protected";
+    }
+    echo $message . PHP_EOL;
+  }
+
+  return $count;
 }

@@ -187,10 +187,11 @@ summergame.player.setactive:
   requirements:
     _permission: 'access summergame'
 summergame.player.gcpc:
-  path: '/summergame/player/{pid}/gcpc'
+  path: '/summergame/player/{pid}/gcpc/{delete}'
   defaults:
     _controller: '\Drupal\summergame\Controller\PlayerController::gcpc'
     _title: 'Summer Game Player Generate Cell Phone Code'
+    delete: 0
   requirements:
     _permission: 'access summergame'
 summergame.player.ledger:
@@ -338,21 +339,6 @@ summergame.trivia.update:
     _title: 'Summer Game Trivia Update'
   requirements:
     _permission: 'access summergame'
-# Summer Game Scatterlog Connect ###############################################
-summergame.scatterlog.connect:
-  path: '/summergame/scatterlog/connect'
-  defaults:
-    _controller: '\Drupal\summergame\Controller\ConnectionController:show'
-    _title: 'Summer Game Account Connection'
-  requirements:
-    _permission: 'access summergame'
-summergame.scatterlog.connect_process:
-  path: '/summergame/scatterlog/connect/{uid}'
-  defaults:
-    _controller: '\Drupal\summergame\Controller\ConnectionController:connect'
-    _title: 'Summer Game Account Connection'
-  requirements:
-    _permission: 'access summergame'
 summergame.recent.badges:
   path: '/summergame/recent-badges'
   defaults:
@@ -360,30 +346,6 @@ summergame.recent.badges:
     _title: 'Summer Game Recent Badges'
   requirements:
     _permission: 'access summergame'
-summergame.super_search.get_puzzle:
-  path: '/summergame/super_search/{nid}/get'
-  defaults:
-    _controller: '\Drupal\summergame\Controller\SuperSearchController:get_puzzle'
-    _title: 'Super Search Puzzle Retrieval'
-summergame.super_search.guess:
-  path: '/summergame/super_search/{nid}/guess'
-  defaults:
-    _controller: '\Drupal\summergame\Controller\SuperSearchController:guess'
-    _title: 'Super Search Puzzle Guess'
-  requirements:
-    _method: 'POST'
-  options:
-    no_cache: 'TRUE'
-summergame.super_search.hint:
-  path: '/summergame/super_search/{nid}/hint/{i}'
-  defaults:
-    _controller: '\Drupal\summergame\Controller\SuperSearchController:hint'
-    _title: 'Super Search Puzzle Hint'
-  requirements:
-    _method: 'POST'
-  options:
-    no_cache: 'TRUE'
-
 summergame.aaps_config:
   path: '/summergame/staff/aaps'
   defaults:
@@ -414,3 +376,10 @@ summergame.aaps.code:
     line_number_hash: null
   requirements:
     _permission: 'access content'
+summergame.all.player.summary:
+  path: '/summergame/user/{uid}/all-players'
+  defaults:
+    _controller: '\Drupal\summergame\Controller\PlayerController::all_player_summary'
+    _title: 'Summer Game All Player Summary'
+  requirements:
+    _permission: 'access summergame'

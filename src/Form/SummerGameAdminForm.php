@@ -103,6 +103,14 @@ class SummerGameAdminForm extends ConfigFormBase
       '#maxlength' => 32,
       '#description' => t("Default Game Term to apply to earned points (e.g. SummerGame2011)"),
     ];
+    $form['summergame_signup_game_term'] = [
+      '#type' => 'textfield',
+      '#title' => t("Current Signup Game Term"),
+      '#default_value' => $summergame_settings->get('summergame_signup_game_term'),
+      '#size' => 32,
+      '#maxlength' => 32,
+      '#description' => t("Default Game Term for new players when signing up via text (e.g. MLEADershipGame)"),
+    ];
     $form['summergame_suppress_current_leaderboard'] = [
       '#type' => 'checkbox',
       '#title' => t('Suppress Current Leaderboard'),
@@ -133,6 +141,14 @@ class SummerGameAdminForm extends ConfigFormBase
       '#maxlength' => 32,
       '#description' => t("Game Code awarded for completion of the Classic Reading Game (e.g. PUPPYLOVE13)"),
     ];
+    $form['summergame_fuzzy_code_regex'] = [
+      '#type' => 'textfield',
+      '#title' => t("Fuzzy Code Regex"),
+      '#default_value' => $summergame_settings->get('summergame_fuzzy_code_regex'),
+      '#size' => 100,
+      '#maxlength' => 255,
+      '#description' => t("Regular expression for clue field to identify player-facing fuzzy match game codes (e.g. /^Find a code in the .* Library!$/)"),
+    ];
     $form['summergame_game_term_homes'] = [
       '#type' => 'textarea',
       '#title' => 'Home Pages by Game Term',
@@ -144,6 +160,14 @@ class SummerGameAdminForm extends ConfigFormBase
       '#title' => 'Game Limits by Type',
       '#default_value' => $summergame_settings->get('summergame_game_limits'),
       '#description' => 'Set Game Limits for Types of scoring points. JSON array keyed by type and value with game long point limit',
+    ];
+    $form['summergame_gamecode_rate_limit'] = [
+      '#type' => 'textfield',
+      '#title' => t("Game Code Rate Limit"),
+      '#default_value' => $summergame_settings->get('summergame_gamecode_rate_limit'),
+      '#size' => 32,
+      '#maxlength' => 32,
+      '#description' => t("Limit of number of codes that can be redeemed for a player in a given time period. Format is number:seconds (e.g. 10:300)"),
     ];
     $form['summergame_user_search_path'] = [
       '#type' => 'textfield',
@@ -282,25 +306,6 @@ class SummerGameAdminForm extends ConfigFormBase
       '#default_value' => $summergame_settings->get('summergame_homecode_report_threshold'),
       '#description' => 'Number of player reports needed to remove a Home Code from the map',
     ];
-    $form['summergame_scatterlog_key'] = [
-      '#type' => 'textfield',
-      '#title' => 'Scatterlog App Key',
-      '#default_value' => $summergame_settings->get('summergame_scatterlog_key'),
-      '#description' => 'Key for Scatterlog session creation',
-    ];
-    $form['summergame_scatterlog_url'] = [
-      '#type' => 'textfield',
-      '#title' => 'Scatterlog URL',
-      '#default_value' => $summergame_settings->get('summergame_scatterlog_url'),
-      '#description' => 'URL for scatter log',
-    ];
-    $form['summergame_supersearch_salt'] = [
-      '#type' => 'textfield',
-      '#title' => 'Super Search Salt',
-      '#default_value' => $summergame_settings->get('summergame_supersearch_salt'),
-      '#description' => 'Salt for supersearch answer encoding',
-    ];
-
     return parent::buildForm($form, $form_state);
   }
 }

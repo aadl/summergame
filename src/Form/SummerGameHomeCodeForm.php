@@ -24,11 +24,12 @@ class SummerGameHomeCodeForm extends FormBase {
 
   private function branches() {
     return [
-      'downtown' => 'Downtown',
-      'malletts' => 'Malletts Creek',
-      'pittsfield' => 'Pittsfield',
-      'traverwood' => 'Traverwood',
-      'westgate' => 'Westgate',
+      'downtown' => 'Downtown Library',
+      'malletts' => 'Malletts Creek Library',
+      'pittsfield' => 'Pittsfield Library',
+      'traverwood' => 'Traverwood Library',
+      'westgate' => 'Westgate Library',
+      'aalf' => 'AALF',
     ];
   }
 
@@ -36,6 +37,12 @@ class SummerGameHomeCodeForm extends FormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state, $uid = 0) {
+    // Redirect user 0 to current user's home code form
+    if ($uid == 0) {
+      $uid = \Drupal::currentUser()->id();
+      return new RedirectResponse('/summergame/user/' . $uid . '/homecode');
+    }
+
     // Check access to Account
     $user = User::load(\Drupal::currentUser()->id());
     if ($user->get('uid')->value == $uid ||
@@ -44,6 +51,11 @@ class SummerGameHomeCodeForm extends FormBase {
       if (isset($account)) {
         $form = [
           '#attributes' => ['class' => 'form-width-exception'],
+          '#attached' => [
+            'library' => [
+              'summergame/summergame-homecode-form-lib',
+            ],
+          ],
         ];
 
         // Check for existing home code for this user
@@ -54,7 +66,27 @@ class SummerGameHomeCodeForm extends FormBase {
           if (isset($location_data->branchcode)) {
             $branches = $this->branches();
             $branch = $branches[$location_data->branchcode];
-            $location_message = "Spread the word that it's located at the $branch Library!";
+            $location_message = "Spread the word that it's located at the $branch!";
+
+            // coordinate lookup
+            $lats = [
+              'downtown' => 42.278355032204445,
+              'malletts' => 42.24387568322788,
+              'pittsfield' => 42.25271695126512,
+              'traverwood' => 42.30838433760029,
+              'westgate' => 42.27866255504599,
+              'aalf' => 42.280969845328286,
+            ];
+            $lons = [
+              'downtown' => -83.74590413038366,
+              'malletts' => -83.71805381691777,
+              'pittsfield' => -83.77811950157411,
+              'traverwood' => -83.71416680157276,
+              'westgate' => -83.78305954390173,
+              'aalf' => -83.81069732467459,
+            ];
+            $location_data->lat = $lats[$location_data->branchcode];
+            $location_data->lon = $lons[$location_data->branchcode];
           }
           else {
             $location_message = 'Make sure to display the code next to the street or sidewalk at:<br>' . $location_data->homecode;
@@ -65,6 +97,18 @@ class SummerGameHomeCodeForm extends FormBase {
             '<p>It has been redeemed ' . $homecode->num_redemptions . ' time' . ($homecode->num_redemptions == 1 ? '' : 's') . '!</p>' .
             "<p>$location_message</p>"
           ];
+          // Display map with code location
+          $form['homecode_lat'] = [
+            '#type' => 'hidden',
+            '#value' => $location_data->lat,
+          ];
+          $form['homecode_lon'] = [
+            '#type' => 'hidden',
+            '#value' => $location_data->lon,
+          ];
+          $form['map'] = [
+            '#markup' => '<div id="mapid"></div>',
+          ];
           $homecode_player = summergame_player_load(['uid' => $homecode->creator_uid]);
           $form['cancel'] = [
             '#type' => 'link',
@@ -74,8 +118,6 @@ class SummerGameHomeCodeForm extends FormBase {
           ];
         }
         else if (\Drupal::config('summergame.settings')->get('summergame_homecode_form_enabled')) {
-          $form['#attached']['library'][] = 'summergame/summergame-homecode-form-lib';
-
           $form['instructions'] = [
             '#markup' => \Drupal::config('summergame.settings')->get('summergame_homecode_message'),
           ];
@@ -130,7 +172,7 @@ class SummerGameHomeCodeForm extends FormBase {
             '#type' => 'select',
             '#title' => t('Library Branch'),
             '#options' => array_merge(['' => '- Select Branch -'], $this->branches()),
-            '#description' => t('The library branch where you are posting your library code sign'),
+            '#description' => t('The library location where you are posting your library code sign'),
             '#attributes' => ["onChange" => "showActions()"],
           ];
           $form['details']['lawn'] = [
@@ -263,7 +305,7 @@ class SummerGameHomeCodeForm extends FormBase {
     }
     else if ($form_state->getValue('type') == 'library') {
       if ($form_state->getValue('branch') == '') {
-        $form_state->setErrorByName('branch', 'Please select the branch where this code will be posted.');
+        $form_state->setErrorByName('branch', 'Please select the location where this code will be posted.');
       }
     }
     else {
@@ -297,7 +339,7 @@ class SummerGameHomeCodeForm extends FormBase {
       // branch code
       $branch = $form_state->getValue('branch');
       $branches = $this->branches();
-      $description = "You found a Library Code at the " . $branches[$branch] . ' Library.';
+      $description = 'You found a Library Code at the ' . $branches[$branch] . '.';
       if ($message = $form_state->getValue('message')) {
         $description .= ' ' . trim($message);
       }

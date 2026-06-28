@@ -10,10 +10,10 @@
   {# Link to Points Forms #}
   <div id="player-earn-links">
     <h2>Earn Game Points</h2>
-    <div class="no-padding-left">
+    <div class="gap">
       <a class="button" href="/summergame/player/{{ player.pid }}/gamecode">I have a Game Code!</a>
       {% if summergame_points_enabled %}
-        <a class="button base-margin-left" href="/summergame/player/{{ player.pid }}/consume">I Read, Listened to, or Watched something!</a>
+        <a class="button" href="/summergame/player/{{ player.pid }}/consume">I Read, Listened to, or Watched something!</a>
       {% endif %}
     </div>
   </div>
@@ -41,7 +41,10 @@
         <table class="account-summary not-fixed-table">
           <tr><th>Type</th><th>Balance</th></tr>
           <tr><td>Summer Game Shop Total</td><td><strong>{{ attribute(balances, commerce_game_term) }}</strong></td></tr>
-          <tr><td>{{commerce_shop_term}} Prize Count</td><td>({{ balances.prize_count }}/4 items)</td></tr>
+          <tr><td>{{commerce_shop_term}} Prize Count</td><td>({{ balances.prize_count }}/{{ balances.prize_limit ?: 4 }} items)</td></tr>
+          {% if user_orders_link %}
+            <tr><td colspan="2">{{ user_orders_link|raw }}</td></tr>
+          {% endif %}
           {% if balances.BookPrizeToken is defined %}
             <tr><td>- Book Prize Token</td><td>{{ balances.BookPrizeToken }}</td></tr>
           {% endif %}
@@ -68,7 +71,7 @@
             <td>Classic Reading Game</td>
             <td>
               {% if completed_classic %}
-                Completed on {{ completed_classic }}
+                Completed on {{ completed_classic|date("F j, Y") }}
               {% else %}
                 <a href="/summergame/player/{{ player.pid }}/consume">Log 10 items to complete!</a>
               {% endif %}
@@ -102,7 +105,7 @@
           <th>Cell&nbsp;Phone:</th>
           <td>
             {% if player.phone %}
-              {{ player.phone }}
+              {{ player.phone }} (<a href="/summergame/player/{{ player.pid }}/gcpc">remove</a>)
             {% else %}
               <a href="/summergame/player/{{ player.pid }}/gcpc">GENERATE CODE</a> to link your cell phone to your player
             {% endif %}
@@ -118,6 +121,7 @@
         {% if summergame_leagues_enabled %}
           <tr><th>Leagues:</th><td><a href="/summergame/player/{{ player.pid }}/leagues">View/Join Leagues</a></td></tr>
         {% endif %}
+        <tr><th>Read, Watched, Listened:<th><td><a href="/summergame/player/{{ player.pid }}/ledger?filter_type=Read%20Watched%20Listened%20Daily%20Bonus">View Log Entries</a></td></tr>
       </table>
     </div>
     <div id="player-other-players">
