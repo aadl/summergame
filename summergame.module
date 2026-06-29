@@ -2070,7 +2070,7 @@ function summergame_player_check_badges($pid, $game_term) {
         // Collection Badge
         $eligible = TRUE;
 
-        foreach (explode(',', $badge->formula) as $text_pattern) {
+        foreach (explode(',', strtoupper($badge->formula)) as $text_pattern) {
           /*$query = "SELECT lid FROM sg_ledger WHERE pid = :pid AND (";
           $args = [
             ':pid' => $pid
