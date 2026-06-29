@@ -1369,9 +1369,11 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
         $player_points = $cached_points['player_points'];
         //deload badges and grab them fresh, deload game terms if filtering
         foreach ($player_points as $badge_game_term => $data) {
+          /** 
+           * We can also cache badges since the sg_players_badges field has a timestamp
           if (isset($player_points[$badge_game_term]['badges'])) {
             $player_points[$badge_game_term]['badges'] = [];
-          }
+          }*/
           //unset game terms we don't want here.
           if ($game_term !== '' && $badge_game_term !== $game_term && $badge_game_term !== 'career') {
             unset($player_points[$badge_game_term]);
@@ -1482,7 +1484,7 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
   }
 
   // Get old badges
-  $params = [':pid' => $pid];
+  $params = [':pid' => $pid, ':after' => $after];
   $game_term_filter = "";
   $new_game_term_filter = "";
   if ($term_filter) {
@@ -1493,7 +1495,7 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
   }
 
   $res = $db->query("SELECT * FROM sg_players_badges, sg_badges " .
-                    "WHERE sg_players_badges.pid = :pid AND sg_players_badges.bid = sg_badges.bid " . $game_term_filter .
+                    "WHERE sg_players_badges.pid = :pid AND sg_players_badges.timestamp > :after AND sg_players_badges.bid = sg_badges.bid " . $game_term_filter .
                     "ORDER BY sg_players_badges.timestamp ASC", $params);
   while ($badge = $res->fetchAssoc()) {
     $game_term = $badge['game_term'];
@@ -1509,7 +1511,7 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
   $res = $db->query("SELECT gt.entity_id AS bid, gt.field_badge_game_term_value AS game_term, b.bid AS pbid " .
                     "FROM node__field_badge_game_term gt, sg_players_badges b " .
                     "WHERE gt.entity_id = b.bid " .
-                    "AND b.pid = :pid " . $new_game_term_filter .
+                    "AND b.pid = :pid AND b.timestamp > :after " . $new_game_term_filter .
                     "ORDER BY bid ASC", $params);
   while ($badge = $res->fetchAssoc()) {
     $game_term = $badge['game_term'];
