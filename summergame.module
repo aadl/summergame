@@ -1341,15 +1341,28 @@ function summergame_get_active_player() {
 function summergame_get_player_points($pid, $game_term = '', $type = '') {
   $term_filter = FALSE;
 
+  $closed_game_terms = \Drupal::config('summergame.settings')->get('summergame_closed_game_terms');
+  $closed_game_term__points_filter = "";
+  $closed_game_term_filter = "";
+  $closed_new_game_term_filter = "";
+
   $player_points = [
     'career' => 0,
   ];
+  
+
+  $refresh = false;
+  if(isset($_GET['refresh'])){
+    $refresh = true;
+  }
 
   //redis setup
   $after = 0;
   $using_cache = false;
+  $using_closed_cache = false;
   $redis = null;
   $cached_points_raw = null;
+  $host = \Drupal::request()->getHost();
   try{
     $redis = new Client(\Drupal::config('summergame.settings')->get('summergame_redis_conn'));
     $redis->connect();
@@ -1357,9 +1370,10 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
     $redis = null;
   }
   
-  if (!is_null($redis)) {
-    $host = \Drupal::request()->getHost();
+  if (!is_null($redis) && !$refresh) {
     $cached_points_raw = $redis->get("$host:summergame:points:$pid");
+    $cached_points_closed_raw = $redis->get("$host:summergame:points_closed:$pid");
+
     if (!is_null($cached_points_raw)) {
       $cached_points = json_decode($cached_points_raw, true);
       if($cached_points['timestamp'] > strtotime('-1 hour',time())){
@@ -1369,9 +1383,11 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
         $player_points = $cached_points['player_points'];
         //deload badges and grab them fresh, deload game terms if filtering
         foreach ($player_points as $badge_game_term => $data) {
+          /** 
+           * We can also cache badges since the sg_players_badges field has a timestamp
           if (isset($player_points[$badge_game_term]['badges'])) {
             $player_points[$badge_game_term]['badges'] = [];
-          }
+          }*/
           //unset game terms we don't want here.
           if ($game_term !== '' && $badge_game_term !== $game_term && $badge_game_term !== 'career') {
             unset($player_points[$badge_game_term]);
@@ -1379,6 +1395,20 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
         }
       } else {
         $redis->del("$host:summergame:points:$pid");
+      }
+    }
+    //grab closed game terms from closed cache ONLY if we're not using
+    if (!is_null($cached_points_closed_raw) && !$using_cache) {
+      $using_closed_cache = true;
+      $cached_closed_points = json_decode($cached_points_closed_raw , true);
+      $closed_game_term_points_filter = " AND game_term NOT IN (:closed_game_terms[]) ";
+      $closed_game_term_filter = " AND sg_badges.game_term NOT IN (:closed_game_terms[]) ";
+      $closed_new_game_term_filter = " AND gt.field_badge_game_term_value NOT IN (:closed_game_terms[]) ";
+      $after = 0; // just to be explicit that we're not filtering by time
+      foreach ($closed_game_terms as $closed_game_term) {
+        if (isset($cached_closed_points[$closed_game_term])) {
+          $player_points[$closed_game_term] = $cached_closed_points[$closed_game_term];
+        }
       }
     }
   }
@@ -1395,6 +1425,11 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
     $query .= " AND type = :type";
     $args[':type'] = $type;
   }
+  if ($using_closed_cache) {
+    $query .= $closed_game_term_points_filter;
+    $args[':closed_game_terms[]'] = $closed_game_terms;
+  }
+
   $query .= " group by game_term, type,  (CASE WHEN metadata LIKE '%leaderboard:no%' THEN 'leaderboard:no' WHEN metadata NOT LIKE '%leaderboard:no%' THEN '' END) ORDER BY max_timestamp DESC";
 
   $db = \Drupal::database();
@@ -1452,6 +1487,9 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
   if ($term_filter) {
     $query = $query->condition('game_term', $game_term, '=');
   }
+  if ($using_closed_cache) {
+    $query = $query->condition('game_term', $closed_game_terms, 'NOT IN');
+  }
   $query = $query->condition('metadata', 'delete:no leaderboard:no prize_count:%', 'LIKE');
   
 
@@ -1482,7 +1520,7 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
   }
 
   // Get old badges
-  $params = [':pid' => $pid];
+  $params = [':pid' => $pid, ':after' => $after];
   $game_term_filter = "";
   $new_game_term_filter = "";
   if ($term_filter) {
@@ -1491,9 +1529,12 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
 
     $params[':game_term'] = $game_term;
   }
+  if ($using_closed_cache) {
+    $params[':closed_game_terms[]'] = $closed_game_terms;
+  }
 
   $res = $db->query("SELECT * FROM sg_players_badges, sg_badges " .
-                    "WHERE sg_players_badges.pid = :pid AND sg_players_badges.bid = sg_badges.bid " . $game_term_filter .
+                    "WHERE sg_players_badges.pid = :pid AND sg_players_badges.timestamp > :after AND sg_players_badges.bid = sg_badges.bid " . $game_term_filter . $closed_game_term_filter  .
                     "ORDER BY sg_players_badges.timestamp ASC", $params);
   while ($badge = $res->fetchAssoc()) {
     $game_term = $badge['game_term'];
@@ -1509,7 +1550,7 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
   $res = $db->query("SELECT gt.entity_id AS bid, gt.field_badge_game_term_value AS game_term, b.bid AS pbid " .
                     "FROM node__field_badge_game_term gt, sg_players_badges b " .
                     "WHERE gt.entity_id = b.bid " .
-                    "AND b.pid = :pid " . $new_game_term_filter .
+                    "AND b.pid = :pid AND b.timestamp > :after " . $new_game_term_filter . $closed_new_game_term_filter  .
                     "ORDER BY bid ASC", $params);
   while ($badge = $res->fetchAssoc()) {
     $game_term = $badge['game_term'];
@@ -1541,6 +1582,13 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
     $redis->setEx("$host:summergame:points:$pid", 3600, json_encode($points_cache_obj));
   }
 
+  //save closed game terms in long running cache
+  if (!$using_closed_cache && $term_filter == FALSE && !is_null($redis)) {
+    $points_closed_cache_obj = [];
+    $points_closed_cache_obj['timestamp'] = time();
+    $points_closed_cache_obj['player_points'] = $player_points;
+    $redis->set("$host:summergame:points_closed:$pid", json_encode($points_closed_cache_obj));
+  }
   return $player_points;
 }
 
