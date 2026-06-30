@@ -2070,7 +2070,7 @@ function summergame_player_check_badges($pid, $game_term) {
         // Collection Badge
         $eligible = TRUE;
 
-        foreach (explode(',', strtoupper($badge->formula)) as $text_pattern) {
+        foreach (explode(',', $badge->formula) as $text_pattern) {
           /*$query = "SELECT lid FROM sg_ledger WHERE pid = :pid AND (";
           $args = [
             ':pid' => $pid
@@ -2084,8 +2084,8 @@ function summergame_player_check_badges($pid, $game_term) {
          /* $args[':type_' . $i] = $pattern;
             $args[':metadata_' . $i] = 'gamecode:' . $pattern;
             $pattern = "(type LIKE :type_$i OR metadata LIKE :metadata_$i)";*/
-              $wc_text_pattern = "/" . str_replace("%", ".*", $pattern) . "/";
-              $wc_gamecode_pattern = "/" . str_replace("%", ".*", "gamecode:".$pattern."$") . "/";
+              $wc_text_pattern = "/" . str_replace("%", ".*", $pattern) . "/i";
+              $wc_gamecode_pattern = "/" . str_replace("%", ".*", "gamecode:".$pattern."$") . "/i";
               if (preg_match($wc_text_pattern, $points->type) ||
                   preg_match($wc_gamecode_pattern, $points->metadata)) {
                 $found_any_match = TRUE;
