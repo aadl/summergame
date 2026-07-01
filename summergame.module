@@ -2007,7 +2007,7 @@ function summergame_player_check_badges($pid, $game_term) {
         $distinct_days = [];
         $distinct_count = 0;
 
-        $wc_type_pattern =  "/^" . str_replace("%", ".*", $text_pattern) . "$/i";
+        $wc_type_pattern =  "/^" . str_replace("%", ".*", $text_pattern) . "$/";
         $wc_gamecode_pattern =  "/^" . str_replace("%", ".*", "gamecode:".$text_pattern."%") . "$/i";
 
         foreach ($points_rows as $points) {
@@ -2032,7 +2032,7 @@ function summergame_player_check_badges($pid, $game_term) {
                                   "AND (type LIKE :text_pattern OR metadata LIKE :gamecode_pattern) AND game_term = :game_term",
                                   [':text_pattern' => $text_pattern, ':gamecode_pattern' => "gamecode:$text_pattern%", ':game_term' => $game_term])->fetchObject();*/
           $lid_count = 0;
-          $wc_type_pattern =  "/^" . str_replace("%", ".*", $text_pattern) . "$/i";
+          $wc_type_pattern =  "/^" . str_replace("%", ".*", $text_pattern) . "$/";
           $wc_gamecode_pattern =  "/^" . str_replace("%", ".*", "gamecode:".$text_pattern."%") . "$/i";
           foreach ($points_rows as $points) {
             if (preg_match($wc_type_pattern, $points->type) || preg_match($wc_gamecode_pattern, $points->metadata) ) {
@@ -2084,7 +2084,7 @@ function summergame_player_check_badges($pid, $game_term) {
          /* $args[':type_' . $i] = $pattern;
             $args[':metadata_' . $i] = 'gamecode:' . $pattern;
             $pattern = "(type LIKE :type_$i OR metadata LIKE :metadata_$i)";*/
-              $wc_type_pattern = "/^" . str_replace("%", ".*", $pattern) . "$/i";
+              $wc_type_pattern = "/^" . str_replace("%", ".*", $pattern) . "$/";
               $wc_gamecode_pattern = "/^" . str_replace("%", ".*", "gamecode:" . $pattern) . "$/i";
               if (preg_match($wc_type_pattern, $points->type) ||
                   preg_match($wc_gamecode_pattern, $points->metadata)) {
