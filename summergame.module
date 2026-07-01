@@ -2084,7 +2084,7 @@ function summergame_player_check_badges($pid, $game_term) {
          /* $args[':type_' . $i] = $pattern;
             $args[':metadata_' . $i] = 'gamecode:' . $pattern;
             $pattern = "(type LIKE :type_$i OR metadata LIKE :metadata_$i)";*/
-              $wc_text_pattern = "/" . str_replace("%", ".*", $pattern) . "/i";
+              $wc_text_pattern = "/" . str_replace("%", ".*", $pattern) . "/";
               $wc_gamecode_pattern = "/" . str_replace("%", ".*", "gamecode:".$pattern."$") . "/i";
               if (preg_match($wc_text_pattern, $points->type) ||
                   preg_match($wc_gamecode_pattern, $points->metadata)) {
