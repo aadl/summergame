@@ -1356,7 +1356,7 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
   } catch (Predis\Connection\ConnectionException $e) {
     $redis = null;
   }
-  
+
   if (!is_null($redis)) {
     $host = \Drupal::request()->getHost();
     $cached_points_raw = $redis->get("$host:summergame:points:$pid");
@@ -1453,7 +1453,7 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
     $query = $query->condition('game_term', $game_term, '=');
   }
   $query = $query->condition('metadata', 'delete:no leaderboard:no prize_count:%', 'LIKE');
-  
+
 
   $query->fields('sg_ledger', ['metadata', 'game_term']);
 
@@ -1536,7 +1536,7 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
   //save in redis if we're not loading from it to ensure we sometimes still load from points from scratch.  also only save if there is no term filter. regardless of whether we loaded with the cache.
   if (!$using_cache && $term_filter == FALSE && !is_null($redis)) {
     $points_cache_obj = [];
-    $points_cache_obj['timestamp'] = time(); 
+    $points_cache_obj['timestamp'] = time();
     $points_cache_obj['player_points'] = $player_points;
     $redis->setEx("$host:summergame:points:$pid", 3600, json_encode($points_cache_obj));
   }
@@ -2007,13 +2007,13 @@ function summergame_player_check_badges($pid, $game_term) {
         $distinct_days = [];
         $distinct_count = 0;
 
-        $wc_text_pattern =  "/" . str_replace("%", ".*", $text_pattern) . "$/";
-        $wc_gamecode_pattern =  "/" . str_replace("%", ".*", "gamecode:".$text_pattern."%") . "/";
+        $wc_type_pattern =  "/^" . str_replace("%", ".*", $text_pattern) . "$/";
+        $wc_gamecode_pattern =  "/^" . str_replace("%", ".*", "gamecode:".$text_pattern."%") . "$/i";
 
         foreach ($points_rows as $points) {
           $day = date('z', $points->timestamp);
 
-          if (!in_array($day, $distinct_days) && (preg_match($wc_text_pattern, $points->type) || preg_match($wc_gamecode_pattern, $points->metadata)) ) {
+          if (!in_array($day, $distinct_days) && (preg_match($wc_type_pattern, $points->type) || preg_match($wc_gamecode_pattern, $points->metadata)) ) {
             $distinct_days[] = $day;
             $distinct_count++;
           }
@@ -2032,10 +2032,10 @@ function summergame_player_check_badges($pid, $game_term) {
                                   "AND (type LIKE :text_pattern OR metadata LIKE :gamecode_pattern) AND game_term = :game_term",
                                   [':text_pattern' => $text_pattern, ':gamecode_pattern' => "gamecode:$text_pattern%", ':game_term' => $game_term])->fetchObject();*/
           $lid_count = 0;
-          $wc_text_pattern =  "/" . str_replace("%", ".*", $text_pattern) . "$/";
-          $wc_gamecode_pattern =  "/" . str_replace("%", ".*", "gamecode:".$text_pattern."%") . "$/";
+          $wc_type_pattern =  "/^" . str_replace("%", ".*", $text_pattern) . "$/";
+          $wc_gamecode_pattern =  "/^" . str_replace("%", ".*", "gamecode:".$text_pattern."%") . "$/i";
           foreach ($points_rows as $points) {
-            if (preg_match($wc_text_pattern, $points->type) || preg_match($wc_gamecode_pattern, $points->metadata) ) {
+            if (preg_match($wc_type_pattern, $points->type) || preg_match($wc_gamecode_pattern, $points->metadata) ) {
               $lid_count++;
             }
           }
@@ -2053,7 +2053,7 @@ function summergame_player_check_badges($pid, $game_term) {
                                   [':game_term' => $game_term, ':text_pattern' => $text_pattern])->fetchObject();*/
 
           $lid_count = 0;
-          $wc_text_pattern =  "/" . str_replace("%", ".*", $text_pattern) . "/";
+          $wc_text_pattern =  "/^" . str_replace("%", ".*", $text_pattern) . "$/";
 
           foreach ($points_rows as $points) {
             if (preg_match($wc_text_pattern, $points->{$ledger_field})) {
@@ -2084,9 +2084,9 @@ function summergame_player_check_badges($pid, $game_term) {
          /* $args[':type_' . $i] = $pattern;
             $args[':metadata_' . $i] = 'gamecode:' . $pattern;
             $pattern = "(type LIKE :type_$i OR metadata LIKE :metadata_$i)";*/
-              $wc_text_pattern = "/" . str_replace("%", ".*", $pattern) . "/";
-              $wc_gamecode_pattern = "/" . str_replace("%", ".*", "gamecode:".$pattern."$") . "/i";
-              if (preg_match($wc_text_pattern, $points->type) ||
+              $wc_type_pattern = "/^" . str_replace("%", ".*", $pattern) . "$/";
+              $wc_gamecode_pattern = "/^" . str_replace("%", ".*", "gamecode:" . $pattern) . "$/i";
+              if (preg_match($wc_type_pattern, $points->type) ||
                   preg_match($wc_gamecode_pattern, $points->metadata)) {
                 $found_any_match = TRUE;
               }
