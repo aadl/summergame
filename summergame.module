@@ -1338,7 +1338,7 @@ function summergame_get_active_player() {
 /**
  * UTILITY: Load player points
  */
-function summergame_get_player_points($pid, $game_term = '', $type = '') {
+function summergame_get_player_points($pid, $game_term = '', $type = '', $refresh = null) {
   $term_filter = FALSE;
 
   $closed_game_terms = \Drupal::config('summergame.settings')->get('summergame_closed_game_terms');
@@ -1350,9 +1350,11 @@ function summergame_get_player_points($pid, $game_term = '', $type = '') {
     'career' => 0,
   ];
   
-
-  $refresh = false;
-  if(isset($_GET['refresh'])){
+  
+  if (!is_null($refresh) && $refresh == true) {
+    $refresh = true;
+  }
+  if(isset($_GET['refresh']) && $refresh !== false){
     $refresh = true;
   }
 
