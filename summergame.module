@@ -1338,7 +1338,7 @@ function summergame_get_active_player() {
 /**
  * UTILITY: Load player points
  */
-function summergame_get_player_points($pid, $game_term = '', $type = '', $refresh = FALSE) {
+function summergame_get_player_points($pid, $game_term = '', $type = '', $refresh = NULL) {
   $term_filter = FALSE;
 
   $closed_game_terms = \Drupal::config('summergame.settings')->get('summergame_closed_game_terms');
@@ -1350,7 +1350,10 @@ function summergame_get_player_points($pid, $game_term = '', $type = '', $refres
     'career' => 0,
   ];
 
-  if (!empty($refresh) || isset($_GET['refresh'])) {
+  // If function argument is truthy, refresh
+  // OR
+  // if GET var is set and function argument is NOT set to FALSE, refresh
+  if (!empty($refresh) || (isset($_GET['refresh']) && $refresh !== FALSE)) {
     $refresh = TRUE;
   }
 
