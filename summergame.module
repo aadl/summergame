@@ -1407,8 +1407,8 @@ function summergame_get_player_points($pid, $game_term = '', $type = '', $refres
       $closed_new_game_term_filter = " AND gt.field_badge_game_term_value NOT IN (:closed_game_terms[]) ";
       $after = 0; // just to be explicit that we're not filtering by time
       foreach ($closed_game_terms as $closed_game_term) {
-        if (isset($cached_closed_points[$closed_game_term])) {
-          $player_points[$closed_game_term] = $cached_closed_points[$closed_game_term];
+        if (isset($cached_closed_points['player_points'][$closed_game_term])) {
+          $player_points[$closed_game_term] = $cached_closed_points['player_points'][$closed_game_term];
         }
       }
     }
