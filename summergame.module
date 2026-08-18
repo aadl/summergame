@@ -2590,6 +2590,21 @@ function summergame_players_merge($pid1, $pid2) {
   $db->query("UPDATE sg_ledger SET pid = :pid1 WHERE pid = :pid2", [':pid1' => $pid1, ':pid2' => $pid2]);
   $db->query("UPDATE sg_players_badges SET pid = :pid1 WHERE pid = :pid2", [':pid1' => $pid1, ':pid2' => $pid2]);
   $db->query("DELETE FROM sg_players WHERE pid = :pid", [':pid' => $pid2]);
+
+  //clear redis points caches
+  $host = \Drupal::request()->getHost();
+  try {
+    $redis = new Client(\Drupal::config('summergame.settings')->get('summergame_redis_conn'));
+    $redis->connect();
+  } catch (Predis\Connection\ConnectionException $e) {
+    $redis = NULL;
+  }
+  if (!is_null($redis)) {
+    $redis->del("$host:summergame:points:$pid1");
+    $redis->del("$host:summergame:points_closed:$pid1");
+    $redis->del("$host:summergame:points:$pid2");
+    $redis->del("$host:summergame:points_closed:$pid2");
+  }
 }
 
 /**
