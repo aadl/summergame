@@ -57,6 +57,8 @@
         <h2>{{ game_term|replace({'_': ' '}) }}</h2>
         {% endif %}
         {% for term_id, series in badge_list %}
+          {% if (series.name not in player.player_played_closed_series) and (series.name in closed_byteclub_series) %}
+          {% else %}
           <div class="badgelist-series {{ series.classes|join(' ') }} show">
             <h3 id="series-{{ term_id }}" class="no-margin-bottom">{{ series.name }} Badge Series</h3>
             <p>
@@ -91,6 +93,7 @@
               {% endfor %}
             </div>
           </div>
+          {% endif %}
         {% endfor %}
       </div>
     {% if is_summergame %}
