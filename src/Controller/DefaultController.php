@@ -586,7 +586,7 @@ We don't have all the details yet, but we'll reuse the signs for the 2023 game, 
       }
     }
     
-    $player['player_played_closed_series'] = false;
+    $player['player_played_closed_series'] = [];
     $closed_byteclub_series = \Drupal::config('summergame.settings')->get('summergame_closed_byteclub_series'); //don't show these if the player has badges from any of them
     $vocab = 'sg_badge_series';
     $badgelist_game_term = ($game_term ? $game_term : $summergame_settings->get('summergame_badgelist_game_term'));
@@ -676,7 +676,7 @@ We don't have all the details yet, but we'll reuse the signs for the 2023 game, 
 
           //["Byte Club: Season One", "Byte Club: Season Two"];
           if ( in_array($badges[$term_id]['name'], $closed_byteclub_series) && $node->badge_earned) {
-            $player['player_played_closed_series'] = true;
+            $player['player_played_closed_series'][] = $badges[$term_id]['name'];
           }
           // Add difficulty to node classes
           $node->classes = [$badges[$term_id]['diff_class']];

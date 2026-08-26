@@ -550,6 +550,7 @@ function summergame_theme() {
         'game_term' => NULL,
         'list_tags' => NULL,
         'badge_list' => NULL,
+        'closed_byteclub_series' => NULL,
         'is_byteclub' => NULL,
         'is_summergame' => NULL,
       ]
