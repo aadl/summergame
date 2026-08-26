@@ -585,9 +585,9 @@ We don't have all the details yet, but we'll reuse the signs for the 2023 game, 
         ];
       }
     }
-    
+
     $player['player_played_closed_series'] = [];
-    $closed_byteclub_series = \Drupal::config('summergame.settings')->get('summergame_closed_byteclub_series'); //don't show these if the player has badges from any of them
+    $closed_byteclub_series = \Drupal::config('summergame.settings')->get('summergame_closed_byteclub_series') ?? []; //don't show these if the player has badges from any of them
     $vocab = 'sg_badge_series';
     $badgelist_game_term = ($game_term ? $game_term : $summergame_settings->get('summergame_badgelist_game_term'));
     $play_test_term_id = $summergame_settings->get('summergame_play_test_term_id');
