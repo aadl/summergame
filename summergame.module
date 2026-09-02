@@ -1715,7 +1715,7 @@ function summergame_player_delete($player_info) {
 /**
  * UTILITY: Redeem a game code for a player
  */
-function summergame_redeem_code($player, $code_text) {
+function summergame_redeem_code($player, $code_text, $allow_expired = FALSE) {
   $db = \Drupal::database();
   $config = \Drupal::config('summergame.settings');
   $result = [];
@@ -1733,7 +1733,7 @@ function summergame_redeem_code($player, $code_text) {
       $start_date = date('F j, Y, g:i a', $code->valid_start);
       return ['error' => "Code \"$code->text\" is not yet valid. It will activate on $start_date"];
     }
-    else if ($now > $code->valid_end) {
+    else if ($now > $code->valid_end && !$allow_expired) {
       $end_date = date('F j, Y, g:i a', $code->valid_end);
       return ['error' => "Code \"$code->text\" is no longer valid. It expired on $end_date"];
     }
