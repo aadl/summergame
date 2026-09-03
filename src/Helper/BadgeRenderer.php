@@ -96,7 +96,7 @@ class BadgeRenderer {
             $variables['self_award_form'] = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGameSelfAwardForm', $pid, $bid);
           }
           else {
-            $variables['redeem_form'] = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerRedeemForm', $pid);
+            $variables['redeem_form'] = \Drupal::formBuilder()->getForm('Drupal\summergame\Form\SummerGamePlayerRedeemForm', $pid, false);
           }
 
           // Handle hidden badges
