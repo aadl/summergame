@@ -352,7 +352,7 @@ summergame.aaps_config:
     _title: 'Summer Game Settings'
     _form: '\Drupal\summergame\Form\SummerGameAdminAAPS'
   requirements:
-    _permission: 'access administration pages'
+    _permission: 'manage summergame'
 summergame.aaps.map:
   path: '/schoolcodes'
   defaults:
