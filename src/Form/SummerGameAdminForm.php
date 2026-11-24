@@ -7,6 +7,7 @@
 
 namespace Drupal\summergame\Form;
 
+use Drupal\user\Entity\Role;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element;
@@ -202,7 +203,7 @@ class SummerGameAdminForm extends ConfigFormBase
       '#description' => t('Connection information for the redis server (e.g. tcp://127.0.0.1:6379?database=15)'),
     ];
     $user_roles = ['' => 'NONE'];
-    foreach (\Drupal\user\Entity\Role::loadMultiple() as $user_role) {
+    foreach (Role::loadMultiple() as $user_role) {
       $role_id = $user_role->get('id');
       $role_label = $user_role->get('label');
       $user_roles[$role_id] = $role_label;

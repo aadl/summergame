@@ -69,7 +69,7 @@ class SummerGameHomeCodeReportForm extends FormBase {
           $form['inline']['cancel'] = [
             '#type' => 'link',
             '#title' => $this->t('Back to Map'),
-            '#url' => \Drupal\Core\Url::fromRoute('summergame.map'),
+            '#url' => Url::fromRoute('summergame.map'),
           ];
         }
         else {
@@ -139,7 +139,7 @@ class SummerGameHomeCodeReportForm extends FormBase {
       'Lawn Code Reported: ' . $code_data->text,
       "We have received a report of a Lawn Code that a player was unable to find.\n\n" .
       "Lawn Code Details:\n" .
-      \Drupal\Core\Url::fromRoute('summergame.admin.gamecode', ['code_id' => $code_data->code_id], ['absolute' => TRUE])->toString() . "\n" .
+      Url::fromRoute('summergame.admin.gamecode', ['code_id' => $code_data->code_id], ['absolute' => TRUE])->toString() . "\n" .
       "Code Text: $code_data->text\n" .
       "Code description: $code_data->description\n" .
       "Number of Code Redemptions: $code_data->num_redemptions\n" .
