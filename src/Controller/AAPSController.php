@@ -62,7 +62,7 @@ class AAPSController extends ControllerBase {
 
     $aaps_map_settings = \Drupal::config('summergame.aapssettings');
     $data_raw = $aaps_map_settings->get('data');
-  
+
     //parse
     $data = [];
     $renderArray = [];
@@ -70,7 +70,7 @@ class AAPSController extends ControllerBase {
     $line_num = 0;
     foreach($rawlines as $rawline){
       $line = str_getcsv($rawline, ",", '"');
-      
+
       if ((int)$line_number == $line_num) {
 
         $data = [
@@ -89,8 +89,8 @@ class AAPSController extends ControllerBase {
       $line_num++;
 
     }
-    
-  
+
+
 
     $module_path = \Drupal::service('module_handler')->getModule('summergame')->getpath();
     $html = $this->renderTwig($module_path."/templates/aaps-school.html.twig",  $renderArray);
@@ -103,12 +103,12 @@ class AAPSController extends ControllerBase {
         )],
       '#cache' => ['max-age' => 0]
     ];
-    
+
 
     /*  $module_path = \Drupal::service('module_handler')->getModule('summergame')->getpath();
       $html = $this->renderTwig($module_path."/templates/sg-badge-display-embed.html.twig",  $renderArray);
       $resp->html[$key] = $html;
-    
+
     $response = new JsonResponse($resp, 200);
     return $response;*/
   }
@@ -156,7 +156,7 @@ class AAPSController extends ControllerBase {
       '#template' => \file_get_contents($template_file),
       '#context'  => $variables,
     ];
-    return (string) \Drupal::service('renderer')->renderPlain($renderArray);
+    return (string) \Drupal::service('renderer')->renderInIsolation($renderArray);
   }
 
 }

@@ -1,5 +1,6 @@
 <?php
 
+use Predis\Connection\ConnectionException;
 use Drupal\user\Entity\User;
 use Drupal\file\Entity\File;
 use Elasticsearch\ClientBuilder;
@@ -53,7 +54,7 @@ function summergame_preprocess_html(&$variables) {
       ],
     ];
 
-    $bc_header = (string) \Drupal::service('renderer')->renderPlain($renderArray);
+    $bc_header = (string) \Drupal::service('renderer')->renderInIsolation($renderArray);
 
     if (isset($variables['page']['content']['aadl_content']['#prefix'])) {
       $bc_header = $bc_header . $variables['page']['content']['aadl_content']['#prefix'];
@@ -1368,7 +1369,7 @@ function summergame_get_player_points($pid, $game_term = '', $type = '', $refres
   try {
     $redis = new Client(\Drupal::config('summergame.settings')->get('summergame_redis_conn'));
     $redis->connect();
-  } catch (Predis\Connection\ConnectionException $e) {
+  } catch (ConnectionException $e) {
     $redis = NULL;
   }
 
@@ -2597,7 +2598,7 @@ function summergame_players_merge($pid1, $pid2) {
   try {
     $redis = new Client(\Drupal::config('summergame.settings')->get('summergame_redis_conn'));
     $redis->connect();
-  } catch (Predis\Connection\ConnectionException $e) {
+  } catch (ConnectionException $e) {
     $redis = NULL;
   }
   if (!is_null($redis)) {

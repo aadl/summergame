@@ -781,7 +781,7 @@ class PlayerController extends ControllerBase {
       '#template' => \file_get_contents($template_file),
       '#context'  => $variables,
     ];
-    return (string) \Drupal::service('renderer')->renderPlain($renderArray);
+    return (string) \Drupal::service('renderer')->renderInIsolation($renderArray);
   }
 
 }

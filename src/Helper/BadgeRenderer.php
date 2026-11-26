@@ -2,6 +2,8 @@
 
 namespace Drupal\summergame\Helper;
 
+use Drupal\node\Entity\Node;
+
 /**
  * Class BadgeRenderer
  * @package Drupal\summergame\Helper
@@ -170,7 +172,7 @@ class BadgeRenderer {
               $total_count = count($bids);
               $badge_list = '';
               foreach ($bids as $bid) {
-                $node = \Drupal\node\Entity\Node::load($bid);
+                $node = Node::load($bid);
                 $faded_class = (isset($player['bids'][$bid]) ? '' : ' sg-badge-faded');
                 $badge_list .= '<a href="/node/' . $bid . '" target="_blank" title="'.$node->getTitle().'">' .
                               '<img class="sg-admin-badge ' . $faded_class . '" src="/files/badge-derivs/100/' . $node->field_badge_image->entity->getFilename() . '" alt="Badge image for '.$node->getTitle().'">' .
